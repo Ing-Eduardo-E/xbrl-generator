@@ -1,0 +1,44 @@
+graph TD
+    subgraph Usuario
+        A[Navegador Web] --> B{Frontend}
+    end
+
+    subgraph Backend
+        B --> C{API}
+        C --> D[Carga]
+        C --> E[Configuracion]
+        C --> F[Generacion]
+        C --> G[Dashboard]
+    end
+
+    subgraph Logica
+        D --> H(1. Parsear Excel)
+        E --> I(2. Validar Porcentajes)
+        H --> J(3. Distribuir)
+        I --> J
+        J --> K(4. Validar Ecuaciones)
+        K --> L(5. Mapear a Plantilla)
+        L --> M(6. Generar Archivos)
+    end
+
+    subgraph Almacenamiento
+        C --> N[Base de Datos]
+        M --> O[Bucket S3]
+        N -.-> E
+        O -.-> F
+    end
+
+    subgraph Tareas Asincronas
+        F --> P{Cola Tareas}
+        P --> Q[Worker]
+        Q --> L
+        Q --> M
+    end
+
+    subgraph Salida
+        F --> R(Descarga ZIP)
+        R --> S[App Externa]
+    end
+
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style S fill:#ccf,stroke:#333,stroke-width:2px

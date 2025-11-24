@@ -1,0 +1,46 @@
+{
+  "query": "SELECT LEFT(codigo, 1) as clase, SUM(valor) as total FROM cuentas_trabajo WHERE es_hoja = 1 GROUP BY LEFT(codigo, 1)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2ZpXuFMpxyo3eo7.874cd66d5e9d --database inBC23r5kN9u7wMnyapARs --execute SELECT LEFT(codigo, 1) as clase, SUM(valor) as total FROM cuentas_trabajo WHERE es_hoja = 1 GROUP BY LEFT(codigo, 1)",
+  "rows": [
+    {
+      "clase": "3",
+      "total": "-839033064"
+    },
+    {
+      "clase": "9",
+      "total": "0"
+    },
+    {
+      "clase": "5",
+      "total": "79199853"
+    },
+    {
+      "clase": "1",
+      "total": "65921695"
+    },
+    {
+      "clase": "6",
+      "total": "308706824"
+    },
+    {
+      "clase": "7",
+      "total": "0"
+    },
+    {
+      "clase": "4",
+      "total": "384363903"
+    },
+    {
+      "clase": "2",
+      "total": "904954759"
+    },
+    {
+      "clase": "8",
+      "total": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "clase\ttotal\n3\t-839033064\n9\t0\n5\t79199853\n1\t65921695\n6\t308706824\n7\t0\n4\t384363903\n2\t904954759\n8\t0\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}

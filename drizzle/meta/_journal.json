@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1763992364134,
+      "tag": "0000_warm_silver_fox",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1763992530197,
+      "tag": "0001_flimsy_paper_doll",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1763994096671,
+      "tag": "0002_motionless_kronos",
+      "breakpoints": true
+    }
+  ]
+}

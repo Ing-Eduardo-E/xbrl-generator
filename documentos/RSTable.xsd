@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+This schema incorporates ArcRoleType definitions and XBRL Resource definitions to 
+document instruction to provide actions on cell tables gui events.
+
+This schema is hosted officially at: http://www.reportingstandard.com/2017/RSTable.xsd
+-->
+<schema 
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="http://www.reportingstandard.com/2017/RSTable"
+  xmlns:rstable="http://www.reportingstandard.com/2017/RSTable"
+  xmlns:gen="http://xbrl.org/2008/generic" 
+  xmlns:link="http://www.xbrl.org/2003/linkbase"
+  xmlns:xl="http://www.xbrl.org/2003/XLink"
+  elementFormDefault="qualified">
+  <annotation>
+    <appinfo>
+      <link:arcroleType arcroleURI="http://reportingstandard.com/arcrole/2017/table-action" cyclesAllowed="undirected" id="table-action">
+        <link:definition>Provides a means to add actions on table cell based on gui events</link:definition>
+        <link:usedOn>gen:arc</link:usedOn>
+      </link:arcroleType>
+      <!--
+  
+      XBRL Table Linkbase 1.0 specification provides aspect-node-filter relationships to add a filter on open aspect values
+      [of existing facts] to be represented in the table content.
+
+      This new arcrole is used to filter the content of open aspects that are not part of the instance but are provided by the
+      application based on user input previous to the existence of fact values in the instance. For example: A user creates a new
+      report (the report is empty) the user creates a set of periods to enter values but the periods are not part of any context
+      until a fact is created and a context created and that period is attached to the context of that fact. This filter allows
+      the table processor to filter the periods that are still not part of the instance and select only the periods that pass
+      the filter expression.
+
+      The arc source must be a table:aspectNode and the target must be a table.openFilter
+
+      -->
+      <link:arcroleType arcroleURI="http://reportingstandard.com/arcrole/2017/aspect-node-filter" cyclesAllowed="undirected" id="aspect-node-filter">
+        <link:definition>Allows to filter open aspect values not yet in the instance</link:definition>
+        <link:usedOn>gen:arc</link:usedOn>
+      </link:arcroleType>
+  </appinfo>
+  </annotation>
+
+  <import namespace="http://www.xbrl.org/2003/XLink" schemaLocation="http://www.xbrl.org/2003/xl-2003-12-31.xsd"/>
+
+  <complexType name="table.action.type">
+    <complexContent>
+      <extension base="xl:resourceType">
+        <attribute name="action" type="rstable:action" use="required"/>
+        <attribute name="event" type="rstable:events" use="required"/>
+        <attribute name="expression" type="rstable:expression" use="required" />
+        <attribute name="source" type="rstable:cellRange" use="required" />
+        <attribute name="target" type="rstable:cellRange" use="required" />
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <complexType name="table.openFilter.type">
+    <complexContent>
+      <extension base="xl:resourceType">
+        <attribute name="expression" type="rstable:expression" use="required" />
+        <attribute name="close" type="boolean" default="true" use="optional" />
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <simpleType name="cellRange">
+    <restriction base="string" />
+    <!-- restriction base="string">
+      <pattern value="([A-Z]+)([0-9]+)(:([A-Z]+)([0-9]+))?" />
+    </restriction -->
+  </simpleType>
+
+  <simpleType name="event">
+     <restriction base="token">
+      <enumeration value="focusGain"/>
+      <enumeration value="focusLost"/>
+      <enumeration value="init"/>
+     </restriction>
+  </simpleType>
+  
+  <simpleType name="events">
+  	<list itemType="rstable:event"/>
+  </simpleType>
+  
+  <simpleType name="action">
+     <restriction base="token">
+      <enumeration value="disable"/>
+      <enumeration value="value"/>
+     </restriction>
+  </simpleType>
+  
+  <simpleType name="expression">
+    <restriction base="string"/>
+  </simpleType>
+  
+  <element name="table.action" type="rstable:table.action.type" substitutionGroup="xl:resource"/>
+  <element name="table.openFilter" type="rstable:table.openFilter.type" substitutionGroup="xl:resource"/>
+
+</schema>

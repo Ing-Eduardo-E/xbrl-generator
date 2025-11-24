@@ -1,0 +1,28 @@
+{
+  "query": "SELECT codigo, nombre, valor, es_hoja FROM cuentas_trabajo WHERE codigo IN ('1', '11', '1105', '110505') ORDER BY longitud",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2ZpXuFMpxyo3eo7.874cd66d5e9d --database inBC23r5kN9u7wMnyapARs --execute SELECT codigo, nombre, valor, es_hoja FROM cuentas_trabajo WHERE codigo IN ('1', '11', '1105', '110505') ORDER BY longitud",
+  "rows": [
+    {
+      "codigo": "1",
+      "nombre": "ACTIVOS",
+      "valor": "65921695",
+      "es_hoja": "0"
+    },
+    {
+      "codigo": "11",
+      "nombre": "EFECTIVO Y EQUIVALENTES AL EFECTIVO",
+      "valor": "22922335",
+      "es_hoja": "0"
+    },
+    {
+      "codigo": "1105",
+      "nombre": "CAJA",
+      "valor": "0",
+      "es_hoja": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "codigo\tnombre\tvalor\tes_hoja\n1\tACTIVOS\t65921695\t0\n11\tEFECTIVO Y EQUIVALENTES AL EFECTIVO\t22922335\t0\n1105\tCAJA\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 95
+}
