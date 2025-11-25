@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install:*)",
+      "Bash(pnpm dev)",
+      "Bash(pnpm add:*)",
+      "Bash(curl:*)",
+      "Bash(pnpm create:*)",
+      "Bash(pnpm dlx create-next-app@latest:*)",
+      "Bash(pnpm db:push:*)",
+      "Bash(psql:*)",
+      "Bash(pnpm drizzle-kit push:*)",
+      "Bash(pnpm dlx:*)",
+      "Bash(pnpm remove:*)",
+      "Bash(pnpm list:*)",
+      "Bash(taskkill:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
