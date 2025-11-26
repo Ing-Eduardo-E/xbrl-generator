@@ -2,46 +2,63 @@
 
 Generador automático de taxonomías XBRL para empresas de servicios públicos colombianas que reportan a la SSPD.
 
-## 🚀 Proyecto Nuevo - Creado desde Cero
+## 🚀 Inicio Rápido
 
-Este es un proyecto completamente nuevo, construido con las mejores prácticas modernas. Todo el código anterior fue movido a `../proyecto_anterior_completo/`.
+### Requisitos Previos
+
+- **Node.js** 18+ (recomendado: 20 LTS)
+- **pnpm** 8+ (`npm install -g pnpm`)
+- **PostgreSQL** (local o Neon.tech para cloud)
+
+### Instalación
+
+```bash
+# 1. Navegar al directorio del proyecto
+cd app
+
+# 2. Instalar dependencias
+pnpm install
+
+# 3. Configurar variables de entorno
+cp .env.example .env.local
+# Editar .env.local con tu DATABASE_URL
+
+# 4. Crear tablas en la base de datos
+pnpm db:push
+
+# 5. Iniciar servidor de desarrollo
+pnpm dev
+
+# 6. Abrir http://localhost:3000
+```
 
 ## 🎯 Objetivo
 
-Automatizar la generación de taxonomías XBRL reduciendo el tiempo de preparación de 8 horas a 2-3 horas (85% de ahorro).
+Automatizar la generación de taxonomías XBRL reduciendo el tiempo de preparación de **8 horas a 2-3 horas** (85% de ahorro).
 
 ### Flujo de Trabajo
 
 ```
 1. CARGA → Usuario sube Excel con Balance General Consolidado
 2. VALIDACIÓN → Sistema verifica: Activos = Pasivos + Patrimonio ✅
-3. DISTRIBUCIÓN → Usuario define % para:
+3. DISTRIBUCIÓN → Usuario define % para cada servicio (debe sumar 100%):
    - Acueducto
    - Alcantarillado
    - Aseo
-   (Debe sumar 100%)
-4. GENERACIÓN → Sistema diligencia hojas Excel según taxonomías SSPD
-5. DESCARGA → Usuario descarga paquete completo
+4. GENERACIÓN → Sistema genera Excel con balances distribuidos
+5. DESCARGA → Usuario descarga archivo Excel con 4 hojas
 ```
 
 ## 🛠️ Stack Tecnológico
 
-- **Next.js 16** - Framework React con App Router
-- **React 19** - UI Library
-- **TypeScript 5.9** - Type Safety (Strict Mode)
-- **Tailwind CSS 4** - Styling con tema personalizado
-- **Turbopack** - Build tool ultra-rápido
-- **pnpm** - Package manager
-
-### Por Implementar
-
-- **tRPC** - API type-safe
-- **Drizzle ORM** - Base de datos
-- **PostgreSQL** - Database
-- **Zod** - Validación de schemas
-- **xlsx** - Procesamiento de Excel
-- **Vitest** - Testing
-- **Playwright** - E2E testing
+| Capa | Tecnología | Propósito |
+|------|------------|-----------|
+| **Frontend** | Next.js 15 + React 19 | App Router, Server Components |
+| **Styling** | Tailwind CSS 3.4 + shadcn/ui | UI Components |
+| **API** | tRPC 11 | Type-safe API |
+| **Database** | Drizzle ORM + PostgreSQL | Persistencia |
+| **Excel** | xlsx (SheetJS) | Lectura/Escritura Excel |
+| **Validation** | Zod 4 | Schema validation |
 
 ## 📁 Estructura del Proyecto
 
@@ -49,78 +66,97 @@ Automatizar la generación de taxonomías XBRL reduciendo el tiempo de preparaci
 app/
 ├── src/
 │   ├── app/                    # Next.js App Router
+│   │   ├── api/trpc/[trpc]/   # API endpoints tRPC
 │   │   ├── layout.tsx          # Layout principal
-│   │   └── page.tsx            # Página home
+│   │   └── page.tsx            # Página home (Wizard)
 │   ├── components/
-│   │   └── ui/                 # Componentes UI (shadcn)
-│   ├── lib/                    # Utilidades y configuración
-│   ├── styles/
-│   │   └── globals.css         # Estilos globales + Tailwind
-│   └── types/                  # TypeScript types
-├── public/                     # Assets estáticos
-├── next.config.ts             # Configuración Next.js
-├── tsconfig.json              # TypeScript config (strict mode)
-├── package.json               # Dependencies
-└── README.md                  # Este archivo
+│   │   ├── ui/                 # Componentes shadcn/ui
+│   │   ├── WizardLayout.tsx    # Layout del wizard
+│   │   ├── UploadStep.tsx      # Paso 1: Cargar Excel
+│   │   ├── DistributeStep.tsx  # Paso 2: Distribución
+│   │   └── GenerateStep.tsx    # Paso 3: Descargar
+│   ├── lib/
+│   │   ├── db/                 # Cliente de base de datos
+│   │   ├── services/           # Servicios (Excel parser/generator)
+│   │   ├── trpc/               # Cliente tRPC
+│   │   └── utils.ts            # Utilidades
+│   └── server/
+│       ├── routers/            # tRPC routers
+│       └── trpc.ts             # Configuración tRPC
+├── drizzle/
+│   └── schema/                 # Schema de base de datos
+├── .env.example                # Template de variables
+├── drizzle.config.ts           # Configuración Drizzle
+└── package.json
 ```
 
 ## 🚦 Comandos
 
 ```bash
 # Desarrollo
-pnpm dev          # Inicia servidor en http://localhost:3000 con Turbopack
+pnpm dev              # Servidor en http://localhost:3000
+
+# Base de Datos
+pnpm db:push          # Aplicar schema a la BD
+pnpm db:studio        # Abrir Drizzle Studio (GUI)
 
 # Producción
-pnpm build        # Compila para producción
-pnpm start        # Inicia servidor de producción
+pnpm build            # Build para producción
+pnpm start            # Iniciar servidor de producción
 
 # Calidad de código
-pnpm lint         # ESLint
-pnpm type-check   # TypeScript check sin compilar
+pnpm lint             # ESLint
+pnpm type-check       # Verificar tipos TypeScript
 ```
 
-## 🎨 Características del Proyecto
+## 📊 API Endpoints (tRPC)
 
-### TypeScript Strict Mode
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `balance.ping` | Query | Health check |
+| `balance.uploadBalance` | Mutation | Cargar y procesar Excel |
+| `balance.getTotals` | Query | Obtener totales consolidados |
+| `balance.distributeBalance` | Mutation | Distribuir por servicios |
+| `balance.getTotalesServicios` | Query | Totales por servicio |
+| `balance.downloadExcel` | Query | Descargar Excel distribuido |
+| `balance.downloadConsolidated` | Query | Descargar solo consolidado |
 
-Configuración estricta de TypeScript para prevenir errores:
+## 🗂️ Base de Datos
 
-```json
-{
-  "strict": true,
-  "noUnusedLocals": true,
-  "noUnusedParameters": true,
-  "exactOptionalPropertyTypes": true,
-  "noImplicitReturns": true,
-  "noUncheckedIndexedAccess": true,
-  ...
-}
+### Tablas
+
+```sql
+-- Cuentas cargadas (temporal)
+working_accounts (
+  id, code, name, value, is_leaf, level, class, created_at
+)
+
+-- Balances distribuidos por servicio
+service_balances (
+  id, service, code, name, value, created_at
+)
+
+-- Sesiones de balance (tracking)
+balance_sessions (
+  id, file_name, niif_group, accounts_count, distribution, status, ...
+)
 ```
 
-### Tailwind CSS 4
+## 🔐 Variables de Entorno
 
-Usando la nueva sintaxis `@theme` con colores OKLCH para mejor percepción visual:
+Crear `.env.local` basado en `.env.example`:
 
-```css
-@theme {
-  --color-primary: oklch(60% 0.25 250);
-  --color-secondary: oklch(70% 0.15 200);
-  ...
-}
+```bash
+# PostgreSQL (Neon recomendado para producción)
+DATABASE_URL=postgresql://user:password@host:5432/xbrl_generator
+
+# URL de la aplicación (opcional)
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-### Next.js 16 con Turbopack
-
-- **Turbopack**: Build incremental ultra-rápido (700x más rápido que Webpack)
-- **App Router**: File-based routing moderno
-- **Server Components**: Mejor performance por defecto
-- **Typed Routes**: Rutas type-safe
-
-## 🗂️ Conocimiento del Dominio
+## 📚 Conocimiento del Dominio
 
 ### Plan Único de Cuentas (PUC)
-
-Jerarquía de cuentas colombiana:
 
 ```
 1 dígito  → Clase (1=Activos, 2=Pasivos, 3=Patrimonio, etc.)
@@ -130,78 +166,30 @@ Jerarquía de cuentas colombiana:
 7+ dígitos → Auxiliares
 ```
 
-### Grupos NIIF
-
-| Grupo | Empresas | Hojas | Complejidad |
-|-------|----------|-------|-------------|
-| Grupo 1 | NIIF Plenas | 66 | Muy Alta |
-| Grupo 2 | NIIF PYMES | 45 | Alta |
-| Grupo 3 | Microempresas | 30 | Media |
-| R414 | ESAL | 43 | Media |
-
 ### Servicios Públicos
 
 1. **Acueducto** - Suministro de agua potable
-2. **Alcantarillado** - Recolección y tratamiento de aguas residuales
-3. **Aseo** - Recolección y disposición de residuos sólidos
+2. **Alcantarillado** - Tratamiento de aguas residuales
+3. **Aseo** - Recolección de residuos sólidos
 
-## 📋 Próximos Pasos
+## 📋 Estado del Proyecto
 
-### Fase 1: Setup Base (Completado ✅)
-- [x] Crear proyecto Next.js
-- [x] Configurar TypeScript strict mode
-- [x] Configurar Tailwind CSS 4
-- [x] Estructura de directorios
-- [x] Página home básica
+### ✅ Completado
+- [x] Wizard de 3 pasos (Cargar, Distribuir, Generar)
+- [x] Parser de Excel flexible
+- [x] Validación de ecuaciones contables
+- [x] Distribución proporcional por servicios
+- [x] Generación de Excel con 4 hojas
+- [x] Descarga de archivos
 
-### Fase 2: Core Features (En Progreso)
-- [ ] Instalar y configurar shadcn/ui
-- [ ] Crear componente de carga de archivos
-- [ ] Implementar parser de Excel (xlsx)
-- [ ] Validación contable (Activos = Pasivos + Patrimonio)
-- [ ] UI de distribución por servicios
-- [ ] Lógica de distribución proporcional
-
-### Fase 3: XBRL Generation
-- [ ] Setup tRPC + Drizzle + PostgreSQL
-- [ ] Mapear PUC → Taxonomías SSPD
-- [ ] Integrar plantillas Excel oficiales
-- [ ] Generar hojas Excel diligenciadas
-- [ ] Empaquetar archivos para descarga
-
-### Fase 4: Testing & Deploy
-- [ ] Tests unitarios (Vitest)
-- [ ] Tests E2E (Playwright)
-- [ ] CI/CD (GitHub Actions)
-- [ ] Deploy a producción (Vercel/Railway)
-
-## 📚 Documentación Adicional
-
-Ver `/docs` en el directorio raíz del proyecto para:
-
-- Análisis de taxonomías SSPD
-- Estructura del PUC colombiano
-- Especificaciones técnicas
-- Arquitectura de la solución
-- Flujos de trabajo
-
-## 🔗 Referencias
-
-- **SSPD**: https://www.superservicios.gov.co/
-- **SUI**: https://www.sui.gov.co/
-- **Next.js Docs**: https://nextjs.org/docs
-- **Tailwind CSS 4**: https://tailwindcss.com/docs
-
-## 📝 Notas
-
-- El código anterior está en `../proyecto_anterior_completo/`
-- Este es un proyecto completamente nuevo desde cero
-- Stack moderno con mejores prácticas
-- TypeScript estricto para prevenir errores
-- Performance optimizada desde el diseño
+### 🚧 En Desarrollo
+- [ ] Generación de archivos XBRL
+- [ ] Integración con plantillas SSPD
+- [ ] Tests unitarios e integración
 
 ---
 
 **Versión**: 2.0.0
-**Fecha de Inicio**: 2024-11-24
-**Estado**: En desarrollo activo
+**Fecha**: 2025-11-25
+**Estado**: Funcional (sin generación XBRL)
+

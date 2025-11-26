@@ -1,4 +1,11 @@
 import './globals.css';
+import { TRPCProvider } from '@/lib/trpc';
+import { Toaster } from 'sonner';
+
+export const metadata = {
+  title: 'Generador XBRL - SSPD',
+  description: 'Sistema de generación de taxonomías XBRL para empresas de servicios públicos',
+};
 
 export default function RootLayout({
   children,
@@ -7,7 +14,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <TRPCProvider>
+          {children}
+          <Toaster richColors position="top-right" />
+        </TRPCProvider>
+      </body>
     </html>
   );
 }

@@ -1,9 +1,12 @@
 import { z } from 'zod';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, desc } from 'drizzle-orm';
 import { router, publicProcedure } from '../trpc';
 import { db } from '@/lib/db';
 import { workingAccounts, serviceBalances, balanceSessions } from '../../../drizzle/schema';
 import { parseExcelFile } from '@/lib/services/excelParser';
+import { generateExcelWithDistribution, generateConsolidatedExcel } from '@/lib/services/excelGenerator';
+import { generateXBRLCompatibleExcel } from '@/lib/services/xbrlExcelGenerator';
+import { generateXBRLPackage, type NiifGroup, type RoundingDegree } from '@/lib/xbrl';
 
 export const balanceRouter = router({
   /**
@@ -169,6 +172,9 @@ export const balanceRouter = router({
               code: account.code,
               name: account.name,
               value: distributedValue,
+              isLeaf: account.isLeaf,
+              level: account.level,
+              class: account.class,
             });
           }
         }
@@ -205,11 +211,12 @@ export const balanceRouter = router({
 
   /**
    * Obtener totales de todos los servicios
+   * IMPORTANTE: Solo suma las cuentas hoja (isLeaf = true) para evitar duplicación
    */
   getTotalesServicios: publicProcedure.query(async () => {
     try {
       const services = ['acueducto', 'alcantarillado', 'aseo'];
-      const result: Record<string, { activos: number; pasivos: number; patrimonio: number }> = {};
+      const result: Record<string, { activos: number; pasivos: number; patrimonio: number; ingresos: number; gastos: number; costos: number }> = {};
 
       for (const service of services) {
         const totals = await db
@@ -218,13 +225,16 @@ export const balanceRouter = router({
             total: sql<number>`sum(${serviceBalances.value})`,
           })
           .from(serviceBalances)
-          .where(eq(serviceBalances.service, service))
+          .where(sql`${serviceBalances.service} = ${service} AND ${serviceBalances.isLeaf} = true`)
           .groupBy(sql`substring(${serviceBalances.code}, 1, 1)`);
 
         result[service] = {
           activos: 0,
           pasivos: 0,
           patrimonio: 0,
+          ingresos: 0,
+          gastos: 0,
+          costos: 0,
         };
 
         for (const row of totals) {
@@ -232,6 +242,9 @@ export const balanceRouter = router({
           if (row.firstDigit === '1') result[service]!.activos = total;
           if (row.firstDigit === '2') result[service]!.pasivos = total;
           if (row.firstDigit === '3') result[service]!.patrimonio = total;
+          if (row.firstDigit === '4') result[service]!.ingresos = total;
+          if (row.firstDigit === '5') result[service]!.gastos = total;
+          if (row.firstDigit === '6') result[service]!.costos = total;
         }
       }
 
@@ -239,6 +252,220 @@ export const balanceRouter = router({
     } catch (error) {
       throw new Error(
         error instanceof Error ? error.message : 'Error al obtener totales de servicios'
+      );
+    }
+  }),
+
+  /**
+   * Descargar Excel con balance consolidado y distribuido por servicios
+   */
+  downloadExcel: publicProcedure.query(async () => {
+    try {
+      const excelBase64 = await generateExcelWithDistribution();
+      
+      return {
+        success: true,
+        fileName: `Balance_Distribuido_${new Date().toISOString().split('T')[0]}.xlsx`,
+        fileData: excelBase64,
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      };
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : 'Error al generar el archivo Excel'
+      );
+    }
+  }),
+
+  /**
+   * Descargar Excel solo con balance consolidado
+   */
+  downloadConsolidated: publicProcedure.query(async () => {
+    try {
+      const excelBase64 = await generateConsolidatedExcel();
+      
+      return {
+        success: true,
+        fileName: `Balance_Consolidado_${new Date().toISOString().split('T')[0]}.xlsx`,
+        fileData: excelBase64,
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      };
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : 'Error al generar el archivo Excel'
+      );
+    }
+  }),
+
+  /**
+   * Descargar Excel con formato compatible para XBRL Express
+   * Este Excel tiene la estructura exacta que XBRL Express espera:
+   * - Hoja1: Información general (columna E, filas 12-22)
+   * - Hoja2: Estado de Situación Financiera (columnas I-Q, filas 15-70)
+   */
+  downloadXBRLExcel: publicProcedure
+    .input(
+      z.object({
+        companyId: z.string().min(1, 'ID de empresa requerido'),
+        companyName: z.string().min(1, 'Nombre de empresa requerido'),
+        reportDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha debe ser YYYY-MM-DD'),
+        nit: z.string().optional(),
+        businessNature: z.string().optional(),
+        startDate: z.string().optional(),
+        roundingDegree: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        // Obtener el grupo NIIF de la sesión actual
+        const session = await db
+          .select()
+          .from(balanceSessions)
+          .orderBy(desc(balanceSessions.createdAt))
+          .limit(1);
+
+        if (session.length === 0) {
+          throw new Error('No hay una sesión activa. Por favor carga un balance primero.');
+        }
+
+        const taxonomyGroup = session[0].niifGroup as 'grupo1' | 'grupo2' | 'grupo3' | 'r414';
+
+        // Verificar que hay datos distribuidos
+        const serviceCount = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(serviceBalances);
+
+        if (!serviceCount[0] || Number(serviceCount[0].count) === 0) {
+          throw new Error('No hay datos distribuidos. Por favor distribuye el balance primero.');
+        }
+
+        // Obtener distribución de servicios activos
+        const distribution = session[0].distribution 
+          ? JSON.parse(session[0].distribution) 
+          : { acueducto: 40, alcantarillado: 35, aseo: 25 };
+        
+        const activeServices = Object.keys(distribution).filter(s => distribution[s] > 0);
+
+        // Generar el Excel con formato XBRL Express
+        const excelBase64 = await generateXBRLCompatibleExcel({
+          companyId: input.companyId,
+          companyName: input.companyName,
+          nit: input.nit,
+          reportDate: input.reportDate,
+          businessNature: input.businessNature,
+          startDate: input.startDate,
+          roundingDegree: input.roundingDegree as RoundingDegree,
+          taxonomyGroup,
+          activeServices,
+        });
+
+        return {
+          success: true,
+          fileName: `XBRL_Excel_${input.companyId}_${input.reportDate}.xlsx`,
+          fileData: excelBase64,
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        };
+      } catch (error) {
+        throw new Error(
+          error instanceof Error ? error.message : 'Error al generar el Excel XBRL'
+        );
+      }
+    }),
+
+  /**
+   * Generar y descargar paquete XBRL completo
+   * Incluye: .xbrl, .xbrlt, .xml, README.txt, RESUMEN.txt
+   */
+  downloadXBRL: publicProcedure
+    .input(
+      z.object({
+        companyId: z.string().min(1, 'ID de empresa requerido'),
+        companyName: z.string().min(1, 'Nombre de empresa requerido'),
+        reportDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha debe ser YYYY-MM-DD'),
+        taxonomyYear: z.enum(['2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025']).optional().default('2024'),
+        nit: z.string().optional(),
+        businessNature: z.string().optional(),
+        startDate: z.string().optional(),
+        roundingDegree: z.string().optional(),
+        hasRestatedInfo: z.string().optional(),
+        restatedPeriod: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        // Obtener el grupo NIIF de la sesión actual
+        const session = await db
+          .select()
+          .from(balanceSessions)
+          .orderBy(desc(balanceSessions.createdAt))
+          .limit(1);
+
+        if (session.length === 0) {
+          throw new Error('No hay una sesión activa. Por favor carga un balance primero.');
+        }
+
+        const niifGroup = session[0].niifGroup as NiifGroup;
+
+        // Verificar que hay datos distribuidos
+        const serviceCount = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(serviceBalances);
+
+        if (!serviceCount[0] || Number(serviceCount[0].count) === 0) {
+          throw new Error('No hay datos distribuidos. Por favor distribuye el balance primero.');
+        }
+
+        // Generar el paquete XBRL
+        const xbrlPackage = await generateXBRLPackage({
+          niifGroup,
+          companyId: input.companyId,
+          companyName: input.companyName,
+          reportDate: input.reportDate,
+          taxonomyYear: input.taxonomyYear,
+          nit: input.nit,
+          businessNature: input.businessNature,
+          startDate: input.startDate,
+          roundingDegree: input.roundingDegree as RoundingDegree,
+          hasRestatedInfo: input.hasRestatedInfo,
+          restatedPeriod: input.restatedPeriod,
+        });
+
+        return {
+          success: true,
+          ...xbrlPackage,
+        };
+      } catch (error) {
+        throw new Error(
+          error instanceof Error ? error.message : 'Error al generar el paquete XBRL'
+        );
+      }
+    }),
+
+  /**
+   * Obtener información de la sesión actual
+   */
+  getSessionInfo: publicProcedure.query(async () => {
+    try {
+      const session = await db
+        .select()
+        .from(balanceSessions)
+        .orderBy(desc(balanceSessions.createdAt))
+        .limit(1);
+
+      if (session.length === 0) {
+        return null;
+      }
+
+      return {
+        fileName: session[0].fileName,
+        niifGroup: session[0].niifGroup,
+        accountsCount: session[0].accountsCount,
+        status: session[0].status,
+        distribution: session[0].distribution ? JSON.parse(session[0].distribution) : null,
+        createdAt: session[0].createdAt,
+      };
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : 'Error al obtener información de sesión'
       );
     }
   }),

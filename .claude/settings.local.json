@@ -14,7 +14,9 @@
       "Bash(pnpm remove:*)",
       "Bash(pnpm list:*)",
       "Bash(taskkill:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nRefactor: Migración completa a Next.js 15 con arquitectura moderna\n\n- Migración de Vite/React a Next.js 15.5.6 con App Router\n- Actualización a React 19 y TypeScript 5.9\n- Implementación de Tailwind CSS 3.4.17 con sistema de diseño completo\n- Integración de componentes shadcn/ui (Button, Card, Form, Input, etc.)\n- Configuración de lucide-react para iconos\n- Setup de utilidades CSS (clsx, tailwind-merge, class-variance-authority)\n- Reorganización del proyecto anterior a carpeta proyecto_anterior_completo/\n- Nueva estructura de carpetas app/ con src/app, src/components, src/lib\n- Configuración de path aliases (@/*)\n- Página de inicio con diseño moderno y responsive\n- Variables de color CSS para tema claro/oscuro\n- Componentes UI base: Button, Card, Input, Label, Progress, Select\n- Documentación técnica (CLAUDE.md, README.md)\n\nStack tecnológico:\n- Next.js 15.5.6 (frontend + backend)\n- React 19.2.0\n- TypeScript 5.9.3\n- Tailwind CSS 3.4.17\n- shadcn/ui components\n- Radix UI primitives\n- lucide-react icons\n- pnpm package manager\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

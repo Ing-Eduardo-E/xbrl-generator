@@ -211,6 +211,7 @@ export function UploadStep({ onSuccess }: UploadStepProps) {
                 type="file"
                 accept=".xlsx,.xls"
                 className="hidden"
+                aria-label="Seleccionar archivo Excel"
                 onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
               />
             </div>
