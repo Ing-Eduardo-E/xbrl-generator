@@ -120,16 +120,67 @@ export async function generateXBRLCompatibleExcel(options: XBRLExcelOptions): Pr
   const conceptValues = mapAccountsToXBRLConcepts(consolidatedAccounts, serviceData, activeServices);
   
   // ==========================================
-  // HOJA 1: Información General (formato XBRL Express)
+  // HOJA 1: [110000] Información General sobre estados financieros
   // ==========================================
   const infoSheet = createXBRLInfoSheet(options);
-  XLSX.utils.book_append_sheet(workbook, infoSheet, 'Hoja1');
+  XLSX.utils.book_append_sheet(workbook, infoSheet, '[110000] Info General');
   
   // ==========================================
-  // HOJA 2: Estado de Situación Financiera (formato XBRL Express)
+  // HOJA 2: [210000] Estado de Situación Financiera
   // ==========================================
   const esfSheet = createXBRLESFSheet(conceptValues, config, activeServices);
-  XLSX.utils.book_append_sheet(workbook, esfSheet, 'Hoja2');
+  XLSX.utils.book_append_sheet(workbook, esfSheet, '[210000] ESF');
+  
+  // ==========================================
+  // HOJA 3: [310000] Estado de Resultados
+  // ==========================================
+  const resultadosSheet = createEstadoResultadosSheet(conceptValues, config, activeServices);
+  XLSX.utils.book_append_sheet(workbook, resultadosSheet, '[310000] Estado Resultados');
+  
+  // ==========================================
+  // HOJAS FC01: Gastos de servicios públicos
+  // ==========================================
+  const fc01AcueductoSheet = createFC01Sheet('acueducto', serviceData, options);
+  XLSX.utils.book_append_sheet(workbook, fc01AcueductoSheet, '[900017a] FC01-1 Acueducto');
+  
+  const fc01AlcantarilladoSheet = createFC01Sheet('alcantarillado', serviceData, options);
+  XLSX.utils.book_append_sheet(workbook, fc01AlcantarilladoSheet, '[900017b] FC01-2 Alcantarillado');
+  
+  const fc01AseoSheet = createFC01Sheet('aseo', serviceData, options);
+  XLSX.utils.book_append_sheet(workbook, fc01AseoSheet, '[900017c] FC01-3 Aseo');
+  
+  const fc01TotalSheet = createFC01TotalSheet(serviceData, options);
+  XLSX.utils.book_append_sheet(workbook, fc01TotalSheet, '[900017g] FC01-7 Total SP');
+  
+  // ==========================================
+  // HOJA FC02: Complementario ingresos
+  // ==========================================
+  const fc02Sheet = createFC02Sheet(conceptValues, options);
+  XLSX.utils.book_append_sheet(workbook, fc02Sheet, '[900019] FC02 Comp Ingresos');
+  
+  // ==========================================
+  // HOJAS FC03: CXC por servicio y estrato
+  // ==========================================
+  const fc03AcueductoSheet = createFC03Sheet('acueducto', serviceData, options);
+  XLSX.utils.book_append_sheet(workbook, fc03AcueductoSheet, '[900021] FC03-1 CXC Acueducto');
+  
+  const fc03AlcantarilladoSheet = createFC03Sheet('alcantarillado', serviceData, options);
+  XLSX.utils.book_append_sheet(workbook, fc03AlcantarilladoSheet, '[900022] FC03-2 CXC Alcantarillado');
+  
+  const fc03AseoSheet = createFC03Sheet('aseo', serviceData, options);
+  XLSX.utils.book_append_sheet(workbook, fc03AseoSheet, '[900023] FC03-3 CXC Aseo');
+  
+  // ==========================================
+  // HOJA FC08: Conciliación de ingresos
+  // ==========================================
+  const fc08Sheet = createFC08Sheet(conceptValues, serviceData, options);
+  XLSX.utils.book_append_sheet(workbook, fc08Sheet, '[900031] FC08 Conciliacion');
+  
+  // ==========================================
+  // HOJA FC09: Detalle de costo de ventas
+  // ==========================================
+  const fc09Sheet = createFC09Sheet(conceptValues, serviceData, options);
+  XLSX.utils.book_append_sheet(workbook, fc09Sheet, '[900032] FC09 Costo Ventas');
   
   // Generar buffer y convertir a base64
   const excelBuffer = XLSX.write(workbook, {
@@ -776,4 +827,188 @@ function createERDetailSheet(
   worksheet['!cols'] = colWidths;
   
   return worksheet;
+}
+
+// ==========================================
+// Función auxiliar para obtener valores totales
+// ==========================================
+function getConceptValue(conceptValues: Map<string, Map<string, number>>, conceptId: string): number {
+  const serviceValues = conceptValues.get(conceptId);
+  return serviceValues?.get('total') || 0;
+}
+
+// ==========================================
+// FUNCIÓN: Estado de Resultados [310000]
+// ==========================================
+function createEstadoResultadosSheet(conceptValues: Map<string, Map<string, number>>, config: any, activeServices: string[]) {
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['[310000] Estado de Resultados'],
+    [],
+    ['CONCEPTOS', 'CÓDIGO', 'VALOR'],
+    ['Ingresos operacionales', 'IfrsIngresos', getConceptValue(conceptValues, 'IfrsIngresos')],
+    ['- Ingresos por prestación de servicios', 'IfrsIngresosServiciosPublicos', getConceptValue(conceptValues, 'IfrsIngresosServiciosPublicos')],
+    ['- Otros ingresos operacionales', 'IfrsOtrosIngresosOperacionales', getConceptValue(conceptValues, 'IfrsOtrosIngresosOperacionales')],
+    ['Costos de ventas', 'IfrsCostoVentas', getConceptValue(conceptValues, 'IfrsCostoVentas')],
+    ['Utilidad bruta', 'IfrsUtilidadBruta', getConceptValue(conceptValues, 'IfrsIngresos') - getConceptValue(conceptValues, 'IfrsCostoVentas')],
+    ['Gastos operacionales', 'IfrsGastosOperacionales', getConceptValue(conceptValues, 'IfrsGastosOperacionales')],
+    ['- Gastos de administración', 'IfrsGastosAdministracion', getConceptValue(conceptValues, 'IfrsGastosAdministracion')],
+    ['- Gastos de comercialización', 'IfrsGastosComercializacion', getConceptValue(conceptValues, 'IfrsGastosComercializacion')],
+    ['Utilidad operacional', 'IfrsUtilidadOperacional', getConceptValue(conceptValues, 'IfrsUtilidadOperacional')],
+    ['Ingresos no operacionales', 'IfrsIngresosNoOperacionales', getConceptValue(conceptValues, 'IfrsIngresosNoOperacionales')],
+    ['Gastos no operacionales', 'IfrsGastosNoOperacionales', getConceptValue(conceptValues, 'IfrsGastosNoOperacionales')],
+    ['Utilidad antes de impuestos', 'IfrsUtilidadAntesImpuestos', getConceptValue(conceptValues, 'IfrsUtilidadAntesImpuestos')],
+    ['Provisión impuestos', 'IfrsProvisionImpuestos', getConceptValue(conceptValues, 'IfrsProvisionImpuestos')],
+    ['Utilidad neta', 'IfrsUtilidadNeta', getConceptValue(conceptValues, 'IfrsUtilidadNeta')]
+  ]);
+
+  ws['!cols'] = [{ width: 40 }, { width: 25 }, { width: 15 }];
+  return ws;
+}
+
+// ==========================================
+// FUNCIÓN: FC01 - Gastos de servicios públicos
+// ==========================================
+function createFC01Sheet(service: string, serviceData: any, options: any) {
+  const serviceName = service.charAt(0).toUpperCase() + service.slice(1);
+  const ws = XLSX.utils.aoa_to_sheet([
+    [`[900017${service === 'acueducto' ? 'a' : service === 'alcantarillado' ? 'b' : 'c'}] FC01 - Gastos ${serviceName}`],
+    [],
+    ['CONCEPTOS', 'VALOR'],
+    ['Sueldos y salarios', serviceData?.[service]?.sueldos || 0],
+    ['Prestaciones sociales', serviceData?.[service]?.prestaciones || 0],
+    ['Gastos de personal', serviceData?.[service]?.gastosPersonal || 0],
+    ['Servicios públicos', serviceData?.[service]?.serviciosPublicos || 0],
+    ['Seguros', serviceData?.[service]?.seguros || 0],
+    ['Servicios', serviceData?.[service]?.servicios || 0],
+    ['Mantenimiento y reparaciones', serviceData?.[service]?.mantenimiento || 0],
+    ['Adecuación e instalación', serviceData?.[service]?.adecuacion || 0],
+    ['Materiales y repuestos', serviceData?.[service]?.materiales || 0],
+    ['Transporte, fletes y acarreos', serviceData?.[service]?.transporte || 0],
+    ['Gastos de viaje', serviceData?.[service]?.viajes || 0],
+    ['Depreciaciones', serviceData?.[service]?.depreciaciones || 0],
+    ['Amortizaciones', serviceData?.[service]?.amortizaciones || 0],
+    ['Otros gastos', serviceData?.[service]?.otros || 0],
+    ['TOTAL', serviceData?.[service]?.total || 0]
+  ]);
+
+  ws['!cols'] = [{ width: 35 }, { width: 15 }];
+  return ws;
+}
+
+// ==========================================
+// FUNCIÓN: FC01 Total - Resumen gastos SP
+// ==========================================
+function createFC01TotalSheet(serviceData: any, options: any) {
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['[900017g] FC01-7 Total Servicios Públicos'],
+    [],
+    ['SERVICIOS', 'TOTAL GASTOS'],
+    ['Acueducto', serviceData?.acueducto?.total || 0],
+    ['Alcantarillado', serviceData?.alcantarillado?.total || 0],
+    ['Aseo', serviceData?.aseo?.total || 0],
+    ['TOTAL GENERAL', (serviceData?.acueducto?.total || 0) + (serviceData?.alcantarillado?.total || 0) + (serviceData?.aseo?.total || 0)]
+  ]);
+
+  ws['!cols'] = [{ width: 25 }, { width: 15 }];
+  return ws;
+}
+
+// ==========================================
+// FUNCIÓN: FC02 - Complementario ingresos
+// ==========================================
+function createFC02Sheet(conceptValues: Map<string, Map<string, number>>, options: any) {
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['[900019] FC02 - Complementario Ingresos'],
+    [],
+    ['CONCEPTOS', 'VALOR'],
+    ['Ingresos facturados', getConceptValue(conceptValues, 'IfrsIngresosFacturados')],
+    ['Otros ingresos', getConceptValue(conceptValues, 'IfrsOtrosIngresos')],
+    ['Subsidios', getConceptValue(conceptValues, 'IfrsSubsidios')],
+    ['Contribuciones', getConceptValue(conceptValues, 'IfrsContribuciones')],
+    ['Ingresos financieros', getConceptValue(conceptValues, 'IfrsIngresosFinancieros')],
+    ['TOTAL INGRESOS', getConceptValue(conceptValues, 'IfrsTotalIngresos')]
+  ]);
+
+  ws['!cols'] = [{ width: 30 }, { width: 15 }];
+  return ws;
+}
+
+// ==========================================
+// FUNCIÓN: FC03 - CXC por servicio y estrato
+// ==========================================
+function createFC03Sheet(service: string, serviceData: any, options: any) {
+  const serviceName = service.charAt(0).toUpperCase() + service.slice(1);
+  const ws = XLSX.utils.aoa_to_sheet([
+    [`FC03 - Cartera por Cobrar ${serviceName}`],
+    [],
+    ['ESTRATO', 'SALDO INICIAL', 'FACTURACIÓN', 'RECAUDOS', 'OTROS MOVIMIENTOS', 'SALDO FINAL'],
+    ['Estrato 1', 0, 0, 0, 0, 0],
+    ['Estrato 2', 0, 0, 0, 0, 0],
+    ['Estrato 3', 0, 0, 0, 0, 0],
+    ['Estrato 4', 0, 0, 0, 0, 0],
+    ['Estrato 5', 0, 0, 0, 0, 0],
+    ['Estrato 6', 0, 0, 0, 0, 0],
+    ['Comercial', 0, 0, 0, 0, 0],
+    ['Industrial', 0, 0, 0, 0, 0],
+    ['Oficial', 0, 0, 0, 0, 0],
+    ['TOTAL', 0, 0, 0, 0, 0]
+  ]);
+
+  ws['!cols'] = [{ width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }, { width: 18 }, { width: 15 }];
+  return ws;
+}
+
+// ==========================================
+// FUNCIÓN: FC08 - Conciliación de ingresos
+// ==========================================
+function createFC08Sheet(conceptValues: Map<string, Map<string, number>>, serviceData: any, options: any) {
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['[900031] FC08 - Conciliación de Ingresos'],
+    [],
+    ['CONCEPTOS', 'VALOR'],
+    ['Ingresos facturados en el período', getConceptValue(conceptValues, 'IfrsIngresosFacturadosPeriodo')],
+    ['Menos: Subsidios otorgados', getConceptValue(conceptValues, 'IfrsSubsidiosOtorgados')],
+    ['Más: Contribuciones recibidas', getConceptValue(conceptValues, 'IfrsContribucionesRecibidas')],
+    ['Ingresos netos por servicios', getConceptValue(conceptValues, 'IfrsIngresosNetosServicios')],
+    ['Otros ingresos operacionales', getConceptValue(conceptValues, 'IfrsOtrosIngresosOperacionales')],
+    ['TOTAL INGRESOS OPERACIONALES', getConceptValue(conceptValues, 'IfrsTotalIngresosOperacionales')],
+    [],
+    ['DETALLE POR SERVICIO:', ''],
+    ['Acueducto', serviceData?.acueducto?.ingresos || 0],
+    ['Alcantarillado', serviceData?.alcantarillado?.ingresos || 0],
+    ['Aseo', serviceData?.aseo?.ingresos || 0],
+    ['TOTAL POR SERVICIOS', (serviceData?.acueducto?.ingresos || 0) + (serviceData?.alcantarillado?.ingresos || 0) + (serviceData?.aseo?.ingresos || 0)]
+  ]);
+
+  ws['!cols'] = [{ width: 40 }, { width: 15 }];
+  return ws;
+}
+
+// ==========================================
+// FUNCIÓN: FC09 - Detalle de costo de ventas
+// ==========================================
+function createFC09Sheet(conceptValues: Map<string, Map<string, number>>, serviceData: any, options: any) {
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['[900032] FC09 - Detalle de Costo de Ventas'],
+    [],
+    ['CONCEPTOS', 'ACUEDUCTO', 'ALCANTARILLADO', 'ASEO', 'TOTAL'],
+    ['Costos de personal directo', 0, 0, 0, 0],
+    ['Depreciaciones', 0, 0, 0, 0],
+    ['Amortizaciones', 0, 0, 0, 0],
+    ['Servicios públicos', 0, 0, 0, 0],
+    ['Materiales y suministros', 0, 0, 0, 0],
+    ['Mantenimiento y reparaciones', 0, 0, 0, 0],
+    ['Servicios de terceros', 0, 0, 0, 0],
+    ['Seguros', 0, 0, 0, 0],
+    ['Otros costos', 0, 0, 0, 0],
+    ['TOTAL COSTO DE VENTAS', 
+      serviceData?.acueducto?.costos || 0, 
+      serviceData?.alcantarillado?.costos || 0, 
+      serviceData?.aseo?.costos || 0, 
+      getConceptValue(conceptValues, 'IfrsCostoVentas')
+    ]
+  ]);
+
+  ws['!cols'] = [{ width: 30 }, { width: 15 }, { width: 18 }, { width: 15 }, { width: 15 }];
+  return ws;
 }
