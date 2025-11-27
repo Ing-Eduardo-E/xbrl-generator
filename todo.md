@@ -1,9 +1,26 @@
 # TODO - Generador de Taxonomías XBRL
 
-## Estado Actual del Proyecto (v2.0)
+## Estado Actual del Proyecto (v2.1)
 
-**Última Actualización**: 2025-11-25
+**Última Actualización**: 2025-11-26
 **Stack**: Next.js 15 + React 19 + TypeScript + Tailwind CSS + shadcn/ui + tRPC + Drizzle ORM
+
+## 🆕 Nuevo Enfoque: Plantillas Oficiales XBRL Express
+
+### Cambio de Metodología
+En lugar de generar la estructura XBRL desde cero (muy complejo y propenso a errores),
+ahora usamos las **plantillas oficiales de XBRL Express** como base:
+
+1. **Usuario sube balance** → Sistema procesa cuentas PUC
+2. **Sistema genera Excel** → Rellena plantilla oficial con datos del balance
+3. **Sistema genera .xbrlt** → Adapta plantilla con datos de la empresa
+4. **Usuario abre en XBRL Express** → Completa datos faltantes y genera XBRL final
+
+### Archivos Involucrados
+- `xbrlTemplateService.ts` - Nuevo servicio de plantillas
+- `public/templates/` - Plantillas oficiales por taxonomía
+- `PuntoEntrada_R414_Individual-2024.xbrlt` - Template R414
+- `PuntoEntrada_R414_Individual-2024_1.xlsx` - Excel R414
 
 ## Funcionalidades Principales
 
@@ -18,34 +35,32 @@
 - [x] Descarga del archivo Excel generado
 - [x] Indicador de progreso durante el procesamiento
 - [x] Manejo de errores y mensajes informativos (Sonner toasts)
+- [x] Generación de paquete XBRL (Excel + XML + xbrlt)
+- [x] Soporte para selección de año de taxonomía (2017-2025)
+- [x] Soporte para grado de redondeo
+
+## Taxonomías Soportadas
+
+- [x] **R414** - Resolución 414 de 2014 (Contaduría General de la Nación)
+- [ ] **Grupo 1** - NIIF Plenas (Grandes empresas)
+- [ ] **Grupo 2** - NIIF PYMES (Pequeñas y medianas)
+- [ ] **Grupo 3** - Microempresas (Contabilidad simplificada)
 
 ## En Desarrollo
 
-- [ ] Generación de archivo de mapeo XML
-- [ ] Generación de archivo XBRLT
-- [ ] Empaquetado XBRL en archivo ZIP
-- [ ] Integración con plantillas oficiales SSPD
+- [ ] Integrar xbrlTemplateService en el endpoint downloadXBRL
+- [ ] Mapear celdas Excel R414 a conceptos XBRL
+- [ ] UI para seleccionar taxonomía antes de generar
+- [ ] Descargar plantillas de otras taxonomías (Grupo1, Grupo2, Grupo3)
 
 ## Mejoras Futuras
 
-- [ ] Soporte para los 4 grupos NIIF (Grupo 1, 2, 3, R414)
 - [ ] Guardado de configuraciones en localStorage
 - [ ] Exportación/importación de configuraciones
 - [ ] Validaciones avanzadas de datos
 - [ ] Soporte para múltiples períodos fiscales
 - [ ] Testing unitario e integración
 - [ ] Dark mode toggle
-
-## Migración a Next.js (v2.0) - COMPLETADO
-
-- [x] Migración de Vite/React a Next.js 15 con App Router
-- [x] Configuración de tRPC con Next.js API Routes
-- [x] Configuración de Drizzle ORM con PostgreSQL
-- [x] Implementación de componentes shadcn/ui
-- [x] Parser de Excel con detección flexible de columnas
-- [x] Generador de Excel con múltiples hojas
-- [x] Wizard de 3 pasos responsive
-- [x] Integración de Sonner para notificaciones
 
 ## API Endpoints (tRPC)
 
@@ -56,6 +71,10 @@
 - [x] `balance.getTotalesServicios` - Totales por servicio
 - [x] `balance.downloadExcel` - Descargar Excel distribuido
 - [x] `balance.downloadConsolidated` - Descargar solo consolidado
+- [x] `balance.downloadXBRLExcel` - Descargar Excel formato XBRL Express
+- [x] `balance.downloadXBRL` - Descargar paquete XBRL completo
+- [x] `balance.getSessionInfo` - Información de sesión actual
+- [x] `balance.getTaxonomyList` - Lista de taxonomías disponibles
 
 ## Correcciones Aplicadas
 
@@ -64,4 +83,7 @@
 - [x] Validación de ecuaciones contables
 - [x] Corrección de error de accesibilidad en input de archivo
 - [x] Corrección de tsconfig.json (lib ESNext)
+- [x] Corrección de URL de taxonomía (xbrlCorte -> xbrl/Corte)
+- [x] Corrección de valor GradoDeRedondeo (formato "N - Descripcion")
+- [x] Agregar contexts y entity info al archivo .xbrl
 
