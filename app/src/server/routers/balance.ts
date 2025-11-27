@@ -469,4 +469,16 @@ export const balanceRouter = router({
       );
     }
   }),
+
+  /**
+   * Obtener lista de taxonomías disponibles
+   */
+  getTaxonomyList: publicProcedure.query(() => {
+    return [
+      { id: 'r414', name: 'Resolución 414 de 2014', description: 'Contaduría General de la Nación' },
+      { id: 'grupo1', name: 'NIIF Plenas (Grupo 1)', description: 'Grandes empresas' },
+      { id: 'grupo2', name: 'NIIF PYMES (Grupo 2)', description: 'Pequeñas y medianas empresas' },
+      { id: 'grupo3', name: 'Microempresas (Grupo 3)', description: 'Contabilidad simplificada' },
+    ];
+  }),
 });
