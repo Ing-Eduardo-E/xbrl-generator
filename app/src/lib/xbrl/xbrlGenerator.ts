@@ -14,6 +14,7 @@ import {
   getTaxonomyConfigForYear,
   getDecimalsFromRounding,
   getRoundingDescription,
+  getRoundingXBRLValue,
   ESF_CONCEPTS,
   INFO_CONCEPTS,
   TAXONOMY_CATALOG,
@@ -180,6 +181,7 @@ function generateXBRLInstance(options: XBRLGenerationOptions, config: TaxonomyCo
   
   const decimalsValue = getDecimalsFromRounding(options.roundingDegree);
   const roundingDesc = getRoundingDescription(options.roundingDegree);
+  const roundingXBRLValue = getRoundingXBRLValue(options.roundingDegree);
   
   // Generar contextos para el período de reporte
   const instantContextId = 'ctx_instant';
@@ -297,8 +299,8 @@ ${serviceContexts}
   <!-- Fecha de cierre -->
   <ifrs-full:DateOfEndOfReportingPeriod2013 contextRef="${durationContextId}">${endDate}</ifrs-full:DateOfEndOfReportingPeriod2013>
   
-  <!-- Grado de redondeo -->
-  <${config.prefix}:GradoDeRedondeoUtilizadoEnLosEstadosFinancieros contextRef="${durationContextId}">${roundingDesc}</${config.prefix}:GradoDeRedondeoUtilizadoEnLosEstadosFinancieros>
+  <!-- Grado de redondeo (valor exacto de enumeración TipoGradoRedondeo) -->
+  <${config.prefix}:GradoDeRedondeoUtilizadoEnLosEstadosFinancieros contextRef="${durationContextId}">${roundingXBRLValue}</${config.prefix}:GradoDeRedondeoUtilizadoEnLosEstadosFinancieros>
   
   <!-- ============================================================== -->
   <!-- NOTA: Los valores del Estado de Situación Financiera           -->

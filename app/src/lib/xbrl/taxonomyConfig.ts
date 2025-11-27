@@ -28,12 +28,15 @@ export type RoundingDegree = '1' | '2' | '3' | '4';
 /**
  * Grados de redondeo disponibles en las taxonomías SSPD
  * Según la taxonomía XBRL de la SSPD
+ * 
+ * IMPORTANTE: xbrlValue debe coincidir EXACTAMENTE con los valores
+ * de la enumeración en sspd-typ-g1-{year}-12-31.xsd (TipoGradoRedondeo)
  */
 export const ROUNDING_DEGREES = {
-  '1': { value: '1', label: 'Pesos', description: 'Valores en pesos colombianos', decimals: 0 },
-  '2': { value: '2', label: 'Miles de pesos', description: 'Valores en miles de pesos', decimals: -3 },
-  '3': { value: '3', label: 'Millones de pesos', description: 'Valores en millones de pesos', decimals: -6 },
-  '4': { value: '4', label: 'Pesos redondeada a miles', description: 'Pesos con redondeo a miles', decimals: -3 },
+  '1': { value: '1', label: 'Pesos', xbrlValue: '1 - Pesos', description: 'Valores en pesos colombianos', decimals: 0 },
+  '2': { value: '2', label: 'Miles de pesos', xbrlValue: '2 - Miles de pesos', description: 'Valores en miles de pesos', decimals: -3 },
+  '3': { value: '3', label: 'Millones de pesos', xbrlValue: '3 - Millones de pesos', description: 'Valores en millones de pesos', decimals: -6 },
+  '4': { value: '4', label: 'Pesos redondeada a miles', xbrlValue: '4 - Pesos redondeada a miles', description: 'Pesos con redondeo a miles', decimals: -3 },
 } as const;
 
 export interface ServiceConfig {
@@ -567,11 +570,23 @@ export function getDecimalsFromRounding(roundingDegree?: RoundingDegree): number
 }
 
 /**
- * Obtiene la descripción del grado de redondeo
+ * Obtiene la descripción del grado de redondeo para UI
  * @param roundingDegree - Grado de redondeo (1-4)  
  * @returns Descripción legible del grado de redondeo
  */
 export function getRoundingDescription(roundingDegree?: RoundingDegree): string {
   if (!roundingDegree) return ROUNDING_DEGREES['1'].label;
   return ROUNDING_DEGREES[roundingDegree].label;
+}
+
+/**
+ * Obtiene el valor XBRL exacto del grado de redondeo
+ * Este valor debe coincidir EXACTAMENTE con la enumeración de TipoGradoRedondeo
+ * en la taxonomía SSPD (sspd-typ-g1-{year}-12-31.xsd)
+ * @param roundingDegree - Grado de redondeo (1-4)  
+ * @returns Valor XBRL exacto para el elemento GradoDeRedondeoUtilizadoEnLosEstadosFinancieros
+ */
+export function getRoundingXBRLValue(roundingDegree?: RoundingDegree): string {
+  if (!roundingDegree) return ROUNDING_DEGREES['1'].xbrlValue;
+  return ROUNDING_DEGREES[roundingDegree].xbrlValue;
 }
