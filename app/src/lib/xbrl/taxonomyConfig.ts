@@ -98,6 +98,11 @@ export const TAXONOMY_CATALOG = {
 
 /**
  * Genera la URL del punto de entrada para una taxonomía específica
+ * 
+ * IMPORTANTE: R414 tiene un formato especial:
+ * - Usa 'res414' en lugar de 'r414' como path
+ * - NO usa sufijo -EFEDirecto/-EFEIndirecto
+ * - Formato: PuntoEntrada_R414_Individual-{year}.xsd
  */
 export function getEntryPointUrl(
   year: TaxonomyYear,
@@ -105,11 +110,13 @@ export function getEntryPointUrl(
   reportType: ReportType = 'individual',
   cashFlowType: CashFlowType = 'directo'
 ): string {
+  // Mapeo de rutas en el servidor SUI
+  // NOTA: R414 usa 'res414' (resolución 414) como path, no 'r414'
   const groupMap: Record<NiifGroup, string> = {
     grupo1: 'grupo1',
     grupo2: 'grupo2',
     grupo3: 'grupo3',
-    r414: 'r414',
+    r414: 'res414', // CORREGIDO: res414 en lugar de r414
     r533: 'r533',
     ife: 'ife',
   };
@@ -124,11 +131,17 @@ export function getEntryPointUrl(
   };
   
   const reportPrefix = reportType === 'individual' ? 'Individual' : 'Consolidado';
-  const cashFlowSuffix = cashFlowType === 'directo' ? 'EFEDirecto' : 'EFEIndirecto';
   
   const groupPath = groupMap[group];
   const prefix = groupPrefix[group];
   
+  // R414 tiene un formato de URL diferente: NO usa sufijo EFEDirecto/EFEIndirecto
+  if (group === 'r414') {
+    return `${TAXONOMY_CATALOG.baseUrl}/Corte_${year}/${groupPath}/PuntoEntrada_${prefix}_${reportPrefix}-${year}.xsd`;
+  }
+  
+  // Para otros grupos (Grupo 1, 2, 3, R533), usar el formato con EFE
+  const cashFlowSuffix = cashFlowType === 'directo' ? 'EFEDirecto' : 'EFEIndirecto';
   return `${TAXONOMY_CATALOG.baseUrl}/Corte_${year}/${groupPath}/PuntoEntrada_${prefix}_${reportPrefix}-${year}-${cashFlowSuffix}.xsd`;
 }
 
@@ -207,16 +220,16 @@ export const TAXONOMY_CONFIGS: Record<NiifGroup, TaxonomyConfig> = {
   },
   r414: {
     name: 'Resolución 414 - Sector Público',
-    prefix: 'co-sspd-ef-R414',
-    namespace: 'http://www.superservicios.gov.co/xbrl/niif/ef/r414/2024-12-31',
-    entryPoint: 'http://www.sui.gov.co/xbrl/Corte_2024/r414/PuntoEntrada_R414_Individual-2024-EFEDirecto.xsd',
-    baseUrl: 'http://www.sui.gov.co/xbrl/Corte_2024/r414/',
+    prefix: 'co-sspd-ef-Res414',
+    namespace: 'http://www.superservicios.gov.co/xbrl/ef/core/2024-12-31',
+    entryPoint: 'http://www.sui.gov.co/xbrl/Corte_2024/res414/PuntoEntrada_R414_Individual-2024.xsd',
+    baseUrl: 'http://www.sui.gov.co/xbrl/Corte_2024/res414/',
     packageFile: 'SSPD_EF_2024-12-31_Res414.zip',
     services: [
-      { id: 'total', name: 'Total', xbrlMember: 'TotalESFIndividualOSeparadoMember', column: 'I', ifrsSuffix: 0, sspdSuffix: 0 },
-      { id: 'acueducto', name: 'Acueducto', xbrlMember: 'AcueductoMember', column: 'J', ifrsSuffix: 16, sspdSuffix: 32 },
-      { id: 'alcantarillado', name: 'Alcantarillado', xbrlMember: 'AlcantarilladoMember', column: 'K', ifrsSuffix: 18, sspdSuffix: 33 },
-      { id: 'aseo', name: 'Aseo', xbrlMember: 'AseoMember', column: 'L', ifrsSuffix: 20, sspdSuffix: 34 },
+      { id: 'total', name: 'Total', xbrlMember: 'TotalESFIndividualOSeparadoMember', column: 'P', ifrsSuffix: 0, sspdSuffix: 0 },
+      { id: 'acueducto', name: 'Acueducto', xbrlMember: 'AcueductoMember', column: 'I', ifrsSuffix: 16, sspdSuffix: 32 },
+      { id: 'alcantarillado', name: 'Alcantarillado', xbrlMember: 'AlcantarilladoMember', column: 'J', ifrsSuffix: 18, sspdSuffix: 33 },
+      { id: 'aseo', name: 'Aseo', xbrlMember: 'AseoMember', column: 'K', ifrsSuffix: 20, sspdSuffix: 34 },
     ],
   },
   r533: {
@@ -273,7 +286,17 @@ export function getTaxonomyConfigForYear(
   // Generar URLs dinámicas según el año
   const entryPoint = getEntryPointUrl(year, group, reportType, cashFlowType);
   const packageFile = getTaxonomyPackageUrl(year, group);
-  const baseUrl = `${TAXONOMY_CATALOG.baseUrl}/Corte_${year}/${group === 'grupo1' ? 'grupo1' : group === 'grupo2' ? 'grupo2' : group === 'grupo3' ? 'grupo3' : group === 'r414' ? 'r414' : group === 'r533' ? 'r533' : 'ife'}/`;
+  
+  // Mapeo de rutas en el servidor SUI (R414 usa 'res414', no 'r414')
+  const groupPathMap: Record<NiifGroup, string> = {
+    grupo1: 'grupo1',
+    grupo2: 'grupo2', 
+    grupo3: 'grupo3',
+    r414: 'res414', // CORREGIDO: res414 en lugar de r414
+    r533: 'r533',
+    ife: 'ife',
+  };
+  const baseUrl = `${TAXONOMY_CATALOG.baseUrl}/Corte_${year}/${groupPathMap[group]}/`;
   
   // Actualizar namespace con la fecha del año
   const namespace = baseConfig.namespace.replace(/\d{4}-\d{2}-\d{2}$/, yearConfig.schemaDate);

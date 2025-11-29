@@ -17,13 +17,11 @@ import {
   Download,
   FileSpreadsheet,
   Loader2,
-  Package,
   Building2,
   Calendar,
   Hash,
   FileText,
   CircleDollarSign,
-  Layers,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { trpc } from '@/lib/trpc';
@@ -35,10 +33,9 @@ interface GenerateStepProps {
 }
 
 /**
- * Función para descargar un archivo desde base64
+ * Funcion para descargar un archivo desde base64
  */
 function downloadBase64File(base64Data: string, fileName: string, mimeType: string) {
-  // Convertir base64 a blob
   const byteCharacters = atob(base64Data);
   const byteNumbers = new Array(byteCharacters.length);
   for (let i = 0; i < byteCharacters.length; i++) {
@@ -47,7 +44,6 @@ function downloadBase64File(base64Data: string, fileName: string, mimeType: stri
   const byteArray = new Uint8Array(byteNumbers);
   const blob = new Blob([byteArray], { type: mimeType });
 
-  // Crear link de descarga
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -60,38 +56,34 @@ function downloadBase64File(base64Data: string, fileName: string, mimeType: stri
 
 export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
   const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
-  const [isDownloadingXBRL, setIsDownloadingXBRL] = useState(false);
+  const [isDownloadingOfficial, setIsDownloadingOfficial] = useState(false);
   
-  // Formulario para XBRL
+  // Formulario para datos de la empresa
   const [companyId, setCompanyId] = useState('');
   const [companyName, setCompanyName] = useState('');
-  const [taxonomyYear, setTaxonomyYear] = useState('2024');
   const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0].replace(/-\d{2}$/, '-12-31'));
   const [nit, setNit] = useState('');
-  // Nuevos campos según hoja 110000 de XBRL Express
-  const [businessNature, setBusinessNature] = useState('Servicios públicos domiciliarios');
+  const [businessNature, setBusinessNature] = useState('Servicios publicos domiciliarios');
   const [startDate, setStartDate] = useState('');
-  const [roundingDegree, setRoundingDegree] = useState('1'); // 1=Pesos por defecto
+  const [roundingDegree, setRoundingDegree] = useState('4'); // 4=Pesos redondeada a miles (mas comun)
   const [hasRestatedInfo, setHasRestatedInfo] = useState('No');
   const [restatedPeriod, setRestatedPeriod] = useState('');
-
-  // Años de taxonomía disponibles
-  const availableYears = ['2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017'];
 
   const serviceTotalsQuery = trpc.balance.getTotalesServicios.useQuery();
   const sessionQuery = trpc.balance.getSessionInfo.useQuery();
   const downloadExcelQuery = trpc.balance.downloadExcel.useQuery(undefined, {
     enabled: false,
   });
-  const downloadXBRLMutation = trpc.balance.downloadXBRL.useMutation({
+
+  const downloadOfficialMutation = trpc.balance.downloadOfficialTemplates.useMutation({
     onSuccess: (data) => {
       downloadBase64File(data.fileData, data.fileName, data.mimeType);
-      toast.success('Paquete XBRL generado exitosamente', {
+      toast.success('Plantillas oficiales descargadas exitosamente', {
         description: `Archivo: ${data.fileName}`,
       });
     },
     onError: (error) => {
-      toast.error('Error al generar XBRL', {
+      toast.error('Error al descargar plantillas', {
         description: error.message,
       });
     },
@@ -124,10 +116,10 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
     }
   };
 
-  const handleDownloadXBRL = async () => {
+  const handleDownloadOfficialTemplates = async () => {
     if (!companyId.trim()) {
       toast.error('ID de empresa requerido', {
-        description: 'Ingresa el código RUPS de la empresa',
+        description: 'Ingresa el codigo RUPS de la empresa para personalizar las plantillas',
       });
       return;
     }
@@ -137,23 +129,22 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
       });
       return;
     }
-
-    setIsDownloadingXBRL(true);
+    
+    setIsDownloadingOfficial(true);
     try {
-      await downloadXBRLMutation.mutateAsync({
+      await downloadOfficialMutation.mutateAsync({
         companyId: companyId.trim(),
         companyName: companyName.trim(),
         reportDate,
-        taxonomyYear: taxonomyYear as '2024' | '2025' | '2023' | '2022' | '2021' | '2020' | '2019' | '2018' | '2017',
         nit: nit.trim() || undefined,
         businessNature: businessNature.trim() || undefined,
         startDate: startDate || undefined,
-        roundingDegree: roundingDegree as '1' | '2' | '3' | '4' || undefined,
+        roundingDegree: roundingDegree || undefined,
         hasRestatedInfo: hasRestatedInfo || undefined,
         restatedPeriod: restatedPeriod.trim() || undefined,
       });
     } finally {
-      setIsDownloadingXBRL(false);
+      setIsDownloadingOfficial(false);
     }
   };
 
@@ -307,55 +298,39 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
           </div>
         </Card>
 
-        {/* XBRL Download */}
-        <Card className="p-6">
+        {/* Paquete XBRL - Plantillas Oficiales */}
+        <Card className="p-6 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30">
           <div className="space-y-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <Package className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <h4 className="font-medium">Paquete XBRL (ZIP)</h4>
+                <h4 className="font-medium">Paquete XBRL - Plantillas Oficiales SSPD</h4>
                 <p className="text-sm text-muted-foreground">
-                  Archivos .xbrl, .xbrlt, .xml listos para XBRL Express y SUI
+                  Plantillas oficiales con datos pre-llenados, 100% compatibles con XBRL Express
                 </p>
               </div>
             </div>
 
-            {/* Formulario de datos de empresa */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-              {/* Año de taxonomía */}
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="taxonomyYear" className="flex items-center gap-2">
-                  <Layers className="w-4 h-4" />
-                  Año de Taxonomía SSPD
-                </Label>
-                <Select value={taxonomyYear} onValueChange={(value) => {
-                  setTaxonomyYear(value);
-                  // Actualizar automáticamente la fecha de reporte al año seleccionado
-                  setReportDate(`${value}-12-31`);
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar año..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableYears.map(year => (
-                      <SelectItem key={year} value={year}>
-                        {year} - Taxonomía SSPD Corte {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  URL: http://www.sui.gov.co/xbrl/Corte_{taxonomyYear}/grupo1/
-                </p>
-              </div>
+            <div className="flex items-center gap-2 p-2 bg-blue-100 dark:bg-blue-900/50 rounded text-sm">
+              <span className="font-medium">Taxonomia detectada:</span>
+              <span className="text-blue-700 dark:text-blue-300 font-semibold">
+                {sessionQuery.data?.niifGroup === 'r414' ? 'Resolucion 414 - Sector Publico' :
+                 sessionQuery.data?.niifGroup === 'grupo1' ? 'NIIF Plenas (Grupo 1)' :
+                 sessionQuery.data?.niifGroup === 'grupo2' ? 'NIIF PYMES (Grupo 2)' :
+                 sessionQuery.data?.niifGroup === 'grupo3' ? 'Microempresas (Grupo 3)' :
+                 sessionQuery.data?.niifGroup?.toUpperCase() || 'GRUPO1'}
+              </span>
+            </div>
 
+            {/* Formulario de datos de empresa */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-blue-200 dark:border-blue-800">
               {/* Fila 1: RUPS y NIT */}
               <div className="space-y-2">
                 <Label htmlFor="companyId" className="flex items-center gap-2">
                   <Hash className="w-4 h-4" />
-                  Código RUPS *
+                  Codigo RUPS *
                 </Label>
                 <Input
                   id="companyId"
@@ -372,7 +347,7 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
                 </Label>
                 <Input
                   id="nit"
-                  placeholder="Ej: 900123456-1"
+                  placeholder="Ej: 814002123"
                   value={nit}
                   onChange={(e) => setNit(e.target.value)}
                 />
@@ -386,7 +361,7 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
                 </Label>
                 <Input
                   id="companyName"
-                  placeholder="Ej: Empresa de Servicios Públicos de..."
+                  placeholder="Ej: Empresa de Servicios Publicos de..."
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                 />
@@ -396,11 +371,11 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="businessNature" className="flex items-center gap-2">
                   <FileText className="w-4 h-4" />
-                  Información sobre la naturaleza del negocio
+                  Informacion sobre la naturaleza del negocio
                 </Label>
                 <Input
                   id="businessNature"
-                  placeholder="Ej: Servicios públicos domiciliarios"
+                  placeholder="Ej: Servicios publicos domiciliarios"
                   value={businessNature}
                   onChange={(e) => setBusinessNature(e.target.value)}
                 />
@@ -423,7 +398,7 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
               <div className="space-y-2">
                 <Label htmlFor="reportDate" className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  Fecha de cierre del período *
+                  Fecha de cierre del periodo *
                 </Label>
                 <Input
                   id="reportDate"
@@ -450,16 +425,13 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
                     <SelectItem value="4">4 - Pesos redondeada a miles</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  Código de redondeo según taxonomía SSPD
-                </p>
               </div>
 
-              {/* Fila 6: Información reexpresada */}
+              {/* Fila 6: Informacion reexpresada */}
               <div className="space-y-2">
                 <Label htmlFor="hasRestatedInfo" className="flex items-center gap-2">
                   <FileText className="w-4 h-4" />
-                  ¿Presenta información reexpresada?
+                  Presenta informacion reexpresada?
                 </Label>
                 <Select value={hasRestatedInfo} onValueChange={setHasRestatedInfo}>
                   <SelectTrigger>
@@ -467,17 +439,17 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="No">No</SelectItem>
-                    <SelectItem value="Sí">Sí</SelectItem>
+                    <SelectItem value="Si">Si</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Fila 7: Período de reexpresión (solo si aplica) */}
-              {hasRestatedInfo === 'Sí' && (
+              {/* Fila 7: Periodo de reexpresion (solo si aplica) */}
+              {hasRestatedInfo === 'Si' && (
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="restatedPeriod" className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
-                    Período para el cual se presenta información reexpresada
+                    Periodo para el cual se presenta informacion reexpresada
                   </Label>
                   <Input
                     id="restatedPeriod"
@@ -488,27 +460,33 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
                 </div>
               )}
 
-              {/* Botón de descarga */}
-              <div className="flex items-end md:col-span-2">
+              {/* Boton de descarga */}
+              <div className="flex items-end md:col-span-2 pt-2">
                 <Button 
-                  onClick={handleDownloadXBRL} 
-                  disabled={isDownloadingXBRL}
+                  onClick={handleDownloadOfficialTemplates} 
+                  disabled={isDownloadingOfficial || !companyId.trim() || !companyName.trim()}
                   className="w-full"
-                  variant="default"
+                  size="lg"
                 >
-                  {isDownloadingXBRL ? (
+                  {isDownloadingOfficial ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Generando XBRL...
+                      Generando paquete XBRL...
                     </>
                   ) : (
                     <>
                       <Download className="w-4 h-4 mr-2" />
-                      Generar y Descargar XBRL
+                      Generar y Descargar Paquete XBRL
                     </>
                   )}
                 </Button>
               </div>
+              
+              {(!companyId.trim() || !companyName.trim()) && (
+                <p className="text-xs text-blue-600 dark:text-blue-400 md:col-span-2">
+                  * Campos obligatorios para generar el paquete
+                </p>
+              )}
             </div>
           </div>
         </Card>

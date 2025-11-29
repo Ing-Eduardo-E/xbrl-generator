@@ -6,7 +6,15 @@ import { workingAccounts, serviceBalances, balanceSessions } from '../../../driz
 import { parseExcelFile } from '@/lib/services/excelParser';
 import { generateExcelWithDistribution, generateConsolidatedExcel } from '@/lib/services/excelGenerator';
 import { generateXBRLCompatibleExcel } from '@/lib/services/xbrlExcelGenerator';
-import { generateXBRLPackage, type NiifGroup, type RoundingDegree } from '@/lib/xbrl';
+import { 
+  generateOfficialTemplatePackageWithData,
+  hasOfficialTemplates,
+  getAvailableTemplateGroups,
+  type NiifGroup, 
+  type AccountData,
+  type ServiceBalanceData,
+  type RoundingDegree,
+} from '@/lib/xbrl';
 
 export const balanceRouter = router({
   /**
@@ -372,22 +380,33 @@ export const balanceRouter = router({
     }),
 
   /**
-   * Generar y descargar paquete XBRL completo
-   * Incluye: .xbrl, .xbrlt, .xml, README.txt, RESUMEN.txt
+   * Descargar paquete XBRL usando plantillas OFICIALES de la SSPD
+   * Este método usa los archivos .xbrlt, .xml, .xlsx y .xbrl originales
+   * proporcionados por la SSPD, garantizando 100% compatibilidad con XBRL Express.
+   * 
+   * AHORA INCLUYE: Datos financieros del balance distribuido en las hojas Excel.
+   * 
+   * Hojas pre-llenadas automáticamente:
+   * - [110000] Información general
+   * - [210000] Estado de Situación Financiera
+   * - [310000] Estado de Resultados
+   * - [900017a-g] Gastos por servicio
+   * 
+   * Disponible para: grupo1, grupo2, grupo3, r414
    */
-  downloadXBRL: publicProcedure
+  downloadOfficialTemplates: publicProcedure
     .input(
       z.object({
         companyId: z.string().min(1, 'ID de empresa requerido'),
         companyName: z.string().min(1, 'Nombre de empresa requerido'),
         reportDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha debe ser YYYY-MM-DD'),
-        taxonomyYear: z.enum(['2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025']).optional().default('2024'),
         nit: z.string().optional(),
         businessNature: z.string().optional(),
         startDate: z.string().optional(),
         roundingDegree: z.string().optional(),
         hasRestatedInfo: z.string().optional(),
         restatedPeriod: z.string().optional(),
+        includeFinancialData: z.boolean().optional().default(true),
       })
     )
     .mutation(async ({ input }) => {
@@ -405,37 +424,74 @@ export const balanceRouter = router({
 
         const niifGroup = session[0].niifGroup as NiifGroup;
 
-        // Verificar que hay datos distribuidos
-        const serviceCount = await db
-          .select({ count: sql<number>`count(*)` })
-          .from(serviceBalances);
-
-        if (!serviceCount[0] || Number(serviceCount[0].count) === 0) {
-          throw new Error('No hay datos distribuidos. Por favor distribuye el balance primero.');
+        // Verificar que el grupo tiene plantillas oficiales
+        if (!hasOfficialTemplates(niifGroup)) {
+          throw new Error(
+            `No hay plantillas oficiales disponibles para ${niifGroup}. ` +
+            `Grupos disponibles: ${getAvailableTemplateGroups().join(', ')}`
+          );
         }
 
-        // Generar el paquete XBRL
-        const xbrlPackage = await generateXBRLPackage({
+        // Obtener datos financieros si se solicita
+        let consolidatedAccounts: AccountData[] = [];
+        let serviceBalancesData: ServiceBalanceData[] = [];
+        let activeServices: string[] = [];
+
+        if (input.includeFinancialData !== false) {
+          // Obtener cuentas consolidadas
+          const accounts = await db.select().from(workingAccounts);
+          consolidatedAccounts = accounts.map(acc => ({
+            code: acc.code,
+            name: acc.name,
+            value: acc.value,
+            isLeaf: acc.isLeaf ?? false,
+            level: acc.level ?? 0,
+            class: acc.class ?? '',
+          }));
+
+          // Obtener balances por servicio
+          const balances = await db.select().from(serviceBalances);
+          serviceBalancesData = balances.map(bal => ({
+            service: bal.service,
+            code: bal.code,
+            name: bal.name,
+            value: bal.value,
+            isLeaf: bal.isLeaf ?? false,
+          }));
+
+          // Determinar servicios activos desde la distribución
+          const distribution = session[0].distribution 
+            ? JSON.parse(session[0].distribution) 
+            : { acueducto: 40, alcantarillado: 35, aseo: 25 };
+          activeServices = Object.keys(distribution).filter(s => distribution[s] > 0);
+        }
+
+        // Generar el paquete con plantillas oficiales Y datos financieros
+        const templatePackage = await generateOfficialTemplatePackageWithData({
           niifGroup,
           companyId: input.companyId,
           companyName: input.companyName,
           reportDate: input.reportDate,
-          taxonomyYear: input.taxonomyYear,
           nit: input.nit,
           businessNature: input.businessNature,
           startDate: input.startDate,
-          roundingDegree: input.roundingDegree as RoundingDegree,
+          roundingDegree: input.roundingDegree,
           hasRestatedInfo: input.hasRestatedInfo,
           restatedPeriod: input.restatedPeriod,
+          consolidatedAccounts: consolidatedAccounts.length > 0 ? consolidatedAccounts : undefined,
+          serviceBalances: serviceBalancesData.length > 0 ? serviceBalancesData : undefined,
+          activeServices: activeServices.length > 0 ? activeServices : undefined,
         });
 
         return {
           success: true,
-          ...xbrlPackage,
+          ...templatePackage,
+          accountsProcessed: consolidatedAccounts.length,
+          servicesIncluded: activeServices,
         };
       } catch (error) {
         throw new Error(
-          error instanceof Error ? error.message : 'Error al generar el paquete XBRL'
+          error instanceof Error ? error.message : 'Error al generar el paquete de plantillas oficiales'
         );
       }
     }),

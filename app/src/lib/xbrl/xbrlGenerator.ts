@@ -317,6 +317,9 @@ ${serviceContexts}
  * Este archivo sigue el formato exacto requerido por XBRL Express (Reporting Standard).
  * Los identificadores de entidad usan placeholders (_) que XBRL Express reemplaza
  * con los valores reales de scheme y company definidos fuera de los contextos.
+ * 
+ * IMPORTANTE: Debe incluir la sección <facts> que conecta los mapIdentifier
+ * del archivo XML con los conceptos XBRL y sus contextos.
  */
 function generateXBRLTemplate(
   options: XBRLGenerationOptions, 
@@ -328,30 +331,40 @@ function generateXBRLTemplate(
   const year = options.reportDate.split('-')[0];
   const endDate = options.reportDate;
   const startDate = options.startDate || `${year}-01-01`;
+  const prevEndDate = `${parseInt(year) - 1}-12-31`;
   
   // IDs de contexto siguiendo el patrón de XBRL Express
-  // id4 = duration (periodo), id5+ = instant con dimensiones por servicio
+  // id4 = duration (periodo), id5 = instant período anterior
+  // id6+ = instant con dimensiones por servicio para período actual
   let contextIdCounter = 4;
   
   // Contexto de duración (para información general)
-  const durationContextId = `id${contextIdCounter++}`;
+  const durationContextId = `id${contextIdCounter++}`; // id4
   
-  // Mapeo de servicios a sus Members XBRL
-  const serviceMembers = [
-    { id: 'acueducto', member: 'AcueductoMember' },
-    { id: 'alcantarillado', member: 'AlcantarilladoMember' },
-    { id: 'aseo', member: 'AseoMember' },
-    { id: 'energia', member: 'EnergiaElectricaMember' },
-    { id: 'gas', member: 'GasNaturalMember' },
-    { id: 'glp', member: 'GasLicuadoDePetroleoMember' },
-    { id: 'otros', member: 'OtrasActividadesNoVigiladasMember' },
-    { id: 'total', member: 'TotalMember' }
+  // Contexto instant período anterior (comparativo)
+  const prevInstantContextId = `id${contextIdCounter++}`; // id5
+  
+  // Contexto instant período actual total (sin dimensión)
+  const currentInstantTotalContextId = `id${contextIdCounter++}`; // id6
+  
+  // Mapeo de servicios a sus Members XBRL y sus context IDs
+  // Orden exacto como en la taxonomía oficial
+  const serviceMembers: Array<{id: string; member: string; contextId: string; ifrsSuffix: number; sspdSuffix: number}> = [
+    { id: 'acueducto', member: 'AcueductoMember', contextId: `id${contextIdCounter++}`, ifrsSuffix: 16, sspdSuffix: 32 }, // id7
+    { id: 'alcantarillado', member: 'AlcantarilladoMember', contextId: `id${contextIdCounter++}`, ifrsSuffix: 18, sspdSuffix: 33 }, // id8
+    { id: 'aseo', member: 'AseoMember', contextId: `id${contextIdCounter++}`, ifrsSuffix: 20, sspdSuffix: 34 }, // id9
+    { id: 'energia', member: 'EnergiaElectricaMember', contextId: `id${contextIdCounter++}`, ifrsSuffix: 22, sspdSuffix: 35 }, // id10
+    { id: 'gas', member: 'GasNaturalMember', contextId: `id${contextIdCounter++}`, ifrsSuffix: 24, sspdSuffix: 36 }, // id11
+    { id: 'glp', member: 'GasLicuadoDePetroleoMember', contextId: `id${contextIdCounter++}`, ifrsSuffix: 26, sspdSuffix: 37 }, // id12
+    { id: 'otras', member: 'OtrasActividadesNoVigiladasMember', contextId: `id${contextIdCounter++}`, ifrsSuffix: 28, sspdSuffix: 38 }, // id13
   ];
+  
+  // ID de la unidad monetaria
+  const unitCOPId = 'id14';
   
   // Generar contextos para cada servicio (instant con dimensión)
   const serviceContexts = serviceMembers.map(svc => {
-    const ctxId = `id${contextIdCounter++}`;
-    return `      <context id="${ctxId}">
+    return `      <context id="${svc.contextId}">
         <entity>
           <xbrli:identifier scheme="_">_</xbrli:identifier>
         </entity>
@@ -364,16 +377,77 @@ function generateXBRLTemplate(
       </context>`;
   }).join('\n');
 
-  // URLs dinámicas según el año de taxonomía seleccionado
-  // IMPORTANTE: Usar "/" entre baseUrl y "Corte_"
-  const sspdSchemaUrl = `${TAXONOMY_CATALOG.baseUrl}/Corte_${taxonomyYear}/grupo1/Comun/co-sspd-ef-Grupo1_${taxonomyYear}-12-31.xsd`;
+  // URLs dinámicas según el año de taxonomía seleccionado y el grupo NIIF
+  // Mapeo de rutas por grupo (R414 usa 'res414', no 'r414')
+  const groupPathMap: Record<string, string> = {
+    'co-sspd-ef-Grupo1': 'grupo1',
+    'co-sspd-ef-Grupo2': 'grupo2',
+    'co-sspd-ef-Grupo3': 'grupo3',
+    'co-sspd-ef-Res414': 'res414',
+    'co-sspd-ef-R533': 'r533',
+    'co-sspd-ife': 'ife',
+  };
+  const groupPath = groupPathMap[config.prefix] || 'grupo1';
+  
+  // Para R414, el schema tiene un nombre diferente
+  let sspdSchemaUrl: string;
+  if (config.prefix === 'co-sspd-ef-Res414') {
+    sspdSchemaUrl = `${TAXONOMY_CATALOG.baseUrl}/Corte_${taxonomyYear}/res414/co-sspd-ef-Res414-core_${taxonomyYear}-12-31.xsd`;
+  } else {
+    sspdSchemaUrl = `${TAXONOMY_CATALOG.baseUrl}/Corte_${taxonomyYear}/${groupPath}/Comun/co-sspd-ef-${groupPath.charAt(0).toUpperCase() + groupPath.slice(1)}_${taxonomyYear}-12-31.xsd`;
+  }
+  
   const ifrsNamespace = TAXONOMY_CATALOG.ifrsUrl;
   const ifrsSchemaUrl = `${TAXONOMY_CATALOG.ifrsUrl}full_ifrs/full_ifrs-cor_2022-03-24.xsd`;
   
   // El schemaLocation debe incluir los esquemas necesarios
   const schemaLocation = `http://www.reportingstandard.com/map/4 https://www.reportingstandard.com/schemas/mapper/mapper-2021.xsd http://xbrl.org/2006/xbrldi http://www.xbrl.org/2006/xbrldi-2006.xsd ${config.namespace} ${sspdSchemaUrl} ${ifrsNamespace}/ifrs-full ${ifrsSchemaUrl}`;
 
-  return `<xbrlMap xmlns="http://www.reportingstandard.com/map/4" xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:${config.prefix}="${config.namespace}" xmlns:ifrs-full="${ifrsNamespace}/ifrs-full" xmlns:iso4217="http://www.xbrl.org/2003/iso4217" xmlns:xbrldi="http://xbrl.org/2006/xbrldi" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="${schemaLocation}">
+  // =============================================
+  // GENERAR SECCIÓN DE FACTS
+  // =============================================
+  const facts: string[] = [];
+  
+  // 1. Facts de Información General (Hoja1) - usan contexto duration sin unitRef
+  for (const infoConcept of INFO_CONCEPTS) {
+    // Reemplazar prefijo si es necesario
+    const conceptName = infoConcept.concept.replace('co-sspd-ef-Grupo1', config.prefix);
+    const mapId = conceptName.replace(':', '_');
+    
+    facts.push(`      <item sourceRef="source0" contextRef="${durationContextId}" mapIdentifier="${mapId}" concept="${conceptName}"/>`);
+  }
+  
+  // 2. Facts del Estado de Situación Financiera (Hoja2) - usan contexto instant con unitRef
+  for (const esfConcept of ESF_CONCEPTS) {
+    // Concepto base sin sufijo - para columna Total (contexto sin dimensión)
+    const baseConcept = esfConcept.concept.replace('co-sspd-ef-Grupo1', config.prefix);
+    const baseMapId = baseConcept.replace(':', '_');
+    
+    // Fact para columna Total (I) - contexto instant total
+    facts.push(`      <item sourceRef="source0" contextRef="${currentInstantTotalContextId}" mapIdentifier="${baseMapId}" concept="${baseConcept}" unitRef="${unitCOPId}"/>`);
+    
+    // Facts por cada servicio activo
+    for (const service of serviceMembers) {
+      // Solo incluir servicios que estén en la distribución con porcentaje > 0
+      if (!distribution[service.id] || distribution[service.id] <= 0) continue;
+      
+      // Determinar sufijo según tipo de concepto
+      const isIfrs = baseConcept.startsWith('ifrs-full');
+      const suffix = isIfrs ? service.ifrsSuffix : service.sspdSuffix;
+      
+      const conceptWithSuffix = `${baseConcept}${suffix}`;
+      const mapIdWithSuffix = conceptWithSuffix.replace(':', '_');
+      
+      facts.push(`      <item sourceRef="source0" contextRef="${service.contextId}" mapIdentifier="${mapIdWithSuffix}" concept="${conceptWithSuffix}" unitRef="${unitCOPId}"/>`);
+    }
+    
+    // Fact para período anterior (comparativo) - contexto instant anterior
+    const prevMapId = `${baseMapId}_prev`;
+    facts.push(`      <item sourceRef="source0" contextRef="${prevInstantContextId}" mapIdentifier="${prevMapId}" concept="${baseConcept}" unitRef="${unitCOPId}"/>`);
+  }
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<xbrlMap xmlns="http://www.reportingstandard.com/map/4" xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:${config.prefix}="${config.namespace}" xmlns:ifrs-full="${ifrsNamespace}ifrs-full" xmlns:iso4217="http://www.xbrl.org/2003/iso4217" xmlns:xbrldi="http://xbrl.org/2006/xbrldi" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="${schemaLocation}">
   <datasources>
     <source id="source0" class="com.ihr.xbrl.mapper.source.ExcelDataSource" config="${config.prefix}_Individual_${options.companyId}_${options.reportDate}.xml"/>
   </datasources>
@@ -394,16 +468,35 @@ function generateXBRLTemplate(
           <endDate>${endDate}</endDate>
         </period>
       </context>
+      <context id="${prevInstantContextId}">
+        <entity>
+          <xbrli:identifier scheme="_">_</xbrli:identifier>
+        </entity>
+        <period>
+          <instant>${prevEndDate}</instant>
+        </period>
+      </context>
+      <context id="${currentInstantTotalContextId}">
+        <entity>
+          <xbrli:identifier scheme="_">_</xbrli:identifier>
+        </entity>
+        <period>
+          <instant>${endDate}</instant>
+        </period>
+      </context>
 ${serviceContexts}
     </contexts>
     <units>
-      <unit id="COP">
-        <measure>iso4217:COP</measure>
-      </unit>
-      <unit id="pure">
-        <measure>xbrli:pure</measure>
-      </unit>
+      <xbrli:unit id="${unitCOPId}">
+        <xbrli:measure>iso4217:COP</xbrli:measure>
+      </xbrli:unit>
+      <xbrli:unit id="pure">
+        <xbrli:measure>xbrli:pure</xbrli:measure>
+      </xbrli:unit>
     </units>
+    <facts>
+${facts.join('\n')}
+    </facts>
   </instance>
 </xbrlMap>`;
 }
@@ -414,13 +507,16 @@ ${serviceContexts}
  * Este archivo define exactamente qué celda del Excel corresponde a qué concepto XBRL.
  * La estructura sigue el formato requerido por XBRL Express.
  * 
+ * IMPORTANTE: Los mapId deben coincidir EXACTAMENTE con los mapIdentifier del .xbrlt
+ * Se usa formato con guión bajo: ifrs-full_CashAndCashEquivalents (no con :)
+ * 
  * Estructura:
  * - Hoja1: Información general (columna E, filas 12-22)
  * - Hoja2: ESF (columnas I-Q, filas 15-70)
  *   - Columna I: Total (sin sufijo)
- *   - Columna J: Acueducto (sufijo 16)
- *   - Columna K: Alcantarillado (sufijo 18)
- *   - Columna L: Aseo (sufijo 20)
+ *   - Columna J: Acueducto (sufijo 16 para IFRS, 32 para SSPD)
+ *   - Columna K: Alcantarillado (sufijo 18 para IFRS, 33 para SSPD)
+ *   - Columna L: Aseo (sufijo 20 para IFRS, 34 para SSPD)
  *   - Columnas M-Q: Otros servicios
  */
 function generateExcelMapping(
@@ -431,50 +527,68 @@ function generateExcelMapping(
 ): string {
   const mappings: string[] = [];
   
+  // Helper para convertir concepto a mapId (reemplazar : por _)
+  const toMapId = (concept: string) => concept.replace(':', '_').replace('co-sspd-ef-Grupo1', config.prefix.replace(':', '_'));
+  
   // 1. Mapeos de Información General (Hoja1)
-  // Estos van exactamente como en el ejemplo: solo mapId y cell
   for (const infoConcept of INFO_CONCEPTS) {
+    // Reemplazar prefijo según configuración
+    const conceptName = infoConcept.concept.replace('co-sspd-ef-Grupo1', config.prefix);
+    const mapId = toMapId(conceptName);
+    
     const mapEntry = `  <map>
-    <mapId>${infoConcept.concept}</mapId>
+    <mapId>${mapId}</mapId>
     <cell>Hoja1!E${infoConcept.row}</cell>
   </map>`;
     mappings.push(mapEntry);
   }
   
   // 2. Mapeos del Estado de Situación Financiera (Hoja2)
+  // Servicios con sus sufijos
+  const serviceConfig: Array<{id: string; column: string; ifrsSuffix: number; sspdSuffix: number}> = [
+    { id: 'acueducto', column: 'J', ifrsSuffix: 16, sspdSuffix: 32 },
+    { id: 'alcantarillado', column: 'K', ifrsSuffix: 18, sspdSuffix: 33 },
+    { id: 'aseo', column: 'L', ifrsSuffix: 20, sspdSuffix: 34 },
+    { id: 'energia', column: 'M', ifrsSuffix: 22, sspdSuffix: 35 },
+    { id: 'gas', column: 'N', ifrsSuffix: 24, sspdSuffix: 36 },
+    { id: 'glp', column: 'O', ifrsSuffix: 26, sspdSuffix: 37 },
+    { id: 'otras', column: 'P', ifrsSuffix: 28, sspdSuffix: 38 },
+  ];
+  
   for (const esfConcept of ESF_CONCEPTS) {
+    // Reemplazar prefijo según configuración
+    const baseConcept = esfConcept.concept.replace('co-sspd-ef-Grupo1', config.prefix);
+    const baseMapId = toMapId(baseConcept);
+    
     // Mapeo para columna Total (I) - sin sufijo
     const totalMap = `  <map>
-    <mapId>${esfConcept.concept}</mapId>
+    <mapId>${baseMapId}</mapId>
     <cell>Hoja2!I${esfConcept.row}</cell>
   </map>`;
     mappings.push(totalMap);
     
     // Mapeos por servicio activo
-    for (const service of config.services) {
-      // Saltar el servicio 'total' ya que se manejó arriba
-      if (service.id === 'total' || service.id === 'other') continue;
-      
+    for (const service of serviceConfig) {
       // Solo incluir servicios activos
       if (!activeServices.includes(service.id)) continue;
       
-      // Usar el sufijo correcto según el tipo de concepto (IFRS vs SSPD)
-      const conceptWithSuffix = getConceptIdWithSuffix(
-        esfConcept.concept, 
-        service.ifrsSuffix, 
-        service.sspdSuffix
-      );
+      // Determinar sufijo según tipo de concepto (IFRS vs SSPD)
+      const isIfrs = baseConcept.startsWith('ifrs-full');
+      const suffix = isIfrs ? service.ifrsSuffix : service.sspdSuffix;
+      
+      const conceptWithSuffix = `${baseConcept}${suffix}`;
+      const mapIdWithSuffix = toMapId(conceptWithSuffix);
       
       const serviceMap = `  <map>
-    <mapId>${conceptWithSuffix}</mapId>
+    <mapId>${mapIdWithSuffix}</mapId>
     <cell>Hoja2!${service.column}${esfConcept.row}</cell>
   </map>`;
       mappings.push(serviceMap);
     }
   }
 
-  // El formato debe ser exactamente como el ejemplo: sin declaración XML ni comentarios
-  return `<!-- Sample configuration file for ExcelDataSource content -->
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!-- Excel to XBRL Mapping - Generated by XBRL Generator -->
 <XBRLDataSourceExcelMap xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.reportingstandard.com/schemas/mapper/XBRLDataSourceExcelMapSchema.xsd">
 ${mappings.join('\n')}
 </XBRLDataSourceExcelMap>`;

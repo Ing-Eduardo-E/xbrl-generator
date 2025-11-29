@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- XBRL Report (Instance) generated using Reporting Standard S.L. Software -->
+<!-- http://www.reportingstandard.com -->
+<!-- Software (C) 2008-2025 Reporting Standard S.L. All rights reserved -->
+<!-- Generado con : XBRL Editor Express - Editor rápido de informes XBRL - Version: 3.9.1.1400 -->
+<!-- License issued to: 20037 at 20037 -->
+<!-- This document has been created with a valid production license -->
+<xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <link:schemaRef xlink:type="simple" xlink:href="http://www.sui.gov.co/xbrl/Corte_2024/grupo2/PuntoEntrada_G2_Individual-2024.xsd"/>
+</xbrli:xbrl>
