@@ -570,7 +570,7 @@ function getRoundingLabel(degree: string): string {
 function groupAccountsByPUC(accounts: typeof workingAccounts.$inferSelect[]): Map<string, typeof workingAccounts.$inferSelect[]> {
   const grouped = new Map<string, typeof workingAccounts.$inferSelect[]>();
   for (const account of accounts) {
-    const key = account.accountCode.substring(0, 4); // Primeros 4 dígitos
+    const key = account.code.substring(0, 4); // Primeros 4 dígitos
     if (!grouped.has(key)) {
       grouped.set(key, []);
     }
@@ -582,10 +582,10 @@ function groupAccountsByPUC(accounts: typeof workingAccounts.$inferSelect[]): Ma
 function calculateServiceAmounts(serviceData: typeof serviceBalances.$inferSelect[]): Map<string, Map<string, number>> {
   const amounts = new Map<string, Map<string, number>>();
   for (const item of serviceData) {
-    if (!amounts.has(item.accountCode)) {
-      amounts.set(item.accountCode, new Map());
+    if (!amounts.has(item.code)) {
+      amounts.set(item.code, new Map());
     }
-    amounts.get(item.accountCode)!.set(item.serviceType, Number(item.amount));
+    amounts.get(item.code)!.set(item.service, Number(item.value));
   }
   return amounts;
 }

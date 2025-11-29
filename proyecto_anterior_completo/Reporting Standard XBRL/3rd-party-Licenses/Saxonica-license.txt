@@ -1,3 +1,0 @@
-Reporting Estándard S.L. Software owns an Enterprise Edition license of Saxonica 9 XML library.
-
-More information about saxonica Enterprise Edition (Saxon-EE) license can be found at http://www.saxonica.com/license/license.xml

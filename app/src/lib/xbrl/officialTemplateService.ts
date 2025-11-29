@@ -21,6 +21,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import type { NiifGroup, TaxonomyYear } from './taxonomyConfig';
 import { 
   ESF_CONCEPTS, 
@@ -504,9 +505,17 @@ function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWithDataOpt
     const config = getTaxonomyConfig(options.niifGroup);
     
     // Función para establecer valor numérico en celda
+    // PRUEBA: Escribir como TEXTO (t:'s') igual que los campos del 110000
+    // para ver si XBRL Express lo lee correctamente
     const setNumericCell = (sheet: XLSX.WorkSheet, cell: string, value: number) => {
       if (value !== 0 && value !== undefined && !isNaN(value)) {
-        sheet[cell] = { t: 'n', v: value };
+        const stringValue = String(value);
+        sheet[cell] = { 
+          t: 's',  // Tipo STRING en lugar de número
+          v: stringValue,
+          w: stringValue,
+          h: stringValue
+        };
       }
     };
     
@@ -1229,6 +1238,161 @@ function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWithDataOpt
 }
 
 /**
+ * Re-escribe los valores numéricos de Hoja2 y Hoja3 usando ExcelJS
+ * 
+ * Esta función se usa como paso adicional después de customizeExcelWithData
+ * porque xlsx library puede no generar celdas compatibles con XBRL Express.
+ * ExcelJS preserva mejor el formato original del archivo Excel.
+ * 
+ * @param xlsxBuffer - Buffer del archivo Excel ya procesado por xlsx
+ * @param options - Opciones con datos financieros
+ * @returns Promise<Buffer> - Buffer del archivo Excel con valores corregidos
+ */
+async function rewriteFinancialDataWithExcelJS(
+  xlsxBuffer: Buffer, 
+  options: TemplateWithDataOptions
+): Promise<Buffer> {
+  // Si no hay datos financieros, retornar el buffer sin cambios
+  if (!options.consolidatedAccounts || options.consolidatedAccounts.length === 0) {
+    return xlsxBuffer;
+  }
+
+  const workbook = new ExcelJS.Workbook();
+  // Cargar el buffer - usamos any para evitar conflictos de tipos entre versiones de Node
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await workbook.xlsx.load(xlsxBuffer as any);
+
+  const serviceBalances = options.serviceBalances || [];
+  const activeServices = options.activeServices || ['acueducto', 'alcantarillado', 'aseo'];
+
+  // Agrupar cuentas por servicio
+  const accountsByService: Record<string, ServiceBalanceData[]> = {};
+  for (const service of activeServices) {
+    accountsByService[service] = serviceBalances.filter(sb => sb.service === service);
+  }
+
+  // Función helper para verificar si una cuenta coincide con los prefijos
+  const matchesPrefixes = (code: string, prefixes: string[], excludes?: string[]): boolean => {
+    if (excludes) {
+      for (const exclude of excludes) {
+        if (code.startsWith(exclude)) return false;
+      }
+    }
+    for (const prefix of prefixes) {
+      if (code.startsWith(prefix)) return true;
+    }
+    return false;
+  };
+
+  // Solo procesar R414 por ahora
+  if (options.niifGroup === 'r414') {
+    // ===============================================
+    // HOJA2 (210000): Estado de Situación Financiera
+    // ===============================================
+    const sheet2 = workbook.getWorksheet('Hoja2');
+    if (sheet2) {
+      console.log('[ExcelJS] Escribiendo datos en Hoja2...');
+      
+      for (const mapping of R414_ESF_MAPPINGS) {
+        // Calcular total consolidado
+        let totalValue = 0;
+        for (const account of options.consolidatedAccounts) {
+          if (!account.isLeaf) continue;
+          if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
+            totalValue += account.value;
+          }
+        }
+
+        // Escribir valor total en columna P (columna 16)
+        if (totalValue !== 0) {
+          const cell = sheet2.getCell(`P${mapping.row}`);
+          cell.value = totalValue;
+          console.log(`[ExcelJS] Hoja2!P${mapping.row} = ${totalValue}`);
+        }
+
+        // Escribir valores por servicio
+        for (const service of activeServices) {
+          const serviceColumn = R414_SERVICE_COLUMNS[service];
+          if (!serviceColumn) continue;
+
+          let serviceValue = 0;
+          const serviceAccounts = accountsByService[service] || [];
+          for (const account of serviceAccounts) {
+            if (!account.isLeaf) continue;
+            if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
+              serviceValue += account.value;
+            }
+          }
+
+          if (serviceValue !== 0) {
+            const cell = sheet2.getCell(`${serviceColumn}${mapping.row}`);
+            cell.value = serviceValue;
+            console.log(`[ExcelJS] Hoja2!${serviceColumn}${mapping.row} = ${serviceValue}`);
+          }
+        }
+      }
+    }
+
+    // ===============================================
+    // HOJA3 (310000): Estado de Resultados
+    // ===============================================
+    const sheet3 = workbook.getWorksheet('Hoja3');
+    if (sheet3) {
+      console.log('[ExcelJS] Escribiendo datos en Hoja3...');
+      
+      for (const mapping of R414_ER_MAPPINGS) {
+        // Calcular total consolidado
+        let totalValue = 0;
+        for (const account of options.consolidatedAccounts) {
+          if (!account.isLeaf) continue;
+          if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
+            totalValue += account.value;
+          }
+        }
+
+        // Escribir valor total en columna L (columna 12)
+        if (totalValue !== 0) {
+          const cell = sheet3.getCell(`L${mapping.row}`);
+          cell.value = totalValue;
+          console.log(`[ExcelJS] Hoja3!L${mapping.row} = ${totalValue}`);
+        }
+
+        // Escribir valores por servicio (E=Acueducto, F=Alcantarillado, G=Aseo)
+        const erServiceColumns: Record<string, string> = {
+          acueducto: 'E',
+          alcantarillado: 'F',
+          aseo: 'G'
+        };
+
+        for (const service of activeServices) {
+          const serviceColumn = erServiceColumns[service];
+          if (!serviceColumn) continue;
+
+          let serviceValue = 0;
+          const serviceAccounts = accountsByService[service] || [];
+          for (const account of serviceAccounts) {
+            if (!account.isLeaf) continue;
+            if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
+              serviceValue += account.value;
+            }
+          }
+
+          if (serviceValue !== 0) {
+            const cell = sheet3.getCell(`${serviceColumn}${mapping.row}`);
+            cell.value = serviceValue;
+            console.log(`[ExcelJS] Hoja3!${serviceColumn}${mapping.row} = ${serviceValue}`);
+          }
+        }
+      }
+    }
+  }
+
+  // Escribir el buffer con ExcelJS
+  const outputBuffer = await workbook.xlsx.writeBuffer();
+  return Buffer.from(outputBuffer);
+}
+
+/**
  * Función original para retrocompatibilidad (solo metadatos, sin datos financieros)
  */
 function customizeExcel(xlsxBuffer: Buffer, options: TemplateCustomization): Buffer {
@@ -1286,40 +1450,21 @@ function customizeXbrlt(content: string, options: TemplateCustomization, outputF
   // Solo reemplazar si es diferente al template original (2024)
   if (reportYear !== '2024') {
     // ============================================================
-    // 1. REEMPLAZAR URLs DE TAXONOMÍA SSPD
+    // IMPORTANTE: NO REEMPLAZAR URLs DE TAXONOMÍA SSPD
     // ============================================================
-    // Las taxonomías de la SSPD se organizan por "Corte" anual
-    // Cada año tiene su propio set de schemas en http://www.sui.gov.co/xbrl/Corte_YYYY/
-    
-    // Reemplazar el año del corte de taxonomía en todas las URLs
-    // Ejemplo: Corte_2024 -> Corte_{reportYear}
-    customized = customized.replace(/Corte_2024/g, `Corte_${reportYear}`);
-    
-    // Reemplazar el año en namespaces de la SSPD
-    // Ejemplo: http://www.superservicios.gov.co/xbrl/niif/ef/core/2024-12-31
-    customized = customized.replace(
-      /superservicios\.gov\.co\/xbrl\/niif\/ef\/core\/2024-12-31/g,
-      `superservicios.gov.co/xbrl/niif/ef/core/${reportYear}-12-31`
-    );
-    customized = customized.replace(
-      /superservicios\.gov\.co\/xbrl\/ef\/core\/2024-12-31/g,
-      `superservicios.gov.co/xbrl/ef/core/${reportYear}-12-31`
-    );
-    
-    // Reemplazar el año en los nombres de archivos XSD
-    // Ejemplo: co-sspd-ef-Grupo1_2024-12-31.xsd -> co-sspd-ef-Grupo1_{reportYear}-12-31.xsd
-    customized = customized.replace(/_2024-12-31\.xsd/g, `_${reportYear}-12-31.xsd`);
-    
-    // Reemplazar el año en los puntos de entrada
-    // Ejemplo: PuntoEntrada_G1_Individual-2024-EFEDirecto.xsd
-    customized = customized.replace(/-2024-EFEDirecto\.xsd/g, `-${reportYear}-EFEDirecto.xsd`);
-    customized = customized.replace(/-2024-EFEIndirecto\.xsd/g, `-${reportYear}-EFEIndirecto.xsd`);
-    customized = customized.replace(/-2024\.xsd/g, `-${reportYear}.xsd`);
-    customized = customized.replace(/_Individual-2024\.xsd/g, `_Individual-${reportYear}.xsd`);
-    customized = customized.replace(/_R414_Individual-2024\.xsd/g, `_R414_Individual-${reportYear}.xsd`);
+    // Las taxonomías de la SSPD se publican anualmente, pero la de 2025
+    // puede no estar disponible aún. SIEMPRE usar la taxonomía 2024
+    // que es la más reciente disponible.
+    // 
+    // NO hacemos esto:
+    // customized = customized.replace(/Corte_2024/g, `Corte_${reportYear}`);
+    // 
+    // Las URLs de taxonomía permanecen en 2024:
+    // - http://www.sui.gov.co/xbrl/Corte_2024/res414/...
+    // - http://www.superservicios.gov.co/xbrl/ef/core/2024-12-31
     
     // ============================================================
-    // 2. REEMPLAZAR FECHAS EN CONTEXTOS XBRL
+    // SOLO REEMPLAZAR FECHAS EN CONTEXTOS XBRL (períodos contables)
     // ============================================================
     
     // Reemplazar año actual (2024 -> reportYear)
@@ -1508,7 +1653,12 @@ export async function generateOfficialTemplatePackageWithData(
     
     // 3. Cargar y personalizar .xlsx con datos del formulario Y datos financieros
     const xlsxContent = await loadBinaryTemplate(templatePaths.xlsx);
-    const customizedXlsx = customizeExcelWithData(xlsxContent, options);
+    let customizedXlsx = customizeExcelWithData(xlsxContent, options);
+    
+    // 3.1 Re-escribir datos financieros con ExcelJS para mejor compatibilidad con XBRL Express
+    // La librería xlsx puede no generar celdas que XBRL Express pueda leer correctamente
+    customizedXlsx = await rewriteFinancialDataWithExcelJS(customizedXlsx, options);
+    
     zip.file(`${outputFileName}.xlsx`, customizedXlsx);
     
     // 4. Cargar .xbrl (referencia)
