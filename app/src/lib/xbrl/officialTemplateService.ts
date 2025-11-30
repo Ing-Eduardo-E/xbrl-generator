@@ -196,35 +196,177 @@ interface R414ESFMapping {
 }
 
 const R414_ESF_ACTIVOS: R414ESFMapping[] = [
-  // ACTIVOS CORRIENTES
-  { row: 15, label: 'Efectivo y equivalentes', pucPrefixes: ['11'] },
-  { row: 19, label: 'CXC servicios públicos (sin subsidios)', pucPrefixes: ['131802', '131803', '131804', '1318'] },
-  { row: 20, label: 'CXC subsidios', pucPrefixes: ['131808', '131809', '131810'] },
-  { row: 26, label: 'Otras CXC', pucPrefixes: ['1384', '13'] },
+  // =====================================================
+  // ACTIVOS CORRIENTES (filas 14-32)
+  // =====================================================
+  // Fila 15: Efectivo y equivalentes al efectivo
+  // PUC: 11 - Efectivo (caja, bancos, cuentas de ahorro, fondos)
+  { row: 15, label: 'Efectivo y equivalentes al efectivo', pucPrefixes: ['11'] },
+  
+  // Fila 16: Efectivo de uso restringido corriente
+  // PUC: 1195 - Fondos restringidos (si aplica, generalmente vacío)
+  { row: 16, label: 'Efectivo de uso restringido corriente', pucPrefixes: ['1195'] },
+  
+  // Fila 19: CXC por prestación de servicios públicos (SIN subsidios ni aprovechamiento)
+  // PUC: 1305 - Clientes servicios públicos (acueducto, alcantarillado, aseo)
+  // EXCLUIR: 130580 (subsidios), 130585 (aprovechamiento)
+  { row: 19, label: 'CXC servicios públicos (sin subsidios)', pucPrefixes: ['1305'], excludePrefixes: ['130580', '130585', '130590'] },
+  
+  // Fila 20: CXC por subsidios corrientes
+  // PUC: 130580 - Subsidios por cobrar, 1330 - Anticipos de subsidios
+  { row: 20, label: 'CXC subsidios corrientes', pucPrefixes: ['130580', '1330'] },
+  
+  // Fila 22: CXC por actividad de aprovechamiento corrientes
+  // PUC: 130585 - Aprovechamiento (reciclaje, etc.)
+  { row: 22, label: 'CXC aprovechamiento corrientes', pucPrefixes: ['130585'] },
+  
+  // Fila 24: CXC por venta de bienes corrientes
+  // PUC: 1310 - Clientes del exterior, 1315 - Deudores del sistema
+  { row: 24, label: 'CXC venta de bienes corrientes', pucPrefixes: ['1310', '1315'] },
+  
+  // Fila 25: CXC a partes relacionadas corrientes
+  // PUC: 1320 - Cuentas por cobrar a vinculados económicos
+  { row: 25, label: 'CXC partes relacionadas corrientes', pucPrefixes: ['1320', '1325'] },
+  
+  // Fila 26: Otras cuentas por cobrar corrientes
+  // PUC: 1345 - Ingresos por cobrar, 1350 - Retención en la fuente, 1355 - Anticipo impuestos,
+  //      1360 - Reclamaciones, 1365 - CxC a trabajadores, 1370 - Prestamos particulares,
+  //      1380 - Deudores varios, 1385 - Derechos de recompra, 1390 - Deudas difícil cobro
+  // EXCLUIR: 1305 (servicios públicos), 1310, 1315, 1320, 1325, 1330
+  { row: 26, label: 'Otras CXC corrientes', pucPrefixes: ['1345', '1350', '1355', '1360', '1365', '1370', '1380', '1385', '1390', '1399'] },
+  
+  // Fila 28: Inventarios corrientes
+  // PUC: 14 - Inventarios (materiales, repuestos, productos en proceso, etc.)
   { row: 28, label: 'Inventarios corrientes', pucPrefixes: ['14'] },
-  { row: 31, label: 'Otros activos no financieros corrientes', pucPrefixes: ['19'] },
-  // ACTIVOS NO CORRIENTES
-  { row: 34, label: 'Propiedades, planta y equipo', pucPrefixes: ['16'] },
-  { row: 59, label: 'Intangibles', pucPrefixes: ['1970'] },
+  
+  // Fila 29: Activo por impuesto a las ganancias corriente
+  // PUC: 1355 - Anticipo de impuestos (renta)
+  // Nota: Ya incluido en fila 26, aquí sería específico para impuesto de renta anticipado
+  // { row: 29, label: 'Activo impuesto ganancias corriente', pucPrefixes: ['135505', '135510'] },
+  
+  // Fila 30: Otros activos financieros corrientes
+  // PUC: 12 - Inversiones (CDT, bonos, acciones de corto plazo)
+  { row: 30, label: 'Otros activos financieros corrientes', pucPrefixes: ['12'] },
+  
+  // Fila 31: Otros activos no financieros corrientes
+  // PUC: 17 - Diferidos (gastos pagados por anticipado), 1705, 1710
+  { row: 31, label: 'Otros activos no financieros corrientes', pucPrefixes: ['17'] },
+  
+  // =====================================================
+  // ACTIVOS NO CORRIENTES (filas 33-63)
+  // =====================================================
+  // Fila 34: Propiedades, planta y equipo (NETO)
+  // PUC: 15 - Propiedades planta y equipo, 16 - Construcciones en curso
+  // El valor debe ser NETO (menos depreciación acumulada 1592)
+  { row: 34, label: 'Propiedades, planta y equipo', pucPrefixes: ['15', '16'] },
+  
+  // Fila 35: Efectivo de uso restringido no corriente
+  { row: 35, label: 'Efectivo restringido no corriente', pucPrefixes: ['1295'] },
+  
+  // Fila 37: Inversiones en asociadas
+  // PUC: 1205 - Acciones
+  { row: 37, label: 'Inversiones en asociadas', pucPrefixes: ['1205'] },
+  
+  // Fila 52: Inventarios no corrientes
+  // PUC: Generalmente no hay, pero si hubiera serían inventarios de largo plazo
+  // { row: 52, label: 'Inventarios no corrientes', pucPrefixes: [] },
+  
+  // Fila 53: Activos por impuestos diferidos
+  // PUC: 1710 - Cargos diferidos impuestos
+  { row: 53, label: 'Activos por impuestos diferidos', pucPrefixes: ['171076', '171044'] },
+  
+  // Fila 59: Activos intangibles
+  // PUC: 16 - Intangibles (licencias, software, derechos)
+  { row: 59, label: 'Activos intangibles', pucPrefixes: ['1605', '1610', '1615', '1620', '1625', '1630', '1635', '1698'] },
 ];
 
 const R414_ESF_PASIVOS: R414ESFMapping[] = [
-  // PASIVOS CORRIENTES
-  { row: 69, label: 'Provisiones por beneficios a empleados', pucPrefixes: ['2505', '2510', '2515', '2520', '2525', '2530', '2535', '25'] },
-  { row: 70, label: 'Otras provisiones corrientes', pucPrefixes: ['26'], excludePrefixes: ['2610'] },
-  { row: 74, label: 'Cuentas por pagar adquisición bienes', pucPrefixes: ['2401'] },
-  { row: 76, label: 'Otras cuentas comerciales por pagar', pucPrefixes: ['24'], excludePrefixes: ['2401', '2404'] },
-  { row: 79, label: 'Préstamos por pagar', pucPrefixes: ['21'] },
-  { row: 80, label: 'Impuesto a las ganancias corriente', pucPrefixes: ['2404'] },
-  { row: 82, label: 'Ingresos recibidos por anticipado', pucPrefixes: ['27'] },
+  // =====================================================
+  // PASIVOS CORRIENTES (filas 67-90)
+  // =====================================================
+  // Fila 69: Provisiones corrientes por beneficios a empleados
+  // PUC: 25 - Obligaciones laborales (salarios, cesantías, vacaciones, primas)
+  { row: 69, label: 'Provisiones beneficios empleados corrientes', pucPrefixes: ['25'] },
+  
+  // Fila 70: Otras provisiones corrientes
+  // PUC: 2610 - Para obligaciones fiscales, 2615 - Para contingencias
+  { row: 70, label: 'Otras provisiones corrientes', pucPrefixes: ['2610', '2615', '2620', '2625', '2630', '2635'] },
+  
+  // Fila 74: Cuentas comerciales por pagar (adquisición bienes/servicios)
+  // PUC: 22 - Proveedores
+  { row: 74, label: 'Cuentas por pagar proveedores', pucPrefixes: ['22'] },
+  
+  // Fila 76: Otras cuentas comerciales por pagar
+  // PUC: 23 - Cuentas por pagar (costos y gastos por pagar, dividendos)
+  { row: 76, label: 'Otras cuentas por pagar', pucPrefixes: ['23'] },
+  
+  // Fila 79: Préstamos por pagar corrientes
+  // PUC: 21 - Obligaciones financieras (bancos, compañías financiamiento)
+  { row: 79, label: 'Préstamos por pagar corrientes', pucPrefixes: ['21'] },
+  
+  // Fila 80: Pasivo por impuesto a las ganancias corriente
+  // PUC: 2404 - De renta y complementarios
+  { row: 80, label: 'Impuesto ganancias por pagar', pucPrefixes: ['2404'] },
+  
+  // Fila 82: Ingresos recibidos por anticipado corrientes
+  // PUC: 27 - Diferidos (ingresos recibidos por anticipado)
+  { row: 82, label: 'Ingresos diferidos corrientes', pucPrefixes: ['27'] },
+  
+  // Fila 83: Otros pasivos financieros corrientes
+  // PUC: 2195 - Otras obligaciones financieras
+  { row: 83, label: 'Otros pasivos financieros corrientes', pucPrefixes: ['2195', '2115'] },
+  
+  // Fila 85: Otros pasivos corrientes
+  // PUC: 24 - Impuestos gravámenes y tasas, 28 - Otros pasivos (anticipos, depósitos)
+  { row: 85, label: 'Otros pasivos corrientes', pucPrefixes: ['24', '28'], excludePrefixes: ['2404'] },
+  
+  // =====================================================
+  // PASIVOS NO CORRIENTES (filas 91-110)
+  // =====================================================
+  // Fila 92: Provisiones no corrientes por beneficios a empleados
+  // PUC: Pasivos laborales de largo plazo (pensiones, bonificaciones)
+  { row: 92, label: 'Provisiones beneficios empleados no corrientes', pucPrefixes: ['2620'] },
+  
+  // Fila 99: Préstamos por pagar no corrientes
+  // PUC: 2105 - Bancos LP, 2120 - Compañías financiamiento LP
+  { row: 99, label: 'Préstamos por pagar no corrientes', pucPrefixes: ['2105', '2120'] },
+  
+  // Fila 103: Pasivos por impuestos diferidos
+  // PUC: 2725 - Impuestos diferidos
+  { row: 103, label: 'Pasivos por impuestos diferidos', pucPrefixes: ['2725', '272505'] },
 ];
 
 const R414_ESF_PATRIMONIO: R414ESFMapping[] = [
+  // =====================================================
+  // PATRIMONIO (filas 112-127)
+  // =====================================================
+  // Fila 113: Aportes sociales
+  // PUC: 32 - Superávit de capital (prima en colocación, donaciones)
   { row: 113, label: 'Aportes sociales', pucPrefixes: ['32'] },
+  
+  // Fila 114: Capital suscrito y pagado
+  // PUC: 31 - Capital social (autorizado, suscrito, pagado)
   { row: 114, label: 'Capital suscrito y pagado', pucPrefixes: ['31'] },
-  { row: 117, label: 'Reserva Legal', pucPrefixes: ['3305', '330505'] },
-  { row: 118, label: 'Otras Reservas', pucPrefixes: ['33'], excludePrefixes: ['3305'] },
+  
+  // Fila 115: Acciones propias en cartera (resta)
+  // PUC: 3130 - Capital suscrito no pagado (negativo), 3140 - Acciones propias readquiridas
+  { row: 115, label: 'Acciones propias en cartera', pucPrefixes: ['3130', '3140'] },
+  
+  // Fila 117: Reserva legal
+  // PUC: 3305 - Reservas obligatorias (reserva legal 10%)
+  { row: 117, label: 'Reserva legal', pucPrefixes: ['3305'] },
+  
+  // Fila 118: Otras reservas
+  // PUC: 3310, 3315, 3320 - Reservas estatutarias, ocasionales
+  { row: 118, label: 'Otras reservas', pucPrefixes: ['33'], excludePrefixes: ['3305'] },
+  
+  // Fila 120: Ganancias acumuladas
+  // PUC: 36 - Resultados del ejercicio, 37 - Resultados ejercicios anteriores
   { row: 120, label: 'Ganancias acumuladas', pucPrefixes: ['36', '37'] },
+  
+  // Fila 121: Otro resultado integral acumulado
+  // PUC: 38 - Superávit por valorizaciones
+  { row: 121, label: 'Otro resultado integral', pucPrefixes: ['38'] },
 ];
 
 // Combinar todos los mapeos R414
