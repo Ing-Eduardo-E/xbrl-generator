@@ -1457,6 +1457,11 @@ function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWithDataOpt
       // ===== POLÍTICAS CON CONTENIDO ESTÁNDAR =====
       // Políticas comunes y aplicables a empresas de servicios públicos
       
+      // Fila 11: Información a revelar sobre un resumen de las políticas contables significativas [OBLIGATORIO]
+      setPolicyCell(sheet10, 'E11',
+        `Las políticas contables significativas aplicadas en la preparación de estos estados financieros se resumen a continuación. Estas políticas han sido aplicadas consistentemente para todos los períodos presentados, salvo que se indique lo contrario. Los estados financieros han sido preparados de conformidad con las Normas de Información Financiera aplicables en Colombia y la Resolución 414 de 2014 de la CGN para empresas de servicios públicos domiciliarios.`
+      );
+      
       // Fila 16: Beneficios a los empleados
       setPolicyCell(sheet10, 'E16',
         `Los beneficios a empleados de corto plazo se reconocen como gasto cuando el empleado presta el servicio. Incluyen salarios, aportes a seguridad social, prestaciones sociales legales y extralegales. Los beneficios post-empleo se reconocen según el tipo de plan: contribución definida (gasto cuando se paga) o beneficio definido (obligación actuarial).`
@@ -1517,30 +1522,94 @@ function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWithDataOpt
         `Bases de preparación: Los estados financieros se preparan bajo NIIF para Pymes adoptadas en Colombia y la Resolución 414 de 2014 de la CGN. Moneda funcional y de presentación: Peso colombiano. Efectivo: Incluye caja, bancos e inversiones de alta liquidez con vencimiento menor a 3 meses. Aportes y contribuciones: Se reconocen según regulación sectorial aplicable a empresas de servicios públicos.`
       );
       
+      // Fila 13: Descripción de la política contable sobre costos de financiación
+      setPolicyCell(sheet10, 'E13',
+        `Los costos por préstamos directamente atribuibles a la adquisición, construcción o producción de activos aptos se capitalizan como parte del costo del activo. Los demás costos por préstamos se reconocen como gasto en el período en que se incurren. La capitalización se suspende durante períodos prolongados de interrupción de las actividades de desarrollo.`
+      );
+      
+      // Fila 14: Descripción de la política contable sobre préstamos
+      setPolicyCell(sheet10, 'E14',
+        `Los préstamos se reconocen inicialmente al valor razonable menos los costos de transacción. Posteriormente se miden al costo amortizado utilizando el método del interés efectivo. Los intereses devengados se reconocen como gasto financiero. Se clasifican como pasivos corrientes o no corrientes según su vencimiento.`
+      );
+      
+      // Fila 15: Descripción de la política contable sobre instrumentos financieros derivados
+      setPolicyCell(sheet10, 'E15',
+        `La entidad no utiliza instrumentos financieros derivados para especulación. En caso de utilizarse con fines de cobertura, se reconocen inicialmente al valor razonable y se miden posteriormente según su clasificación. Los cambios en el valor razonable se reconocen en resultados, excepto las coberturas de flujo de efectivo eficaces que se reconocen en otro resultado integral.`
+      );
+      
+      // Fila 18: Descripción de la política contable sobre conversión de moneda extranjera
+      setPolicyCell(sheet10, 'E18',
+        `Las transacciones en moneda extranjera se convierten a la moneda funcional usando las tasas de cambio vigentes a la fecha de la transacción. Las partidas monetarias en moneda extranjera al cierre se convierten usando la tasa de cierre. Las diferencias en cambio se reconocen en el resultado del período, excepto las relacionadas con financiamiento de activos aptos.`
+      );
+      
+      // Fila 19: Descripción de la política contable de la moneda funcional
+      setPolicyCell(sheet10, 'E19',
+        `La moneda funcional y de presentación de la entidad es el peso colombiano (COP), que es la moneda del entorno económico principal donde opera. Esta determinación se basa en que los ingresos, costos, financiamiento y operaciones se denominan principalmente en pesos colombianos.`
+      );
+      
+      // Fila 20: Descripción de la política contable sobre plusvalía
+      setPolicyCell(sheet10, 'E20',
+        `La plusvalía surge de la adquisición de subsidiarias y representa el exceso del costo de adquisición sobre el valor razonable de los activos netos identificables adquiridos. Se mide posteriormente al costo menos pérdidas por deterioro acumuladas. No se amortiza pero se somete a pruebas de deterioro anuales.`
+      );
+      
+      // Fila 21: Descripción de la política contable para subvenciones del gobierno
+      setPolicyCell(sheet10, 'E21',
+        `Las subvenciones gubernamentales se reconocen cuando existe seguridad razonable de que se cumplirán las condiciones y que se recibirá la subvención. Se reconocen en resultados sistemáticamente durante los períodos necesarios para asociarlas con los costos relacionados. Las subvenciones para activos se presentan reduciendo el valor en libros del activo o como ingreso diferido.`
+      );
+      
+      // Fila 24: Descripción de la política contable sobre activos intangibles distintos a la plusvalía
+      setPolicyCell(sheet10, 'E24',
+        `Los activos intangibles adquiridos separadamente se miden al costo menos amortización y deterioro acumulados. La amortización se calcula por línea recta sobre la vida útil estimada. Los activos con vida útil indefinida no se amortizan pero se someten a pruebas de deterioro anuales. Los activos intangibles generados internamente, excepto costos de desarrollo que cumplan criterios específicos, se reconocen como gasto.`
+      );
+      
+      // Fila 25: Descripción de la política contable sobre inversiones en asociadas
+      setPolicyCell(sheet10, 'E25',
+        `Las inversiones en asociadas se reconocen usando el método de participación patrimonial. Se miden inicialmente al costo y posteriormente se ajustan por la participación en los cambios del patrimonio de la asociada. Los dividendos recibidos reducen el valor en libros. Se evalúan indicadores de deterioro anualmente.`
+      );
+      
+      // Fila 26: Descripción de la política contable para inversiones en negocios conjuntos
+      setPolicyCell(sheet10, 'E26',
+        `Las inversiones en negocios conjuntos se reconocen usando el método de participación patrimonial. Se miden inicialmente al costo incluyendo costos de transacción. Posteriormente se ajustan por la participación en los resultados y otros cambios en el patrimonio del negocio conjunto.`
+      );
+      
+      // Fila 27: Descripción de la política contable sobre propiedades de inversión
+      setPolicyCell(sheet10, 'E27',
+        `Las propiedades de inversión son propiedades mantenidas para obtener rentas o apreciación de capital. Se reconocen inicialmente al costo incluyendo costos de transacción. Posteriormente se miden al modelo del costo (costo menos depreciación acumulada y deterioro). La depreciación se calcula por línea recta sobre la vida útil estimada de los edificios.`
+      );
+      
+      // Fila 29: Descripción de la política contable sobre arrendamientos
+      setPolicyCell(sheet10, 'E29',
+        `Los arrendamientos se evalúan al inicio para determinar si transfieren sustancialmente los riesgos y beneficios. Los arrendamientos financieros se reconocen como activo y pasivo al menor entre el valor razonable y el valor presente de los pagos mínimos. Los arrendamientos operativos se reconocen como gasto de forma lineal durante el plazo del arrendamiento.`
+      );
+      
+      // Fila 37: Descripción de la política contable sobre efectivo restringido
+      setPolicyCell(sheet10, 'E37',
+        `El efectivo restringido comprende fondos con restricciones de uso por compromisos contractuales, regulatorios o legales. Se clasifica como activo corriente o no corriente según el plazo de la restricción. Las restricciones incluyen fondos para garantías, depósitos en garantía, fondos especiales y recursos con destinación específica.`
+      );
+      
+      // Fila 39: Descripción de la política contable sobre transacciones con partes relacionadas
+      setPolicyCell(sheet10, 'E39',
+        `Las transacciones con partes relacionadas se realizan en condiciones de mercado. Se consideran partes relacionadas: accionistas controlantes, subsidiarias, asociadas, directivos clave y sus familiares cercanos. Las transacciones y saldos pendientes se revelan en notas a los estados financieros según los requerimientos de la NIC 24.`
+      );
+      
+      // Fila 41: Descripción de la política contable para inversiones en administración de liquidez
+      setPolicyCell(sheet10, 'E41',
+        `Las inversiones de administración de liquidez comprenden instrumentos financieros de alta liquidez fácilmente convertibles en efectivo, con vencimientos mayores a 90 días pero que no forman parte del capital de trabajo operativo. Se miden al costo amortizado o valor razonable según su clasificación y naturaleza del instrumento.`
+      );
+      
+      // Fila 42: Descripción de la política contable sobre préstamos por cobrar
+      setPolicyCell(sheet10, 'E42',
+        `Los préstamos por cobrar se reconocen inicialmente al valor razonable más los costos de transacción directamente atribuibles. Posteriormente se miden al costo amortizado usando el método del interés efectivo, menos cualquier deterioro. Se evalúan para deterioro aplicando el modelo de pérdidas crediticias esperadas.`
+      );
+      
       // ===== POLÍTICAS CON "NA" (No Aplica) =====
       // Políticas que generalmente no aplican para empresas típicas de servicios públicos
       
       const politicasNA = [
-        12, // Activos financieros disponibles para la venta
-        13, // Costos de financiación (capitalización)
-        14, // Préstamos por pagar (política específica)
-        15, // Instrumentos financieros derivados
-        18, // Conversión de moneda extranjera
-        19, // Moneda funcional (si no aplica moneda extranjera)
-        20, // Plusvalía
-        21, // Subvenciones gubernamentales
-        24, // Activos intangibles
-        25, // Inversiones en asociadas
-        26, // Inversiones en negocios conjuntos
-        27, // Propiedades de inversión
-        29, // Arrendamientos (bajo NIIF 16 / NIC 17)
-        32, // Activos de petróleo y gas
-        36, // Gastos de investigación y desarrollo
-        37, // Efectivo restringido
-        39, // Transacciones con partes relacionadas
-        41, // Inversiones de administración de liquidez
-        42, // Préstamos por cobrar
-        43, // Ingresos por contratos de construcción
+        12, // Activos financieros disponibles para la venta (no comunes en servicios públicos)
+        32, // Activos de petróleo y gas (no aplica a servicios públicos)
+        36, // Gastos de investigación y desarrollo (no significativos)
+        43, // Ingresos por contratos de construcción (no es contratista)
       ];
       
       for (const row of politicasNA) {
