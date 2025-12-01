@@ -1293,6 +1293,11 @@ function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWithDataOpt
       // ===== NOTAS CON CONTENIDO ESTÁNDAR =====
       // Estas notas son comunes y cortas para empresas de servicios públicos
       
+      // Fila 11: Información a revelar sobre notas y otra información explicativa [OBLIGATORIO]
+      setNoteCell(sheet9, 'E11',
+        `Las presentes notas a los estados financieros contienen información adicional a la presentada en el Estado de Situación Financiera y el Estado de Resultados. Proporcionan descripciones narrativas o desagregaciones de partidas presentadas en dichos estados, así como información sobre partidas que no cumplen las condiciones para ser reconocidas en ellos. Las notas se presentan de forma sistemática, haciendo referencia cruzada para cada partida de los estados financieros con cualquier información relacionada en las notas.`
+      );
+      
       // Fila 14: Autorización de estados financieros
       setNoteCell(sheet9, 'E14', 
         `Los estados financieros de ${companyName} al ${reportDate} fueron autorizados para su emisión por la Junta Directiva en su reunión celebrada en el mes de marzo de ${parseInt(reportYear) + 1}.`
@@ -1358,6 +1363,35 @@ function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWithDataOpt
         `Las cuentas por cobrar comerciales corresponden principalmente a la facturación de servicios públicos a usuarios residenciales, comerciales, industriales y oficiales. Se reconocen al valor de la factura y se miden al costo amortizado. Se evalúa el deterioro considerando la antigüedad de cartera y la experiencia histórica de recuperación.`
       );
       
+      // ===== CAMPOS DE SUBVENCIONES DEL GOBIERNO (filas 32-36) =====
+      // Estos campos son obligatorios y van dentro de la sección de subvenciones (fila 31)
+      // Para empresas que NO reciben subvenciones, se indica "NA"
+      
+      // Fila 32: Descripción de la naturaleza y cuantía de las subvenciones reconocidas
+      setNoteCell(sheet9, 'E32',
+        `NA - La entidad no ha recibido subvenciones del gobierno durante el periodo.`
+      );
+      
+      // Fila 33: Descripción de las condiciones cumplidas, por cumplir y otras contingencias
+      setNoteCell(sheet9, 'E33',
+        `NA - No aplica, no se han recibido subvenciones gubernamentales.`
+      );
+      
+      // Fila 34: Periodos que cubre la subvención, así como los montos amortizados y por amortizar
+      setNoteCell(sheet9, 'E34',
+        `NA - No aplica, no existen subvenciones por amortizar.`
+      );
+      
+      // Fila 35: Descripción de las subvenciones a las que no se les haya podido asignar un valor
+      setNoteCell(sheet9, 'E35',
+        `NA - No aplica, no se han recibido subvenciones.`
+      );
+      
+      // Fila 36: Descripción de otro tipo de ayudas gubernamentales
+      setNoteCell(sheet9, 'E36',
+        `NA - La entidad no ha recibido ayudas gubernamentales durante el periodo reportado.`
+      );
+      
       // ===== NOTAS CON "NA" (No Aplica) =====
       // Estas notas generalmente no aplican para empresas típicas de servicios públicos
       
@@ -1375,7 +1409,7 @@ function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWithDataOpt
         27, // Gestión del riesgo financiero
         28, // Adopción por primera vez
         30, // Plusvalía
-        31, // Subvenciones del gobierno
+        31, // Subvenciones del gobierno (encabezado general)
         37, // Deterioro de valor de activos
         39, // Empleados (número)
         40, // Personal clave de la gerencia
