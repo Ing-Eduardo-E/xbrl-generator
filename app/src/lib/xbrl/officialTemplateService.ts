@@ -2502,6 +2502,18 @@ async function rewriteFinancialDataWithExcelJS(
         sheet16.getCell(`F${row}`).value = 0;
       }
       
+      // =====================================================
+      // COLUMNA G - TOTAL (E + F)
+      // Suma de gastos administrativos + gastos operativos por fila
+      // =====================================================
+      const filasConDatos16 = [13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35, 72, 77, 80, 81];
+      for (const row of filasConDatos16) {
+        const valorE = sheet16.getCell(`E${row}`).value as number || 0;
+        const valorF = sheet16.getCell(`F${row}`).value as number || 0;
+        sheet16.getCell(`G${row}`).value = valorE + valorF;
+      }
+      console.log(`[ExcelJS] Hoja16 - Columna G (E+F) calculada para ${filasConDatos16.length} filas`);
+      
       // DEBUG: Mostrar totales para verificar
       const totalGastosAdmin = sumByPrefixes16(acueductoAccounts, ['51', '52']);
       const totalOtrosGastos = sumByPrefixes16(acueductoAccounts, ['53', '54', '56', '58'], ['5802', '5803', '5807', '5815', '5410']);
@@ -2738,6 +2750,18 @@ async function rewriteFinancialDataWithExcelJS(
         sheet17.getCell(`F${row}`).value = 0;
       }
       
+      // =====================================================
+      // COLUMNA G - TOTAL (E + F)
+      // Suma de gastos administrativos + gastos operativos por fila
+      // =====================================================
+      const filasConDatos17 = [13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35, 72, 77, 80, 81];
+      for (const row of filasConDatos17) {
+        const valorE = sheet17.getCell(`E${row}`).value as number || 0;
+        const valorF = sheet17.getCell(`F${row}`).value as number || 0;
+        sheet17.getCell(`G${row}`).value = valorE + valorF;
+      }
+      console.log(`[ExcelJS] Hoja17 - Columna G (E+F) calculada para ${filasConDatos17.length} filas`);
+      
       // DEBUG: Mostrar totales para verificar con Hoja3.F
       const totalGastosAdmin17 = sumByPrefixes17(alcantarilladoAccounts, ['51', '52']);
       const totalOtrosGastos17 = sumByPrefixes17(alcantarilladoAccounts, ['53', '54', '56', '58'], ['5802', '5803', '5807', '5815', '5410']);
@@ -2751,6 +2775,236 @@ async function rewriteFinancialDataWithExcelJS(
       console.log(`[ExcelJS]   Costos de ventas (6) columna F = ${costosVentasTotal17} (Hoja3.F15)`);
       
       console.log('[ExcelJS] Hoja17 completada.');
+    }
+    
+    // ===============================================
+    // HOJA18 (900017c): Gastos del Servicio de Aseo
+    // Columna E = Gastos administrativos
+    // Columna F = Gastos operativos (Costos de ventas)
+    // Los valores deben coincidir con Hoja3 columna G
+    // 
+    // DISTRIBUCIÓN ESPECIAL DE COSTOS DE VENTAS:
+    // - Fila 72 (Mantenimiento): 40%
+    // - Fila 73 (Disposición final): 60%
+    // ===============================================
+    const sheet18 = workbook.getWorksheet('Hoja18');
+    
+    if (sheet18) {
+      console.log('[ExcelJS] Escribiendo datos en Hoja18 (Gastos Aseo)...');
+      
+      // Obtener cuentas del servicio de aseo
+      const aseoAccounts = accountsByService['aseo'] || [];
+      
+      // DEBUG: Ver cuántas cuentas hay
+      console.log(`[ExcelJS] Hoja18 - Total cuentas aseo: ${aseoAccounts.length}`);
+      const gastosAseo = aseoAccounts.filter(a => a.code.startsWith('5'));
+      console.log(`[ExcelJS] Hoja18 - Cuentas de gastos (clase 5): ${gastosAseo.length}`);
+      
+      // Función helper para sumar cuentas por prefijos
+      const sumByPrefixes18 = (accounts: typeof aseoAccounts, prefixes: string[], excludePrefixes?: string[]): number => {
+        let total = 0;
+        for (const account of accounts) {
+          if (!account.isLeaf) continue;
+          if (matchesPrefixes(account.code, prefixes, excludePrefixes)) {
+            total += account.value;
+          }
+        }
+        return total;
+      };
+      
+      // =====================================================
+      // COLUMNA E - TODOS LOS GASTOS (clase 5)
+      // Incluye: Gastos admin (51,52) + Otros gastos (53,54,56,58) + Costos financieros
+      // =====================================================
+      
+      // Fila 13: Beneficios a empleados
+      const beneficiosEmpleados18 = sumByPrefixes18(aseoAccounts, ['5101', '5103', '5104', '5107', '5108']);
+      sheet18.getCell('E13').value = beneficiosEmpleados18;
+      console.log(`[ExcelJS] Hoja18!E13 (Beneficios empleados) = ${beneficiosEmpleados18}`);
+      
+      // Fila 14: Honorarios
+      const honorarios18 = sumByPrefixes18(aseoAccounts, ['5110']);
+      sheet18.getCell('E14').value = honorarios18;
+      console.log(`[ExcelJS] Hoja18!E14 (Honorarios) = ${honorarios18}`);
+      
+      // Fila 15: Impuestos, Tasas y Contribuciones
+      const impuestosTasas18 = sumByPrefixes18(aseoAccounts, ['5120']);
+      sheet18.getCell('E15').value = impuestosTasas18;
+      console.log(`[ExcelJS] Hoja18!E15 (Impuestos y tasas) = ${impuestosTasas18}`);
+      
+      // Fila 16: Generales
+      const generales18 = sumByPrefixes18(aseoAccounts, ['5111']);
+      sheet18.getCell('E16').value = generales18;
+      console.log(`[ExcelJS] Hoja18!E16 (Generales) = ${generales18}`);
+      
+      // Fila 17: Deterioro
+      const deterioro18 = sumByPrefixes18(aseoAccounts, ['5350']);
+      sheet18.getCell('E17').value = deterioro18;
+      console.log(`[ExcelJS] Hoja18!E17 (Deterioro) = ${deterioro18}`);
+      
+      // Fila 18: Depreciación
+      const depreciacion18 = sumByPrefixes18(aseoAccounts, ['5360']);
+      sheet18.getCell('E18').value = depreciacion18;
+      console.log(`[ExcelJS] Hoja18!E18 (Depreciación) = ${depreciacion18}`);
+      
+      // Fila 19: Amortización
+      const amortizacion18 = sumByPrefixes18(aseoAccounts, ['5365']);
+      sheet18.getCell('E19').value = amortizacion18;
+      console.log(`[ExcelJS] Hoja18!E19 (Amortización) = ${amortizacion18}`);
+      
+      // =====================================================
+      // PROVISIONES (Filas 20-24)
+      // =====================================================
+      
+      // Fila 21: Litigios y demandas
+      const litigios18 = sumByPrefixes18(aseoAccounts, ['537001', '537002']);
+      sheet18.getCell('E21').value = litigios18;
+      
+      // Fila 22: Garantías
+      const garantias18 = sumByPrefixes18(aseoAccounts, ['537003']);
+      sheet18.getCell('E22').value = garantias18;
+      
+      // Fila 23: Diversas (otras provisiones)
+      const provisionesDiversas18 = sumByPrefixes18(aseoAccounts, ['5370'], ['537001', '537002', '537003']);
+      sheet18.getCell('E23').value = provisionesDiversas18;
+      
+      // Fila 25: Arrendamientos
+      const arrendamientos18 = sumByPrefixes18(aseoAccounts, ['5115', '5124']);
+      sheet18.getCell('E25').value = arrendamientos18;
+      console.log(`[ExcelJS] Hoja18!E25 (Arrendamientos) = ${arrendamientos18}`);
+      
+      // =====================================================
+      // OTROS GASTOS (Filas 26-33)
+      // =====================================================
+      
+      // Fila 27: Comisiones
+      const comisiones18 = sumByPrefixes18(aseoAccounts, ['5125']);
+      sheet18.getCell('E27').value = comisiones18;
+      
+      // Fila 28: Ajuste por diferencia en cambio
+      const diferenciaEnCambio18 = sumByPrefixes18(aseoAccounts, ['5807']);
+      sheet18.getCell('E28').value = diferenciaEnCambio18;
+      
+      // Fila 29: Financieros (Costos financieros)
+      const financieros18 = sumByPrefixes18(aseoAccounts, ['5802', '5803']);
+      sheet18.getCell('E29').value = financieros18;
+      console.log(`[ExcelJS] Hoja18!E29 (Financieros) = ${financieros18}`);
+      
+      // Fila 30: Pérdidas por aplicación del método de participación patrimonial
+      const perdidasMPP18 = sumByPrefixes18(aseoAccounts, ['5815']);
+      sheet18.getCell('E30').value = perdidasMPP18;
+      console.log(`[ExcelJS] Hoja18!E30 (Pérdidas MPP) = ${perdidasMPP18}`);
+      
+      // Fila 31: Gastos diversos
+      const gastosDiversos18 = sumByPrefixes18(aseoAccounts, ['5195', '5895']);
+      sheet18.getCell('E31').value = gastosDiversos18;
+      console.log(`[ExcelJS] Hoja18!E31 (Gastos diversos) = ${gastosDiversos18}`);
+      
+      // Fila 32: Donaciones
+      const donaciones18 = sumByPrefixes18(aseoAccounts, ['5423']);
+      sheet18.getCell('E32').value = donaciones18;
+      console.log(`[ExcelJS] Hoja18!E32 (Donaciones) = ${donaciones18}`);
+      
+      // Fila 33: Ganancias por MPP (negativo)
+      const gananciasMPP18 = sumByPrefixes18(aseoAccounts, ['4815']);
+      sheet18.getCell('E33').value = gananciasMPP18 !== 0 ? -gananciasMPP18 : 0;
+      if (gananciasMPP18 !== 0) {
+        console.log(`[ExcelJS] Hoja18!E33 (Ganancias MPP) = ${-gananciasMPP18}`);
+      }
+      
+      // =====================================================
+      // IMPUESTOS A LAS GANANCIAS (Filas 34-35)
+      // =====================================================
+      
+      // Fila 34: Impuesto a las ganancias corrientes
+      const impuestoRentaCorriente18 = sumByPrefixes18(aseoAccounts, ['540101']);
+      sheet18.getCell('E34').value = impuestoRentaCorriente18;
+      console.log(`[ExcelJS] Hoja18!E34 (Imp. renta corriente) = ${impuestoRentaCorriente18}`);
+      
+      // Fila 35: Impuesto a las ganancias diferido
+      const impuestoRentaDiferido18 = sumByPrefixes18(aseoAccounts, ['5410'], ['540101']);
+      sheet18.getCell('E35').value = impuestoRentaDiferido18;
+      console.log(`[ExcelJS] Hoja18!E35 (Imp. renta diferido) = ${impuestoRentaDiferido18}`);
+      
+      // =====================================================
+      // SERVICIOS PÚBLICOS, MANTENIMIENTO, SEGUROS, OTROS
+      // =====================================================
+      
+      // Fila 72: Órdenes y contratos de mantenimiento y reparaciones
+      const mantenimiento18 = sumByPrefixes18(aseoAccounts, ['5140', '5145']);
+      sheet18.getCell('E72').value = mantenimiento18;
+      console.log(`[ExcelJS] Hoja18!E72 (Mantenimiento) = ${mantenimiento18}`);
+      
+      // Fila 77: Servicios públicos
+      const serviciosPublicos18 = sumByPrefixes18(aseoAccounts, ['5135']);
+      sheet18.getCell('E77').value = serviciosPublicos18;
+      console.log(`[ExcelJS] Hoja18!E77 (Servicios públicos) = ${serviciosPublicos18}`);
+      
+      // Fila 80: Seguros
+      const seguros18 = sumByPrefixes18(aseoAccounts, ['5130']);
+      sheet18.getCell('E80').value = seguros18;
+      console.log(`[ExcelJS] Hoja18!E80 (Seguros) = ${seguros18}`);
+      
+      // Fila 81: Órdenes y contratos por otros servicios
+      const otrosContratos18 = sumByPrefixes18(aseoAccounts, ['5150', '5155']);
+      sheet18.getCell('E81').value = otrosContratos18;
+      console.log(`[ExcelJS] Hoja18!E81 (Otros contratos) = ${otrosContratos18}`);
+      
+      // =====================================================
+      // COLUMNA F - GASTOS OPERATIVOS / COSTOS DE VENTAS
+      // PUC: Clase 6 - Costos de ventas
+      // 
+      // DISTRIBUCIÓN ESPECIAL PARA SERVICIO DE ASEO:
+      // - Fila 72 (Mantenimiento): 40%
+      // - Fila 73 (Disposición final): 60%
+      // =====================================================
+      
+      const costosVentasTotal18 = sumByPrefixes18(aseoAccounts, ['6']);
+      
+      // Calcular distribución: 40% mantenimiento, 60% disposición final
+      const costosMantenimiento18 = Math.round(costosVentasTotal18 * 0.40);
+      const costosDisposicionFinal18 = costosVentasTotal18 - costosMantenimiento18; // Resto para evitar errores de redondeo
+      
+      sheet18.getCell('F72').value = costosMantenimiento18;
+      sheet18.getCell('F73').value = costosDisposicionFinal18;
+      
+      console.log(`[ExcelJS] Hoja18 - Costos de ventas total: ${costosVentasTotal18}`);
+      console.log(`[ExcelJS] Hoja18!F72 (Mantenimiento 40%) = ${costosMantenimiento18}`);
+      console.log(`[ExcelJS] Hoja18!F73 (Disposición final 60%) = ${costosDisposicionFinal18}`);
+      
+      // Limpiar otras celdas de la columna F
+      for (const row of [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 77, 80, 81]) {
+        sheet18.getCell(`F${row}`).value = 0;
+      }
+      
+      // =====================================================
+      // COLUMNA G - TOTAL (E + F)
+      // Suma de gastos administrativos + gastos operativos por fila
+      // Nota: Incluye fila 73 para disposición final
+      // =====================================================
+      const filasConDatos18 = [13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35, 72, 73, 77, 80, 81];
+      for (const row of filasConDatos18) {
+        const valorE = sheet18.getCell(`E${row}`).value as number || 0;
+        const valorF = sheet18.getCell(`F${row}`).value as number || 0;
+        sheet18.getCell(`G${row}`).value = valorE + valorF;
+      }
+      console.log(`[ExcelJS] Hoja18 - Columna G (E+F) calculada para ${filasConDatos18.length} filas`);
+      
+      // DEBUG: Mostrar totales para verificar con Hoja3.G
+      const totalGastosAdmin18 = sumByPrefixes18(aseoAccounts, ['51', '52']);
+      const totalOtrosGastos18 = sumByPrefixes18(aseoAccounts, ['53', '54', '56', '58'], ['5802', '5803', '5807', '5815', '5410']);
+      const totalCostosFinancieros18 = sumByPrefixes18(aseoAccounts, ['5802', '5803', '5807']);
+      const totalGastosHoja18 = totalGastosAdmin18 + totalOtrosGastos18 + totalCostosFinancieros18;
+      console.log(`[ExcelJS] Hoja18 - Verificación de totales (debe coincidir con Hoja3.G):`);
+      console.log(`[ExcelJS]   Gastos admin/op/ventas (51,52) = ${totalGastosAdmin18} (Hoja3.G18)`);
+      console.log(`[ExcelJS]   Otros gastos (53,54,56,58) = ${totalOtrosGastos18} (Hoja3.G22)`);
+      console.log(`[ExcelJS]   Costos financieros (5802,5803,5807) = ${totalCostosFinancieros18} (Hoja3.G20)`);
+      console.log(`[ExcelJS]   TOTAL GASTOS HOJA18 columna E = ${totalGastosHoja18}`);
+      console.log(`[ExcelJS]   Costos de ventas (6) columna F = ${costosVentasTotal18} (Hoja3.G15)`);
+      console.log(`[ExcelJS]     -> F72 (40%): ${costosMantenimiento18}`);
+      console.log(`[ExcelJS]     -> F73 (60%): ${costosDisposicionFinal18}`);
+      
+      console.log('[ExcelJS] Hoja18 completada.');
     }
   }
 
