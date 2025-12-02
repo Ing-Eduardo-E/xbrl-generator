@@ -827,6 +827,29 @@ const R414_PROVISIONES_MAPPINGS: Array<{ row: number; label: string; pucPrefixes
   // Fila 73: Total de provisiones por desmantelamiento (AUTOSUMA = F71+F72 - NO LLENAR)
 ];
 
+/**
+ * Mapeo de filas de Otras Provisiones para R414 - Hoja7 (800100)
+ * Notas - Subclasificaciones de activos, pasivos y patrimonios
+ * Columna: F (consolidado)
+ * 
+ * Fila de autosuma (dejar vacía): 77
+ * Fórmula F77 = F75 + F76
+ */
+const R414_OTRAS_PROVISIONES_MAPPINGS: Array<{ row: number; label: string; pucPrefixes: string[]; excludePrefixes?: string[]; useAbsoluteValue?: boolean }> = [
+  // ====== Otras provisiones (filas 75-77) ======
+  
+  // Fila 75: Otras provisiones no corrientes
+  // PUC R414: 2707 - Garantías, 2790 - Provisiones diversas (excepto 279018 y 279020 ya mapeados)
+  // Nota: En R414 no hay subdivisión corriente/no corriente
+  // { row: 75, label: 'Otras provisiones no corrientes', pucPrefixes: [] },
+  
+  // Fila 76: Otras provisiones corrientes
+  // PUC R414: 2707 - Garantías, 2790 - Provisiones diversas (excepto contratos onerosos y desmantelamiento)
+  { row: 76, label: 'Otras provisiones corrientes', pucPrefixes: ['2707', '2790'], excludePrefixes: ['279018', '279020'] },
+  
+  // Fila 77: Total otras provisiones (AUTOSUMA = F75+F76 - NO LLENAR)
+];
+
 /** Datos de cuentas para procesar */
 export interface AccountData {
   code: string;
@@ -2148,6 +2171,25 @@ async function rewriteFinancialDataWithExcelJS(
         }
 
         // Escribir valor en columna F
+        if (totalValue !== 0) {
+          const cell = sheet7.getCell(`F${mapping.row}`);
+          cell.value = totalValue;
+          console.log(`[ExcelJS] Hoja7!F${mapping.row} = ${totalValue} (${mapping.label})`);
+        }
+      }
+
+      // ===============================================
+      // Otras Provisiones (filas 75-77)
+      // ===============================================
+      for (const mapping of R414_OTRAS_PROVISIONES_MAPPINGS) {
+        let totalValue = 0;
+        for (const account of options.consolidatedAccounts) {
+          if (!account.isLeaf) continue;
+          if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
+            totalValue += account.value;
+          }
+        }
+
         if (totalValue !== 0) {
           const cell = sheet7.getCell(`F${mapping.row}`);
           cell.value = totalValue;
