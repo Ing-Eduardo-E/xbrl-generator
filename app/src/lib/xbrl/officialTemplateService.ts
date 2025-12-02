@@ -850,6 +850,36 @@ const R414_OTRAS_PROVISIONES_MAPPINGS: Array<{ row: number; label: string; pucPr
   // Fila 77: Total otras provisiones (AUTOSUMA = F75+F76 - NO LLENAR)
 ];
 
+/**
+ * Mapeo de filas de Beneficios a Empleados para R414 - Hoja7 (800100)
+ * Notas - Subclasificaciones de activos, pasivos y patrimonios
+ * Columna: F (consolidado)
+ * 
+ * Fila de autosuma (dejar vacía): 83
+ * Fórmula F83 = SUMA(F79:F82)
+ */
+const R414_BENEFICIOS_EMPLEADOS_MAPPINGS: Array<{ row: number; label: string; pucPrefixes: string[]; excludePrefixes?: string[]; useAbsoluteValue?: boolean }> = [
+  // ====== Beneficios a Empleados (filas 79-83) ======
+  
+  // Fila 79: Beneficios a Empleados a corto plazo
+  // PUC R414: 2511 - Beneficios a los empleados a corto plazo
+  { row: 79, label: 'Beneficios a empleados corto plazo', pucPrefixes: ['2511'] },
+  
+  // Fila 80: Beneficios a Empleados a largo plazo
+  // PUC R414: 2512 - Beneficios a los empleados a largo plazo
+  { row: 80, label: 'Beneficios a empleados largo plazo', pucPrefixes: ['2512'] },
+  
+  // Fila 81: Beneficios por terminación del vínculo laboral o contractual
+  // PUC R414: 2513 - Beneficios por terminación del vínculo laboral o contractual
+  { row: 81, label: 'Beneficios terminación vínculo', pucPrefixes: ['2513'] },
+  
+  // Fila 82: Beneficios posempleo
+  // PUC R414: 2514 - Beneficios posempleo pensiones, 2515 - Otros beneficios posempleo
+  { row: 82, label: 'Beneficios posempleo', pucPrefixes: ['2514', '2515'] },
+  
+  // Fila 83: Total Beneficios a empleados (AUTOSUMA = SUMA(F79:F82) - NO LLENAR)
+];
+
 /** Datos de cuentas para procesar */
 export interface AccountData {
   code: string;
@@ -2182,6 +2212,34 @@ async function rewriteFinancialDataWithExcelJS(
       // Otras Provisiones (filas 75-77)
       // ===============================================
       for (const mapping of R414_OTRAS_PROVISIONES_MAPPINGS) {
+        let totalValue = 0;
+        for (const account of options.consolidatedAccounts) {
+          if (!account.isLeaf) continue;
+          if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
+            totalValue += account.value;
+          }
+        }
+
+        if (totalValue !== 0) {
+          const cell = sheet7.getCell(`F${mapping.row}`);
+          cell.value = totalValue;
+          console.log(`[ExcelJS] Hoja7!F${mapping.row} = ${totalValue} (${mapping.label})`);
+        }
+      }
+
+      // ===============================================
+      // Beneficios a Empleados (filas 79-83)
+      // ===============================================
+      console.log('[ExcelJS] Escribiendo datos en Hoja7 (Beneficios Empleados)...');
+      
+      // Debug: Mostrar cuentas de beneficios (25xx) disponibles
+      const beneficiosAccounts = options.consolidatedAccounts.filter(a => a.code.startsWith('25') && a.isLeaf);
+      console.log(`[ExcelJS] Cuentas Beneficios (25xx) encontradas: ${beneficiosAccounts.length}`);
+      if (beneficiosAccounts.length > 0) {
+        beneficiosAccounts.forEach(a => console.log(`  - ${a.code}: ${a.name} = ${a.value}`));
+      }
+
+      for (const mapping of R414_BENEFICIOS_EMPLEADOS_MAPPINGS) {
         let totalValue = 0;
         for (const account of options.consolidatedAccounts) {
           if (!account.isLeaf) continue;
