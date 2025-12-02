@@ -2169,179 +2169,94 @@ async function rewriteFinancialDataWithExcelJS(
   if (options.niifGroup === 'r414') {
     const sheet7 = workbook.getWorksheet('Hoja7');
     if (sheet7) {
-      console.log('[ExcelJS] Escribiendo datos en Hoja7 (PPE)...');
+      console.log('[ExcelJS] Escribiendo datos en Hoja7...');
       
-      // Debug: Mostrar cuentas de clase 16 (PPE) disponibles
-      const ppeAccounts = options.consolidatedAccounts.filter(a => a.code.startsWith('16') && a.isLeaf);
-      console.log(`[ExcelJS] Cuentas PPE (clase 16) encontradas: ${ppeAccounts.length}`);
-      if (ppeAccounts.length > 0) {
-        ppeAccounts.forEach(a => console.log(`  - ${a.code}: ${a.name} = ${a.value}`));
-      }
-      
-      for (const mapping of R414_PPE_MAPPINGS) {
-        // Calcular total consolidado
-        let totalValue = 0;
-        for (const account of options.consolidatedAccounts) {
-          if (!account.isLeaf) continue;
-          if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
-            totalValue += account.value;
+      // Función helper para procesar una sección completa
+      // Si hay al menos un valor != 0, llena con 0 las celdas vacías de la sección
+      const processSectionWithZeroFill = (
+        mappings: Array<{ row: number; label: string; pucPrefixes: string[]; excludePrefixes?: string[]; useAbsoluteValue?: boolean }>,
+        sectionName: string,
+        allRowsInSection: number[] // Todas las filas de datos (sin autosumas)
+      ) => {
+        // Primero calcular todos los valores
+        const rowValues: Map<number, number> = new Map();
+        let hasAnyValue = false;
+        
+        for (const mapping of mappings) {
+          let totalValue = 0;
+          for (const account of options.consolidatedAccounts) {
+            if (!account.isLeaf) continue;
+            if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
+              totalValue += account.value;
+            }
+          }
+          
+          if (mapping.useAbsoluteValue) {
+            totalValue = Math.abs(totalValue);
+          }
+          
+          rowValues.set(mapping.row, totalValue);
+          if (totalValue !== 0) {
+            hasAnyValue = true;
           }
         }
-
-        // Aplicar valor absoluto si es necesario (depreciación/deterioro)
-        if (mapping.useAbsoluteValue) {
-          totalValue = Math.abs(totalValue);
+        
+        // Si hay al menos un valor, escribir todos (incluyendo ceros)
+        if (hasAnyValue) {
+          console.log(`[ExcelJS] Sección ${sectionName}: hay valores, llenando celdas...`);
+          
+          for (const row of allRowsInSection) {
+            const value = rowValues.get(row) ?? 0;
+            const cell = sheet7.getCell(`F${row}`);
+            cell.value = value;
+            console.log(`[ExcelJS] Hoja7!F${row} = ${value}`);
+          }
+        } else {
+          console.log(`[ExcelJS] Sección ${sectionName}: sin valores, omitiendo.`);
         }
+      };
 
-        // Escribir valor en columna F (columna 6)
-        if (totalValue !== 0) {
-          const cell = sheet7.getCell(`F${mapping.row}`);
-          cell.value = totalValue;
-          console.log(`[ExcelJS] Hoja7!F${mapping.row} = ${totalValue} (${mapping.label})`);
-        }
-      }
+      // ===============================================
+      // PPE - Propiedad, Planta y Equipo (filas 14-34)
+      // Autosumas: 16, 22, 29, 31, 34
+      // ===============================================
+      const ppeDataRows = [14, 15, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27, 28, 30, 32, 33];
+      processSectionWithZeroFill(R414_PPE_MAPPINGS, 'PPE', ppeDataRows);
 
       // ===============================================
       // Activos Intangibles y Plusvalía (filas 37-48)
+      // Autosumas: 44, 48
       // ===============================================
-      console.log('[ExcelJS] Escribiendo datos en Hoja7 (Intangibles)...');
-      
-      // Debug: Mostrar cuentas de intangibles (197x) disponibles
-      const intangibleAccounts = options.consolidatedAccounts.filter(a => a.code.startsWith('197') && a.isLeaf);
-      console.log(`[ExcelJS] Cuentas Intangibles (197x) encontradas: ${intangibleAccounts.length}`);
-      if (intangibleAccounts.length > 0) {
-        intangibleAccounts.forEach(a => console.log(`  - ${a.code}: ${a.name} = ${a.value}`));
-      }
-
-      for (const mapping of R414_INTANGIBLES_MAPPINGS) {
-        // Calcular total consolidado
-        let totalValue = 0;
-        for (const account of options.consolidatedAccounts) {
-          if (!account.isLeaf) continue;
-          if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
-            totalValue += account.value;
-          }
-        }
-
-        // Aplicar valor absoluto si es necesario (amortización/deterioro)
-        if (mapping.useAbsoluteValue) {
-          totalValue = Math.abs(totalValue);
-        }
-
-        // Escribir valor en columna F
-        if (totalValue !== 0) {
-          const cell = sheet7.getCell(`F${mapping.row}`);
-          cell.value = totalValue;
-          console.log(`[ExcelJS] Hoja7!F${mapping.row} = ${totalValue} (${mapping.label})`);
-        }
-      }
+      const intangiblesDataRows = [37, 38, 39, 40, 41, 42, 43, 45, 46, 47];
+      processSectionWithZeroFill(R414_INTANGIBLES_MAPPINGS, 'Intangibles', intangiblesDataRows);
 
       // ===============================================
       // Efectivo y Equivalentes al Efectivo (filas 51-60)
+      // Autosumas: 53, 58, 60
       // ===============================================
-      console.log('[ExcelJS] Escribiendo datos en Hoja7 (Efectivo)...');
-      
-      // Debug: Mostrar cuentas de efectivo (11xx) disponibles
-      const efectivoAccounts = options.consolidatedAccounts.filter(a => a.code.startsWith('11') && a.isLeaf);
-      console.log(`[ExcelJS] Cuentas Efectivo (11xx) encontradas: ${efectivoAccounts.length}`);
-      if (efectivoAccounts.length > 0) {
-        efectivoAccounts.forEach(a => console.log(`  - ${a.code}: ${a.name} = ${a.value}`));
-      }
-
-      for (const mapping of R414_EFECTIVO_MAPPINGS) {
-        // Calcular total consolidado
-        let totalValue = 0;
-        for (const account of options.consolidatedAccounts) {
-          if (!account.isLeaf) continue;
-          if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
-            totalValue += account.value;
-          }
-        }
-
-        // Escribir valor en columna F
-        if (totalValue !== 0) {
-          const cell = sheet7.getCell(`F${mapping.row}`);
-          cell.value = totalValue;
-          console.log(`[ExcelJS] Hoja7!F${mapping.row} = ${totalValue} (${mapping.label})`);
-        }
-      }
+      const efectivoDataRows = [51, 52, 55, 56, 57, 59];
+      processSectionWithZeroFill(R414_EFECTIVO_MAPPINGS, 'Efectivo', efectivoDataRows);
 
       // ===============================================
       // Clases de Otras Provisiones (filas 63-73)
+      // Autosumas: 65, 69, 73
       // ===============================================
-      console.log('[ExcelJS] Escribiendo datos en Hoja7 (Provisiones)...');
-      
-      // Debug: Mostrar cuentas de provisiones (27xx) disponibles
-      const provisionesAccounts = options.consolidatedAccounts.filter(a => a.code.startsWith('27') && a.isLeaf);
-      console.log(`[ExcelJS] Cuentas Provisiones (27xx) encontradas: ${provisionesAccounts.length}`);
-      if (provisionesAccounts.length > 0) {
-        provisionesAccounts.forEach(a => console.log(`  - ${a.code}: ${a.name} = ${a.value}`));
-      }
-
-      for (const mapping of R414_PROVISIONES_MAPPINGS) {
-        // Calcular total consolidado
-        let totalValue = 0;
-        for (const account of options.consolidatedAccounts) {
-          if (!account.isLeaf) continue;
-          if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
-            totalValue += account.value;
-          }
-        }
-
-        // Escribir valor en columna F
-        if (totalValue !== 0) {
-          const cell = sheet7.getCell(`F${mapping.row}`);
-          cell.value = totalValue;
-          console.log(`[ExcelJS] Hoja7!F${mapping.row} = ${totalValue} (${mapping.label})`);
-        }
-      }
+      const provisionesDataRows = [63, 64, 67, 68, 71, 72];
+      processSectionWithZeroFill(R414_PROVISIONES_MAPPINGS, 'Provisiones', provisionesDataRows);
 
       // ===============================================
       // Otras Provisiones (filas 75-77)
+      // Autosuma: 77
       // ===============================================
-      for (const mapping of R414_OTRAS_PROVISIONES_MAPPINGS) {
-        let totalValue = 0;
-        for (const account of options.consolidatedAccounts) {
-          if (!account.isLeaf) continue;
-          if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
-            totalValue += account.value;
-          }
-        }
-
-        if (totalValue !== 0) {
-          const cell = sheet7.getCell(`F${mapping.row}`);
-          cell.value = totalValue;
-          console.log(`[ExcelJS] Hoja7!F${mapping.row} = ${totalValue} (${mapping.label})`);
-        }
-      }
+      const otrasProvisionesDataRows = [75, 76];
+      processSectionWithZeroFill(R414_OTRAS_PROVISIONES_MAPPINGS, 'Otras Provisiones', otrasProvisionesDataRows);
 
       // ===============================================
       // Beneficios a Empleados (filas 79-83)
+      // Autosuma: 83
       // ===============================================
-      console.log('[ExcelJS] Escribiendo datos en Hoja7 (Beneficios Empleados)...');
-      
-      // Debug: Mostrar cuentas de beneficios (25xx) disponibles
-      const beneficiosAccounts = options.consolidatedAccounts.filter(a => a.code.startsWith('25') && a.isLeaf);
-      console.log(`[ExcelJS] Cuentas Beneficios (25xx) encontradas: ${beneficiosAccounts.length}`);
-      if (beneficiosAccounts.length > 0) {
-        beneficiosAccounts.forEach(a => console.log(`  - ${a.code}: ${a.name} = ${a.value}`));
-      }
-
-      for (const mapping of R414_BENEFICIOS_EMPLEADOS_MAPPINGS) {
-        let totalValue = 0;
-        for (const account of options.consolidatedAccounts) {
-          if (!account.isLeaf) continue;
-          if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
-            totalValue += account.value;
-          }
-        }
-
-        if (totalValue !== 0) {
-          const cell = sheet7.getCell(`F${mapping.row}`);
-          cell.value = totalValue;
-          console.log(`[ExcelJS] Hoja7!F${mapping.row} = ${totalValue} (${mapping.label})`);
-        }
-      }
+      const beneficiosDataRows = [79, 80, 81, 82];
+      processSectionWithZeroFill(R414_BENEFICIOS_EMPLEADOS_MAPPINGS, 'Beneficios Empleados', beneficiosDataRows);
     }
   }
 
