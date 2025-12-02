@@ -581,6 +581,94 @@ const R414_ER_MAPPINGS: R414ESFMapping[] = [
   { row: 26, label: 'Impuesto a las ganancias diferido', pucPrefixes: ['5410'] },
 ];
 
+/**
+ * Mapeo de filas de PPE (Propiedad, Planta y Equipo) para R414 - Hoja7 (800100)
+ * Notas - Subclasificaciones de activos, pasivos y patrimonios
+ * Columna: F (consolidado)
+ * 
+ * Filas de autosuma (dejar vacías): 16, 22, 29, 31, 34
+ * Filas 32-33: Depreciación y Deterioro deben ser valores POSITIVOS (Math.abs)
+ */
+const R414_PPE_MAPPINGS: Array<{ row: number; label: string; pucPrefixes: string[]; excludePrefixes?: string[]; useAbsoluteValue?: boolean }> = [
+  // ====== PPE General (filas 14-21) ======
+  // Fila 14: Terrenos en términos brutos
+  // PUC R414: 1605 - Terrenos
+  { row: 14, label: 'Terrenos', pucPrefixes: ['1605'] },
+  
+  // Fila 15: Edificios en términos brutos
+  // PUC R414: 1640 - Edificaciones
+  { row: 15, label: 'Edificaciones', pucPrefixes: ['1640'] },
+  
+  // Fila 16: Terrenos y edificios (AUTOSUMA - NO LLENAR)
+  
+  // Fila 17: Maquinaria en términos brutos
+  // PUC R414: 1655 - Maquinaria y equipo
+  { row: 17, label: 'Maquinaria y equipo', pucPrefixes: ['1655'] },
+  
+  // Fila 18: Vehículos en términos brutos
+  // PUC R414: 1675 - Equipos de transporte, tracción y elevación
+  { row: 18, label: 'Vehículos / Equipos de transporte', pucPrefixes: ['1675'] },
+  
+  // Fila 19: Enseres y accesorios en términos brutos
+  // PUC R414: 1665 - Muebles, enseres y equipo de oficina
+  { row: 19, label: 'Muebles, enseres y equipo de oficina', pucPrefixes: ['1665'] },
+  
+  // Fila 20: Equipo de oficina en términos brutos
+  // PUC R414: 1670 - Equipos de comunicación y computación
+  { row: 20, label: 'Equipos de comunicación y computación', pucPrefixes: ['1670'] },
+  
+  // Fila 21: Construcciones en proceso en términos brutos
+  // PUC R414: 1615 - Construcciones en curso
+  { row: 21, label: 'Construcciones en curso', pucPrefixes: ['1615'] },
+  
+  // Fila 22: PPE General subtotal (AUTOSUMA - NO LLENAR)
+  
+  // ====== Infraestructura de servicios (filas 23-28) ======
+  // Fila 23: Vías en términos brutos
+  // PUC R414: No hay cuenta específica de vías
+  // { row: 23, label: 'Vías', pucPrefixes: [] },
+  
+  // Fila 24: Ductos en términos brutos
+  // PUC R414: 1645 - Plantas, ductos y túneles (parcial)
+  { row: 24, label: 'Ductos', pucPrefixes: ['164502', '164503', '164504'] },
+  
+  // Fila 25: Plantas en términos brutos
+  // PUC R414: 1645 - Plantas (parcial)
+  { row: 25, label: 'Plantas', pucPrefixes: ['164501'] },
+  
+  // Fila 26: Redes y cables en términos brutos
+  // PUC R414: 1650 - Redes, líneas y cables
+  { row: 26, label: 'Redes, líneas y cables', pucPrefixes: ['1650'] },
+  
+  // Fila 27: Relleno sanitario en términos brutos
+  // PUC R414: 1660 - Equipos de comedor, cocina, despensa y hotelería (puede usarse para relleno)
+  // Nota: En realidad no hay cuenta específica para relleno sanitario en R414
+  // { row: 27, label: 'Relleno sanitario', pucPrefixes: [] },
+  
+  // Fila 28: Activos para generación de energía en términos brutos
+  // PUC R414: 1646 - Plantas de generación de energía
+  { row: 28, label: 'Activos para generación de energía', pucPrefixes: ['1646'] },
+  
+  // Fila 29: Información especial PPE (AUTOSUMA - NO LLENAR)
+  
+  // Fila 30: Otras propiedades, planta y equipo en términos brutos
+  // PUC R414: Otras cuentas del grupo 16 no mapeadas arriba
+  // 1610 - Semovientes, 1660 - Equipos varios, 1680 - Bienes de arte y cultura
+  { row: 30, label: 'Otras PPE', pucPrefixes: ['1610', '1660', '1680', '1690'] },
+  
+  // Fila 31: PPE Importe en libros bruto (AUTOSUMA - NO LLENAR)
+  
+  // Fila 32: Depreciación acumulada PPE (VALOR POSITIVO)
+  // PUC R414: 1685 - Depreciación acumulada (CR) - almacenado como negativo
+  { row: 32, label: 'Depreciación acumulada PPE', pucPrefixes: ['1685'], useAbsoluteValue: true },
+  
+  // Fila 33: Deterioro de valor acumulado PPE (VALOR POSITIVO)
+  // PUC R414: 1695 - Deterioro acumulado de propiedades, planta y equipo (CR)
+  { row: 33, label: 'Deterioro acumulado PPE', pucPrefixes: ['1695'], useAbsoluteValue: true },
+  
+  // Fila 34: PPE Total (AUTOSUMA - NO LLENAR)
+];
+
 /** Datos de cuentas para procesar */
 export interface AccountData {
   code: string;
@@ -1770,6 +1858,47 @@ async function rewriteFinancialDataWithExcelJS(
             cell.value = serviceValue;
             console.log(`[ExcelJS] Hoja3!${serviceColumn}${mapping.row} = ${serviceValue}`);
           }
+        }
+      }
+    }
+  }
+
+  // ===============================================
+  // HOJA7 (800100): Notas - Subclasificaciones PPE
+  // Solo para R414 - Columna F (consolidado)
+  // ===============================================
+  if (options.niifGroup === 'r414') {
+    const sheet7 = workbook.getWorksheet('Hoja7');
+    if (sheet7) {
+      console.log('[ExcelJS] Escribiendo datos en Hoja7 (PPE)...');
+      
+      // Debug: Mostrar cuentas de clase 16 (PPE) disponibles
+      const ppeAccounts = options.consolidatedAccounts.filter(a => a.code.startsWith('16') && a.isLeaf);
+      console.log(`[ExcelJS] Cuentas PPE (clase 16) encontradas: ${ppeAccounts.length}`);
+      if (ppeAccounts.length > 0) {
+        ppeAccounts.forEach(a => console.log(`  - ${a.code}: ${a.name} = ${a.value}`));
+      }
+      
+      for (const mapping of R414_PPE_MAPPINGS) {
+        // Calcular total consolidado
+        let totalValue = 0;
+        for (const account of options.consolidatedAccounts) {
+          if (!account.isLeaf) continue;
+          if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
+            totalValue += account.value;
+          }
+        }
+
+        // Aplicar valor absoluto si es necesario (depreciación/deterioro)
+        if (mapping.useAbsoluteValue) {
+          totalValue = Math.abs(totalValue);
+        }
+
+        // Escribir valor en columna F (columna 6)
+        if (totalValue !== 0) {
+          const cell = sheet7.getCell(`F${mapping.row}`);
+          cell.value = totalValue;
+          console.log(`[ExcelJS] Hoja7!F${mapping.row} = ${totalValue} (${mapping.label})`);
         }
       }
     }
