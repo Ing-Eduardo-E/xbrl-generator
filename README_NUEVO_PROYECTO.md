@@ -84,7 +84,7 @@ Backend:
 - Next.js API Routes / Server Actions
 - tRPC (type-safe API)
 - Drizzle ORM
-- PostgreSQL / SQLite (desarrollo)
+- PostgreSQL (Neon)
 
 Excel Processing:
 - xlsx (SheetJS)

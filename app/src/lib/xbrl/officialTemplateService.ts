@@ -625,8 +625,8 @@ const R414_PPE_MAPPINGS: Array<{ row: number; label: string; pucPrefixes: string
   
   // ====== Infraestructura de servicios (filas 23-28) ======
   // Fila 23: Vías en términos brutos
-  // PUC R414: No hay cuenta específica de vías
-  // { row: 23, label: 'Vías', pucPrefixes: [] },
+  // PUC R414: No hay cuenta específica de vías - se llena con 0 si la sección tiene valores
+  { row: 23, label: 'Vías', pucPrefixes: [] },
   
   // Fila 24: Ductos en términos brutos
   // PUC R414: 1645 - Plantas, ductos y túneles (parcial)
@@ -641,9 +641,8 @@ const R414_PPE_MAPPINGS: Array<{ row: number; label: string; pucPrefixes: string
   { row: 26, label: 'Redes, líneas y cables', pucPrefixes: ['1650'] },
   
   // Fila 27: Relleno sanitario en términos brutos
-  // PUC R414: 1660 - Equipos de comedor, cocina, despensa y hotelería (puede usarse para relleno)
-  // Nota: En realidad no hay cuenta específica para relleno sanitario en R414
-  // { row: 27, label: 'Relleno sanitario', pucPrefixes: [] },
+  // PUC R414: No hay cuenta específica - se llena con 0 si la sección tiene valores
+  { row: 27, label: 'Relleno sanitario', pucPrefixes: [] },
   
   // Fila 28: Activos para generación de energía en términos brutos
   // PUC R414: 1646 - Plantas de generación de energía
@@ -686,8 +685,8 @@ const R414_INTANGIBLES_MAPPINGS: Array<{ row: number; label: string; pucPrefixes
   { row: 37, label: 'Marcas comerciales', pucPrefixes: ['197002'] },
   
   // Fila 38: Activos intangibles para exploración y evaluación en términos brutos
-  // PUC R414: No hay cuenta específica, podría usar activos en concesión
-  // { row: 38, label: 'Activos intangibles exploración y evaluación', pucPrefixes: [] },
+  // PUC R414: No hay cuenta específica - se llena con 0 si la sección tiene valores
+  { row: 38, label: 'Activos intangibles exploración y evaluación', pucPrefixes: [] },
   
   // Fila 39: Programas de computador en términos brutos
   // PUC R414: 197008 - Softwares
@@ -793,8 +792,8 @@ const R414_PROVISIONES_MAPPINGS: Array<{ row: number; label: string; pucPrefixes
   // ====== Provisiones por litigios y demandas (filas 63-65) ======
   
   // Fila 63: Provisiones por litigios y demandas no corriente
-  // PUC R414: No hay subdivisión - dejar vacía o usar parte del 2701
-  // { row: 63, label: 'Litigios y demandas no corriente', pucPrefixes: [] },
+  // PUC R414: No hay subdivisión - se llena con 0 si la sección tiene valores
+  { row: 63, label: 'Litigios y demandas no corriente', pucPrefixes: [] },
   
   // Fila 64: Provisiones por litigios y demandas corriente
   // PUC R414: 2701 - Litigios y demandas (total)
@@ -805,8 +804,8 @@ const R414_PROVISIONES_MAPPINGS: Array<{ row: number; label: string; pucPrefixes
   // ====== Provisiones por contratos onerosos (filas 67-69) ======
   
   // Fila 67: Provisión por contratos onerosos no corriente
-  // PUC R414: No hay subdivisión - dejar vacía
-  // { row: 67, label: 'Contratos onerosos no corriente', pucPrefixes: [] },
+  // PUC R414: No hay subdivisión - se llena con 0 si la sección tiene valores
+  { row: 67, label: 'Contratos onerosos no corriente', pucPrefixes: [] },
   
   // Fila 68: Provisión corriente por contratos onerosos
   // PUC R414: 279018 - Contratos onerosos
@@ -817,8 +816,8 @@ const R414_PROVISIONES_MAPPINGS: Array<{ row: number; label: string; pucPrefixes
   // ====== Provisiones por desmantelamiento y rehabilitación (filas 71-73) ======
   
   // Fila 71: Provisión no corriente para costos de desmantelamiento
-  // PUC R414: No hay subdivisión - dejar vacía
-  // { row: 71, label: 'Desmantelamiento no corriente', pucPrefixes: [] },
+  // PUC R414: No hay subdivisión - se llena con 0 si la sección tiene valores
+  { row: 71, label: 'Desmantelamiento no corriente', pucPrefixes: [] },
   
   // Fila 72: Provisión corriente para costos de desmantelamiento
   // PUC R414: 279020 - Desmantelamientos
@@ -839,9 +838,8 @@ const R414_OTRAS_PROVISIONES_MAPPINGS: Array<{ row: number; label: string; pucPr
   // ====== Otras provisiones (filas 75-77) ======
   
   // Fila 75: Otras provisiones no corrientes
-  // PUC R414: 2707 - Garantías, 2790 - Provisiones diversas (excepto 279018 y 279020 ya mapeados)
-  // Nota: En R414 no hay subdivisión corriente/no corriente
-  // { row: 75, label: 'Otras provisiones no corrientes', pucPrefixes: [] },
+  // PUC R414: No hay subdivisión corriente/no corriente - se llena con 0 si la sección tiene valores
+  { row: 75, label: 'Otras provisiones no corrientes', pucPrefixes: [] },
   
   // Fila 76: Otras provisiones corrientes
   // PUC R414: 2707 - Garantías, 2790 - Provisiones diversas (excepto contratos onerosos y desmantelamiento)
@@ -2125,10 +2123,10 @@ async function rewriteFinancialDataWithExcelJS(
           }
         }
 
-        // Escribir valor total en columna L (columna 12)
+        // Escribir valor total en columna L (columna 12) - SIEMPRE escribir, incluso si es 0
+        const cellL = sheet3.getCell(`L${mapping.row}`);
+        cellL.value = totalValue;
         if (totalValue !== 0) {
-          const cell = sheet3.getCell(`L${mapping.row}`);
-          cell.value = totalValue;
           console.log(`[ExcelJS] Hoja3!L${mapping.row} = ${totalValue}`);
         }
 
@@ -2152,13 +2150,24 @@ async function rewriteFinancialDataWithExcelJS(
             }
           }
 
+          // SIEMPRE escribir el valor, incluso si es 0, para limpiar valores previos del template
+          const cell = sheet3.getCell(`${serviceColumn}${mapping.row}`);
+          cell.value = serviceValue;
           if (serviceValue !== 0) {
-            const cell = sheet3.getCell(`${serviceColumn}${mapping.row}`);
-            cell.value = serviceValue;
             console.log(`[ExcelJS] Hoja3!${serviceColumn}${mapping.row} = ${serviceValue}`);
           }
         }
       }
+      
+      // DEBUG: Verificar que las cuentas usadas para Hoja3.E18 son las mismas que Hoja16
+      const acueductoAccounts3 = accountsByService['acueducto'] || [];
+      let suma51 = 0, suma52 = 0;
+      for (const account of acueductoAccounts3) {
+        if (!account.isLeaf) continue;
+        if (account.code.startsWith('51')) suma51 += account.value;
+        if (account.code.startsWith('52')) suma52 += account.value;
+      }
+      console.log(`[ExcelJS] Hoja3 - DEBUG Acueducto: cuenta 51 = ${suma51}, cuenta 52 = ${suma52}, total = ${suma51 + suma52}`);
     }
   }
 
@@ -2170,6 +2179,9 @@ async function rewriteFinancialDataWithExcelJS(
     const sheet7 = workbook.getWorksheet('Hoja7');
     if (sheet7) {
       console.log('[ExcelJS] Escribiendo datos en Hoja7...');
+      
+      // Verificar que tenemos cuentas consolidadas
+      const consolidatedAccounts = options.consolidatedAccounts || [];
       
       // Función helper para procesar una sección completa
       // Si hay al menos un valor != 0, llena con 0 las celdas vacías de la sección
@@ -2184,7 +2196,7 @@ async function rewriteFinancialDataWithExcelJS(
         
         for (const mapping of mappings) {
           let totalValue = 0;
-          for (const account of options.consolidatedAccounts) {
+          for (const account of consolidatedAccounts) {
             if (!account.isLeaf) continue;
             if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
               totalValue += account.value;
@@ -2257,6 +2269,290 @@ async function rewriteFinancialDataWithExcelJS(
       // ===============================================
       const beneficiosDataRows = [79, 80, 81, 82];
       processSectionWithZeroFill(R414_BENEFICIOS_EMPLEADOS_MAPPINGS, 'Beneficios Empleados', beneficiosDataRows);
+    }
+
+    // ===============================================
+    // HOJA16 (900017a): Gastos del Servicio de Acueducto
+    // Columna E = Gastos administrativos
+    // Columna F = Gastos operativos (Costos de ventas)
+    // Columna G = Autosuma E+F (no tocar)
+    // ===============================================
+    const sheet16 = workbook.getWorksheet('Hoja16');
+    
+    if (sheet16) {
+      console.log('[ExcelJS] Escribiendo datos en Hoja16 (Gastos Acueducto)...');
+      
+      // Obtener cuentas del servicio de acueducto
+      const acueductoAccounts = accountsByService['acueducto'] || [];
+      
+      // DEBUG: Ver cuántas cuentas hay y algunas de ejemplo
+      console.log(`[ExcelJS] Hoja16 - Total cuentas acueducto: ${acueductoAccounts.length}`);
+      const gastosAcueducto = acueductoAccounts.filter(a => a.code.startsWith('5'));
+      console.log(`[ExcelJS] Hoja16 - Cuentas de gastos (clase 5): ${gastosAcueducto.length}`);
+      if (gastosAcueducto.length > 0) {
+        console.log(`[ExcelJS] Hoja16 - Ejemplos de gastos:`, gastosAcueducto.slice(0, 5).map(a => `${a.code}=${a.value}`).join(', '));
+      }
+      
+      // Función helper para sumar cuentas por prefijos
+      const sumByPrefixes16 = (accounts: typeof acueductoAccounts, prefixes: string[], excludePrefixes?: string[]): number => {
+        let total = 0;
+        for (const account of accounts) {
+          if (!account.isLeaf) continue;
+          if (matchesPrefixes(account.code, prefixes, excludePrefixes)) {
+            total += account.value;
+          }
+        }
+        return total;
+      };
+      
+      // =====================================================
+      // IMPORTANTE: Los gastos se dividen según la Hoja3:
+      // - Gastos admin/op/ventas (Hoja3 fila 18): prefijos 51, 52
+      // - Otros gastos (Hoja3 fila 22): prefijos 53, 54, 56, 58 (excluye financieros)
+      // - Costos financieros (Hoja3 fila 20): prefijos 5802, 5803, 5807
+      // 
+      // La columna E de Hoja16 debe sumar = Hoja3.E18 + Hoja3.E22 + Hoja3.E20
+      // La columna F de Hoja16 debe sumar = Hoja3.E15 (Costo de ventas)
+      // =====================================================
+      
+      // =====================================================
+      // COLUMNA E - TODOS LOS GASTOS (clase 5)
+      // Incluye: Gastos admin (51,52) + Otros gastos (53,54,56,58) + Costos financieros
+      // IMPORTANTE: Siempre escribir valores (incluso 0) para limpiar valores previos del template
+      // =====================================================
+      
+      // Fila 13: Beneficios a empleados
+      // PUC: 5101 Sueldos y salarios, 5103 Contribuciones efectivas, 
+      //      5104 Aportes sobre la nómina, 5107 Prestaciones sociales, 5108 Gastos de personal diversos
+      const beneficiosEmpleados = sumByPrefixes16(acueductoAccounts, ['5101', '5103', '5104', '5107', '5108']);
+      sheet16.getCell('E13').value = beneficiosEmpleados;
+      console.log(`[ExcelJS] Hoja16!E13 (Beneficios empleados) = ${beneficiosEmpleados}`);
+      
+      // Fila 14: Honorarios
+      // PUC: 5110 Honorarios
+      const honorarios = sumByPrefixes16(acueductoAccounts, ['5110']);
+      sheet16.getCell('E14').value = honorarios;
+      console.log(`[ExcelJS] Hoja16!E14 (Honorarios) = ${honorarios}`);
+      
+      // Fila 15: Impuestos, Tasas y Contribuciones (No incluye impuesto de renta)
+      // PUC: 5120 Impuestos, contribuciones y tasas
+      const impuestosTasas = sumByPrefixes16(acueductoAccounts, ['5120']);
+      sheet16.getCell('E15').value = impuestosTasas;
+      console.log(`[ExcelJS] Hoja16!E15 (Impuestos y tasas) = ${impuestosTasas}`);
+      
+      // Fila 16: Generales
+      // PUC: 5111 Generales
+      const generales = sumByPrefixes16(acueductoAccounts, ['5111']);
+      sheet16.getCell('E16').value = generales;
+      console.log(`[ExcelJS] Hoja16!E16 (Generales) = ${generales}`);
+      
+      // Fila 17: Deterioro
+      // PUC: 5350 Deterioro de activos - Pertenece a "Otros gastos" (Hoja3 fila 22)
+      const deterioro = sumByPrefixes16(acueductoAccounts, ['5350']);
+      sheet16.getCell('E17').value = deterioro;
+      console.log(`[ExcelJS] Hoja16!E17 (Deterioro) = ${deterioro}`);
+      
+      // Fila 18: Depreciación  
+      // PUC: 5360 Depreciación - Pertenece a "Otros gastos" (Hoja3 fila 22)
+      const depreciacion = sumByPrefixes16(acueductoAccounts, ['5360']);
+      sheet16.getCell('E18').value = depreciacion;
+      console.log(`[ExcelJS] Hoja16!E18 (Depreciación) = ${depreciacion}`);
+      
+      // Fila 19: Amortización
+      // PUC: 5365 Amortización - Pertenece a "Otros gastos" (Hoja3 fila 22)
+      const amortizacion = sumByPrefixes16(acueductoAccounts, ['5365']);
+      sheet16.getCell('E19').value = amortizacion;
+      console.log(`[ExcelJS] Hoja16!E19 (Amortización) = ${amortizacion}`);
+      
+      // =====================================================
+      // PROVISIONES (Filas 20-24)
+      // PUC: 5370 Provisiones diversas
+      // =====================================================
+      
+      // Fila 20: Total provisiones (autosuma) - no tocar
+      
+      // Fila 21: Litigios y demandas
+      const litigios = sumByPrefixes16(acueductoAccounts, ['537001', '537002']);
+      sheet16.getCell('E21').value = litigios;
+      
+      // Fila 22: Garantías
+      const garantias = sumByPrefixes16(acueductoAccounts, ['537003']);
+      sheet16.getCell('E22').value = garantias;
+      
+      // Fila 23: Diversas (otras provisiones)
+      const provisionesDiversas = sumByPrefixes16(acueductoAccounts, ['5370'], ['537001', '537002', '537003']);
+      sheet16.getCell('E23').value = provisionesDiversas;
+      
+      // Fila 25: Arrendamientos
+      // PUC: 5115 Arrendamientos, 5124 Arrendamiento operativo
+      const arrendamientos = sumByPrefixes16(acueductoAccounts, ['5115', '5124']);
+      sheet16.getCell('E25').value = arrendamientos;
+      console.log(`[ExcelJS] Hoja16!E25 (Arrendamientos) = ${arrendamientos}`);
+      
+      // =====================================================
+      // OTROS GASTOS (Filas 26-33)
+      // Incluye costos financieros y otros gastos diversos
+      // =====================================================
+      
+      // Fila 26: Total otros gastos (autosuma) - no tocar
+      
+      // Fila 27: Comisiones
+      const comisiones = sumByPrefixes16(acueductoAccounts, ['5125']);
+      sheet16.getCell('E27').value = comisiones;
+      
+      // Fila 28: Ajuste por diferencia en cambio
+      const diferenciaEnCambio = sumByPrefixes16(acueductoAccounts, ['5807']);
+      sheet16.getCell('E28').value = diferenciaEnCambio;
+      
+      // Fila 29: Financieros (Costos financieros - Hoja3 fila 20)
+      const financieros = sumByPrefixes16(acueductoAccounts, ['5802', '5803']);
+      sheet16.getCell('E29').value = financieros;
+      console.log(`[ExcelJS] Hoja16!E29 (Financieros) = ${financieros}`);
+      
+      // Fila 30: Pérdidas por aplicación del método de participación patrimonial
+      // PUC: 5815 - Pérdidas MPP (gasto)
+      const perdidasMPP = sumByPrefixes16(acueductoAccounts, ['5815']);
+      sheet16.getCell('E30').value = perdidasMPP;
+      console.log(`[ExcelJS] Hoja16!E30 (Pérdidas MPP) = ${perdidasMPP}`);
+      
+      // Fila 31: Gastos diversos
+      // PUC: 5195 Gastos diversos, 5895 Otros gastos
+      const gastosDiversos = sumByPrefixes16(acueductoAccounts, ['5195', '5895']);
+      sheet16.getCell('E31').value = gastosDiversos;
+      console.log(`[ExcelJS] Hoja16!E31 (Gastos diversos) = ${gastosDiversos}`);
+      
+      // Fila 32: Donaciones
+      // PUC: 5423 Donaciones
+      const donaciones = sumByPrefixes16(acueductoAccounts, ['5423']);
+      sheet16.getCell('E32').value = donaciones;
+      console.log(`[ExcelJS] Hoja16!E32 (Donaciones) = ${donaciones}`);
+      
+      // =====================================================
+      // GANANCIAS (Fila 33) - Si hay ganancias por MPP van aquí
+      // PUC: 4815 - Ganancias por método de participación patrimonial (ingreso)
+      // Nota: Se muestra como valor NEGATIVO para restar del total de gastos
+      // =====================================================
+      const gananciasMPP = sumByPrefixes16(acueductoAccounts, ['4815']);
+      if (gananciasMPP !== 0) {
+        // Las ganancias se muestran como valor negativo en hoja de gastos
+        sheet16.getCell('E33').value = -gananciasMPP;
+        console.log(`[ExcelJS] Hoja16!E33 (Ganancias MPP) = ${-gananciasMPP}`);
+      } else {
+        sheet16.getCell('E33').value = 0;
+      }
+      
+      // =====================================================
+      // IMPUESTOS A LAS GANANCIAS (Filas 34-35)
+      // =====================================================
+      
+      // Fila 34: Impuesto a las ganancias corrientes
+      // PUC: 540101 Impuesto de renta corriente
+      const impuestoRentaCorriente = sumByPrefixes16(acueductoAccounts, ['540101']);
+      sheet16.getCell('E34').value = impuestoRentaCorriente;
+      console.log(`[ExcelJS] Hoja16!E34 (Imp. renta corriente) = ${impuestoRentaCorriente}`);
+      
+      // Fila 35: Impuesto a las ganancias diferido
+      // PUC: 5410 (excepto 540101)
+      const impuestoRentaDiferido = sumByPrefixes16(acueductoAccounts, ['5410'], ['540101']);
+      sheet16.getCell('E35').value = impuestoRentaDiferido;
+      console.log(`[ExcelJS] Hoja16!E35 (Imp. renta diferido) = ${impuestoRentaDiferido}`);
+      
+      // =====================================================
+      // SERVICIOS PÚBLICOS, MANTENIMIENTO, SEGUROS, OTROS
+      // Estos son parte de 51xx, así que SÍ van en columna E
+      // =====================================================
+      
+      // Fila 72: Órdenes y contratos de mantenimiento y reparaciones
+      // PUC: 5140 Mantenimiento, 5145 Reparaciones
+      const mantenimiento = sumByPrefixes16(acueductoAccounts, ['5140', '5145']);
+      sheet16.getCell('E72').value = mantenimiento;
+      console.log(`[ExcelJS] Hoja16!E72 (Mantenimiento) = ${mantenimiento}`);
+      
+      // Fila 77: Servicios públicos
+      // PUC: 5135 Servicios públicos
+      const serviciosPublicos = sumByPrefixes16(acueductoAccounts, ['5135']);
+      sheet16.getCell('E77').value = serviciosPublicos;
+      console.log(`[ExcelJS] Hoja16!E77 (Servicios públicos) = ${serviciosPublicos}`);
+      
+      // Fila 80: Seguros
+      // PUC: 5130 Seguros
+      const seguros = sumByPrefixes16(acueductoAccounts, ['5130']);
+      sheet16.getCell('E80').value = seguros;
+      console.log(`[ExcelJS] Hoja16!E80 (Seguros) = ${seguros}`);
+      
+      // Fila 81: Órdenes y contratos por otros servicios
+      // PUC: 5150 Servicios, 5155 Servicios de aseo, vigilancia y otros
+      const otrosContratos = sumByPrefixes16(acueductoAccounts, ['5150', '5155']);
+      sheet16.getCell('E81').value = otrosContratos;
+      console.log(`[ExcelJS] Hoja16!E81 (Otros contratos) = ${otrosContratos}`);
+      
+      // =====================================================
+      // COLUMNA F - GASTOS OPERATIVOS / COSTOS DE VENTAS
+      // PUC: Clase 6 - Costos de ventas
+      // Todos van a la fila 72 "Órdenes y contratos de mantenimiento"
+      // =====================================================
+      
+      const costosVentasTotal = sumByPrefixes16(acueductoAccounts, ['6']);
+      sheet16.getCell('F72').value = costosVentasTotal;
+      console.log(`[ExcelJS] Hoja16!F72 (Costos de ventas total) = ${costosVentasTotal}`);
+      
+      // Limpiar otras celdas de la columna F que puedan tener valores previos
+      // (filas 13-35 y otras que puedan tener datos del template)
+      for (const row of [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 34, 35, 77, 80, 81]) {
+        sheet16.getCell(`F${row}`).value = 0;
+      }
+      
+      // DEBUG: Mostrar totales para verificar
+      const totalGastosAdmin = sumByPrefixes16(acueductoAccounts, ['51', '52']);
+      const totalOtrosGastos = sumByPrefixes16(acueductoAccounts, ['53', '54', '56', '58'], ['5802', '5803', '5807', '5815', '5410']);
+      const totalCostosFinancieros = sumByPrefixes16(acueductoAccounts, ['5802', '5803', '5807']);
+      const totalGastosHoja16 = totalGastosAdmin + totalOtrosGastos + totalCostosFinancieros;
+      console.log(`[ExcelJS] Hoja16 - Verificación de totales:`);
+      console.log(`[ExcelJS]   Gastos admin/op/ventas (51,52) = ${totalGastosAdmin}`);
+      console.log(`[ExcelJS]   Otros gastos (53,54,56,58) = ${totalOtrosGastos}`);
+      console.log(`[ExcelJS]   Costos financieros (5802,5803,5807) = ${totalCostosFinancieros}`);
+      console.log(`[ExcelJS]   TOTAL GASTOS HOJA16 columna E = ${totalGastosHoja16}`);
+      console.log(`[ExcelJS]   Costos de ventas (6) columna F = ${costosVentasTotal}`);
+      
+      // DEBUG: Mostrar TODAS las cuentas 51 y 52 para verificar cobertura
+      const prefixesCubiertos = [
+        '5101', '5103', '5104', '5107', '5108', // Beneficios empleados
+        '5110', // Honorarios
+        '5120', // Impuestos y tasas
+        '5111', // Generales
+        '5115', '5124', // Arrendamientos
+        '5140', '5145', // Mantenimiento
+        '5135', // Servicios públicos
+        '5130', // Seguros
+        '5150', '5155', // Otros contratos
+      ];
+      
+      // Encontrar cuentas 51/52 que NO están cubiertas por los mapeos
+      const cuentasNoCubiertas: Array<{code: string; value: number}> = [];
+      let totalNoCubierto = 0;
+      for (const account of acueductoAccounts) {
+        if (!account.isLeaf) continue;
+        if ((account.code.startsWith('51') || account.code.startsWith('52'))) {
+          // Verificar si está cubierta por alguno de los prefijos
+          const estaCubierta = prefixesCubiertos.some(prefix => account.code.startsWith(prefix));
+          if (!estaCubierta) {
+            cuentasNoCubiertas.push({ code: account.code, value: account.value });
+            totalNoCubierto += account.value;
+          }
+        }
+      }
+      
+      if (cuentasNoCubiertas.length > 0) {
+        console.log(`[ExcelJS] ⚠️ ATENCIÓN: ${cuentasNoCubiertas.length} cuentas 51/52 NO CUBIERTAS por mapeos:`);
+        for (const cuenta of cuentasNoCubiertas) {
+          console.log(`[ExcelJS]   - ${cuenta.code} = ${cuenta.value}`);
+        }
+        console.log(`[ExcelJS]   Total no cubierto: ${totalNoCubierto}`);
+      } else {
+        console.log(`[ExcelJS] ✓ Todas las cuentas 51/52 están cubiertas por los mapeos`);
+      }
+      
+      console.log('[ExcelJS] Hoja16 completada.');
     }
   }
 
