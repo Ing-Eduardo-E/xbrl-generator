@@ -1917,6 +1917,94 @@ function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWithDataOpt
         setPolicyCell(sheet10, `D${row}`, 'NA');
       }
     }
+
+    // ===============================================
+    // HOJA11 (810000): Notas - Información de la entidad
+    // y declaración de cumplimiento con el marco normativo
+    // Similar a Hoja09 y Hoja10 - Columna E
+    // ===============================================
+    const sheet11 = workbook.Sheets['Hoja11'];
+    
+    if (sheet11) {
+      // Función helper para establecer texto en celda
+      const setInfoCell = (sheet: XLSX.WorkSheet, cell: string, value: string) => {
+        sheet[cell] = { t: 's', v: value };
+      };
+      
+      // Fila 11: Información a revelar sobre notas y otra información explicativa [bloque de texto]
+      // Referencia al archivo de notas HTML
+      setInfoCell(sheet11, 'E11', 'Nota2.html');
+      
+      // Fila 12: Nombre de la controladora última del grupo
+      // Usar el nombre de la empresa de las opciones
+      setInfoCell(sheet11, 'E12', options.companyName || '');
+      
+      // Fila 13: Ciudad donde se encuentra ubicada la sede administrativa
+      // Dejar vacía - se diligencia manualmente
+      // setInfoCell(sheet11, 'E13', '');
+      
+      // Fila 14: Dirección de la sede administrativa de la entidad
+      // Dejar vacía - se diligencia manualmente
+      // setInfoCell(sheet11, 'E14', '');
+      
+      // Fila 15: Email institucional
+      // Dejar vacía - se diligencia manualmente
+      // setInfoCell(sheet11, 'E15', '');
+      
+      // Fila 16: Declaración explícita y sin reservas de cumplimiento del Marco Normativo
+      setInfoCell(sheet11, 'E16', 
+        `La entidad declara que los presentes estados financieros han sido preparados de conformidad con el Marco Normativo para Entidades de Gobierno - Resolución 414 de 2014 de la Contaduría General de la Nación y sus modificaciones, el cual hace parte del Régimen de Contabilidad Pública. La entidad ha aplicado de manera consistente las políticas contables establecidas en dicho marco normativo.`
+      );
+      
+      // Fila 17: Información sobre incertidumbres o cambios que comprometan su continuidad
+      setInfoCell(sheet11, 'E17', 
+        `A la fecha de emisión de los estados financieros, no existen incertidumbres significativas ni cambios ordenados que comprometan la continuidad de la entidad como supresión, fusión, escisión o liquidación. La entidad continúa operando como empresa de servicios públicos domiciliarios bajo las condiciones normales de operación.`
+      );
+      
+      // Fila 18: Explicación de porqué no se presume que la actividad se llevara a cabo por tiempo indefinido
+      setInfoCell(sheet11, 'E18', 'NA');
+      
+      // Fila 20: Información sobre incertidumbres sobre la capacidad de dar continuidad a servicios en RUPS
+      setInfoCell(sheet11, 'E20', 
+        `La entidad no presenta incertidumbres significativas sobre la capacidad de dar continuidad a la prestación de los servicios públicos de acueducto, alcantarillado y aseo inscritos en el Registro Único de Prestadores de Servicios Públicos (RUPS). Los servicios se prestan de manera continua conforme a las condiciones establecidas en los contratos de condiciones uniformes.`
+      );
+      
+      // Fila 21: ¿Durante el período se informó finalizó la prestación de servicios en RUPS?
+      setInfoCell(sheet11, 'E21', '2. No');
+      
+      // Fila 22: Detalle sobre la finalización de la prestación de servicios en RUPS
+      setInfoCell(sheet11, 'E22', 'NA');
+      
+      // Fila 24: Explicación de los criterios de medición utilizados
+      setInfoCell(sheet11, 'E24', 
+        `Los criterios de medición utilizados para la preparación de los estados financieros incluyen: costo histórico para la mayoría de activos y pasivos, costo amortizado para instrumentos financieros, valor razonable para ciertos activos y pasivos financieros según lo requiere el marco normativo. Las estimaciones contables se basan en la mejor información disponible a la fecha del informe.`
+      );
+      
+      // Fila 25: Descripción de otras políticas contables relevantes
+      setInfoCell(sheet11, 'E25', 
+        `Las políticas contables aplicadas son consistentes con las establecidas en la Resolución 414 de 2014 de la CGN. Se incluyen políticas sobre: reconocimiento de ingresos por servicios públicos, provisión por deterioro de cartera, depreciación de infraestructura de redes, tratamiento de subsidios y contribuciones, y beneficios a empleados. Las políticas se detallan en las notas específicas.`
+      );
+      
+      // Fila 26: Explicación de supuestos realizados acerca del futuro y otras causas de incertidumbre
+      setInfoCell(sheet11, 'E26', 
+        `Las principales fuentes de incertidumbre en las estimaciones incluyen: vida útil de activos de infraestructura, deterioro de cartera morosa, provisiones por litigios y demandas, y obligaciones por beneficios posempleo. Los supuestos se revisan periódicamente y los ajustes se reconocen prospectivamente cuando corresponde.`
+      );
+      
+      // Fila 28: ¿La entidad ha implementado programas relacionados con objetivos de desarrollo sostenible?
+      setInfoCell(sheet11, 'E28', '2. No');
+      
+      // Fila 29: ¿La entidad prepara reportes de sostenibilidad?
+      setInfoCell(sheet11, 'E29', '2. No');
+      
+      // Fila 30: Si lo presenta como reporte a una entidad de supervisión específica, ¿a cuál?
+      setInfoCell(sheet11, 'E30', 'NA');
+      
+      // Fila 31: ¿La entidad cuenta con objetivos de desarrollo sostenible para el eje económico?
+      setInfoCell(sheet11, 'E31', '2. No');
+      
+      // Fila 32: Mencione que indicadores calcula. Explique los elementos que componen cada indicador
+      setInfoCell(sheet11, 'E32', 'NA');
+    }
   }
   
   // Escribir el archivo modificado
