@@ -776,6 +776,57 @@ const R414_EFECTIVO_MAPPINGS: Array<{ row: number; label: string; pucPrefixes: s
   // Fila 60: Total efectivo y equivalentes al efectivo (AUTOSUMA = F53+F58+F59 - NO LLENAR)
 ];
 
+/**
+ * Mapeo de filas de Clases de Otras Provisiones para R414 - Hoja7 (800100)
+ * Notas - Subclasificaciones de activos, pasivos y patrimonios
+ * Columna: F (consolidado)
+ * 
+ * Filas de autosuma (dejar vacías): 65, 69, 73
+ * Fórmula F65 = F63 + F64
+ * Fórmula F69 = F67 + F68
+ * Fórmula F73 = F71 + F72
+ * 
+ * Nota: En R414 las provisiones no están subdivididas por corriente/no corriente
+ * en cuentas separadas. Se mapea el total a la fila "corriente" por defecto.
+ */
+const R414_PROVISIONES_MAPPINGS: Array<{ row: number; label: string; pucPrefixes: string[]; excludePrefixes?: string[]; useAbsoluteValue?: boolean }> = [
+  // ====== Provisiones por litigios y demandas (filas 63-65) ======
+  
+  // Fila 63: Provisiones por litigios y demandas no corriente
+  // PUC R414: No hay subdivisión - dejar vacía o usar parte del 2701
+  // { row: 63, label: 'Litigios y demandas no corriente', pucPrefixes: [] },
+  
+  // Fila 64: Provisiones por litigios y demandas corriente
+  // PUC R414: 2701 - Litigios y demandas (total)
+  { row: 64, label: 'Litigios y demandas corriente', pucPrefixes: ['2701'] },
+  
+  // Fila 65: Total de Provisiones por litigios y demandas (AUTOSUMA = F63+F64 - NO LLENAR)
+  
+  // ====== Provisiones por contratos onerosos (filas 67-69) ======
+  
+  // Fila 67: Provisión por contratos onerosos no corriente
+  // PUC R414: No hay subdivisión - dejar vacía
+  // { row: 67, label: 'Contratos onerosos no corriente', pucPrefixes: [] },
+  
+  // Fila 68: Provisión corriente por contratos onerosos
+  // PUC R414: 279018 - Contratos onerosos
+  { row: 68, label: 'Contratos onerosos corriente', pucPrefixes: ['279018'] },
+  
+  // Fila 69: Total de provisiones por contratos onerosos (AUTOSUMA = F67+F68 - NO LLENAR)
+  
+  // ====== Provisiones por desmantelamiento y rehabilitación (filas 71-73) ======
+  
+  // Fila 71: Provisión no corriente para costos de desmantelamiento
+  // PUC R414: No hay subdivisión - dejar vacía
+  // { row: 71, label: 'Desmantelamiento no corriente', pucPrefixes: [] },
+  
+  // Fila 72: Provisión corriente para costos de desmantelamiento
+  // PUC R414: 279020 - Desmantelamientos
+  { row: 72, label: 'Desmantelamiento corriente', pucPrefixes: ['279020'] },
+  
+  // Fila 73: Total de provisiones por desmantelamiento (AUTOSUMA = F71+F72 - NO LLENAR)
+];
+
 /** Datos de cuentas para procesar */
 export interface AccountData {
   code: string;
@@ -2057,6 +2108,36 @@ async function rewriteFinancialDataWithExcelJS(
       }
 
       for (const mapping of R414_EFECTIVO_MAPPINGS) {
+        // Calcular total consolidado
+        let totalValue = 0;
+        for (const account of options.consolidatedAccounts) {
+          if (!account.isLeaf) continue;
+          if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
+            totalValue += account.value;
+          }
+        }
+
+        // Escribir valor en columna F
+        if (totalValue !== 0) {
+          const cell = sheet7.getCell(`F${mapping.row}`);
+          cell.value = totalValue;
+          console.log(`[ExcelJS] Hoja7!F${mapping.row} = ${totalValue} (${mapping.label})`);
+        }
+      }
+
+      // ===============================================
+      // Clases de Otras Provisiones (filas 63-73)
+      // ===============================================
+      console.log('[ExcelJS] Escribiendo datos en Hoja7 (Provisiones)...');
+      
+      // Debug: Mostrar cuentas de provisiones (27xx) disponibles
+      const provisionesAccounts = options.consolidatedAccounts.filter(a => a.code.startsWith('27') && a.isLeaf);
+      console.log(`[ExcelJS] Cuentas Provisiones (27xx) encontradas: ${provisionesAccounts.length}`);
+      if (provisionesAccounts.length > 0) {
+        provisionesAccounts.forEach(a => console.log(`  - ${a.code}: ${a.name} = ${a.value}`));
+      }
+
+      for (const mapping of R414_PROVISIONES_MAPPINGS) {
         // Calcular total consolidado
         let totalValue = 0;
         for (const account of options.consolidatedAccounts) {
