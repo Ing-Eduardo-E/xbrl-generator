@@ -669,6 +669,65 @@ const R414_PPE_MAPPINGS: Array<{ row: number; label: string; pucPrefixes: string
   // Fila 34: PPE Total (AUTOSUMA - NO LLENAR)
 ];
 
+/**
+ * Mapeo de filas de Activos Intangibles y Plusvalía para R414 - Hoja7 (800100)
+ * Notas - Subclasificaciones de activos, pasivos y patrimonios
+ * Columna: F (consolidado)
+ * 
+ * Filas de autosuma (dejar vacías): 44, 48
+ * Filas 46-47: Amortización y Deterioro deben ser valores POSITIVOS (Math.abs)
+ * Fórmula F48 = F44 + F45 - F46 - F47
+ */
+const R414_INTANGIBLES_MAPPINGS: Array<{ row: number; label: string; pucPrefixes: string[]; excludePrefixes?: string[]; useAbsoluteValue?: boolean }> = [
+  // ====== Activos intangibles distintos de la plusvalía (filas 37-43) ======
+  
+  // Fila 37: Marcas comerciales en términos brutos
+  // PUC R414: 197002 - Marcas
+  { row: 37, label: 'Marcas comerciales', pucPrefixes: ['197002'] },
+  
+  // Fila 38: Activos intangibles para exploración y evaluación en términos brutos
+  // PUC R414: No hay cuenta específica, podría usar activos en concesión
+  // { row: 38, label: 'Activos intangibles exploración y evaluación', pucPrefixes: [] },
+  
+  // Fila 39: Programas de computador en términos brutos
+  // PUC R414: 197008 - Softwares
+  { row: 39, label: 'Programas de computador / Software', pucPrefixes: ['197008'] },
+  
+  // Fila 40: Licencias y franquicias en términos brutos
+  // PUC R414: 197007 - Licencias, 197004 - Concesiones y franquicias
+  { row: 40, label: 'Licencias y franquicias', pucPrefixes: ['197007', '197004'] },
+  
+  // Fila 41: Derechos de propiedad intelectual, patentes y otros derechos
+  // PUC R414: 197003 - Patentes, 197005 - Derechos
+  { row: 41, label: 'Patentes y derechos', pucPrefixes: ['197003', '197005'] },
+  
+  // Fila 42: Activos intangibles en desarrollo en términos brutos
+  // PUC R414: 197010 - Activos intangibles en fase de desarrollo
+  { row: 42, label: 'Activos intangibles en desarrollo', pucPrefixes: ['197010'] },
+  
+  // Fila 43: Otros activos intangibles en términos brutos
+  // PUC R414: 197090 - Otros activos intangibles, 197012 - Activos en concesión
+  { row: 43, label: 'Otros activos intangibles', pucPrefixes: ['197090', '197012'] },
+  
+  // Fila 44: Total activos intangibles distintos de plusvalía (AUTOSUMA - NO LLENAR)
+  
+  // ====== Plusvalía y ajustes (filas 45-47) ======
+  
+  // Fila 45: Plusvalía en términos brutos
+  // PUC R414: 197001 - Plusvalía
+  { row: 45, label: 'Plusvalía', pucPrefixes: ['197001'] },
+  
+  // Fila 46: Amortización acumulada activos intangibles y plusvalía (VALOR POSITIVO)
+  // PUC R414: 1975 - Amortización acumulada de activos intangibles (CR)
+  { row: 46, label: 'Amortización acumulada intangibles', pucPrefixes: ['1975'], useAbsoluteValue: true },
+  
+  // Fila 47: Deterioro de valor acumulado activos intangibles y plusvalía (VALOR POSITIVO)
+  // PUC R414: 1976 - Deterioro acumulado de activos intangibles (CR)
+  { row: 47, label: 'Deterioro acumulado intangibles', pucPrefixes: ['1976'], useAbsoluteValue: true },
+  
+  // Fila 48: Total activos intangibles y plusvalía (AUTOSUMA = F44+F45-F46-F47 - NO LLENAR)
+];
+
 /** Datos de cuentas para procesar */
 export interface AccountData {
   code: string;
@@ -1895,6 +1954,41 @@ async function rewriteFinancialDataWithExcelJS(
         }
 
         // Escribir valor en columna F (columna 6)
+        if (totalValue !== 0) {
+          const cell = sheet7.getCell(`F${mapping.row}`);
+          cell.value = totalValue;
+          console.log(`[ExcelJS] Hoja7!F${mapping.row} = ${totalValue} (${mapping.label})`);
+        }
+      }
+
+      // ===============================================
+      // Activos Intangibles y Plusvalía (filas 37-48)
+      // ===============================================
+      console.log('[ExcelJS] Escribiendo datos en Hoja7 (Intangibles)...');
+      
+      // Debug: Mostrar cuentas de intangibles (197x) disponibles
+      const intangibleAccounts = options.consolidatedAccounts.filter(a => a.code.startsWith('197') && a.isLeaf);
+      console.log(`[ExcelJS] Cuentas Intangibles (197x) encontradas: ${intangibleAccounts.length}`);
+      if (intangibleAccounts.length > 0) {
+        intangibleAccounts.forEach(a => console.log(`  - ${a.code}: ${a.name} = ${a.value}`));
+      }
+
+      for (const mapping of R414_INTANGIBLES_MAPPINGS) {
+        // Calcular total consolidado
+        let totalValue = 0;
+        for (const account of options.consolidatedAccounts) {
+          if (!account.isLeaf) continue;
+          if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
+            totalValue += account.value;
+          }
+        }
+
+        // Aplicar valor absoluto si es necesario (amortización/deterioro)
+        if (mapping.useAbsoluteValue) {
+          totalValue = Math.abs(totalValue);
+        }
+
+        // Escribir valor en columna F
         if (totalValue !== 0) {
           const cell = sheet7.getCell(`F${mapping.row}`);
           cell.value = totalValue;
