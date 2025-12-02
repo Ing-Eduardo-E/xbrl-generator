@@ -1450,6 +1450,8 @@ function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWithDataOpt
     
     if (sheet10) {
       // Función helper para establecer texto en celda de política
+      // NOTA: Hoja10 usa columna D (a diferencia de Hoja09 que usa columna E)
+      // porque el encabezado "Periodo Actual" está en D10, no en E10
       const setPolicyCell = (sheet: XLSX.WorkSheet, cell: string, value: string) => {
         sheet[cell] = { t: 's', v: value };
       };
@@ -1458,147 +1460,147 @@ function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWithDataOpt
       // Políticas comunes y aplicables a empresas de servicios públicos
       
       // Fila 11: Información a revelar sobre un resumen de las políticas contables significativas [OBLIGATORIO]
-      setPolicyCell(sheet10, 'E11',
+      setPolicyCell(sheet10, 'D11',
         `Las políticas contables significativas aplicadas en la preparación de estos estados financieros se resumen a continuación. Estas políticas han sido aplicadas consistentemente para todos los períodos presentados, salvo que se indique lo contrario. Los estados financieros han sido preparados de conformidad con las Normas de Información Financiera aplicables en Colombia y la Resolución 414 de 2014 de la CGN para empresas de servicios públicos domiciliarios.`
       );
       
       // Fila 16: Beneficios a los empleados
-      setPolicyCell(sheet10, 'E16',
+      setPolicyCell(sheet10, 'D16',
         `Los beneficios a empleados de corto plazo se reconocen como gasto cuando el empleado presta el servicio. Incluyen salarios, aportes a seguridad social, prestaciones sociales legales y extralegales. Los beneficios post-empleo se reconocen según el tipo de plan: contribución definida (gasto cuando se paga) o beneficio definido (obligación actuarial).`
       );
       
       // Fila 17: Gastos
-      setPolicyCell(sheet10, 'E17',
+      setPolicyCell(sheet10, 'D17',
         `Los gastos se reconocen cuando se incurren, independientemente del momento del pago, aplicando el principio de devengo. Se clasifican en gastos de administración, operación y ventas según su función. Los gastos de operación incluyen costos directamente relacionados con la prestación de servicios públicos.`
       );
       
       // Fila 22: Deterioro del valor de activos
-      setPolicyCell(sheet10, 'E22',
+      setPolicyCell(sheet10, 'D22',
         `Al cierre de cada período se evalúa si existe indicación de deterioro de activos. Si existe, se estima el valor recuperable como el mayor entre el valor razonable menos costos de venta y el valor en uso. Si el valor en libros excede el recuperable, se reconoce una pérdida por deterioro. Para cuentas por cobrar se aplica el modelo de pérdidas crediticias esperadas.`
       );
       
       // Fila 23: Impuestos a las ganancias
-      setPolicyCell(sheet10, 'E23',
+      setPolicyCell(sheet10, 'D23',
         `El gasto por impuesto comprende el impuesto corriente y diferido. El corriente se calcula sobre la renta líquida gravable usando tasas vigentes. El diferido se reconoce sobre diferencias temporarias entre bases contables y fiscales, usando el método del pasivo. Los activos por impuesto diferido se reconocen si es probable obtener ganancias fiscales futuras.`
       );
       
       // Fila 28: Capital emitido
-      setPolicyCell(sheet10, 'E28',
+      setPolicyCell(sheet10, 'D28',
         `El capital social se reconoce al valor nominal de las acciones o aportes suscritos y pagados. Las primas en colocación de acciones se registran en el patrimonio. Los costos de transacción relacionados con emisión de instrumentos de patrimonio se deducen directamente del patrimonio.`
       );
       
       // Fila 30: Préstamos y cuentas por cobrar
-      setPolicyCell(sheet10, 'E30',
+      setPolicyCell(sheet10, 'D30',
         `Las cuentas por cobrar comerciales se reconocen inicialmente al precio de la transacción. Posteriormente se miden al costo amortizado menos deterioro. El deterioro se calcula usando el modelo de pérdidas crediticias esperadas, considerando la experiencia histórica de pérdidas, las condiciones actuales y proyecciones futuras.`
       );
       
       // Fila 31: Inventarios
-      setPolicyCell(sheet10, 'E31',
+      setPolicyCell(sheet10, 'D31',
         `Los inventarios se miden al menor entre el costo y el valor neto realizable. El costo se determina usando el método del promedio ponderado. Incluyen materiales para mantenimiento de redes, químicos para tratamiento de agua, repuestos y suministros. Se evalúa periódicamente la obsolescencia y se reconocen ajustes cuando el valor realizable es menor al costo.`
       );
       
       // Fila 33: Propiedades, planta y equipo
-      setPolicyCell(sheet10, 'E33',
+      setPolicyCell(sheet10, 'D33',
         `Las propiedades, planta y equipo se reconocen al costo menos depreciación acumulada y deterioro. El costo incluye precio de adquisición, costos directamente atribuibles y costos de desmantelamiento. La depreciación se calcula por línea recta sobre la vida útil estimada. Las mejoras se capitalizan; el mantenimiento se reconoce como gasto. Se revisan las vidas útiles y valores residuales anualmente.`
       );
       
       // Fila 34: Provisiones
-      setPolicyCell(sheet10, 'E34',
+      setPolicyCell(sheet10, 'D34',
         `Las provisiones se reconocen cuando existe una obligación presente (legal o implícita) resultado de un evento pasado, es probable una salida de recursos y el monto puede estimarse confiablemente. Se miden al mejor estimado del desembolso requerido. Las provisiones de largo plazo se descuentan a valor presente si el efecto es material.`
       );
       
       // Fila 35: Reconocimiento de ingresos de actividades ordinarias
-      setPolicyCell(sheet10, 'E35',
+      setPolicyCell(sheet10, 'D35',
         `Los ingresos por prestación de servicios públicos se reconocen cuando el servicio ha sido prestado, el importe puede medirse confiablemente y es probable que los beneficios económicos fluyan a la entidad. La facturación se realiza mensualmente según consumo medido o estimado. Los subsidios y contribuciones se reconocen según las disposiciones regulatorias de la CRA.`
       );
       
       // Fila 38: Acreedores comerciales y otras cuentas por pagar
-      setPolicyCell(sheet10, 'E38',
+      setPolicyCell(sheet10, 'D38',
         `Las cuentas por pagar comerciales se reconocen al valor de la factura cuando se reciben los bienes o servicios. Posteriormente se miden al costo amortizado. No se descuentan si el efecto del valor temporal del dinero no es significativo. Incluyen obligaciones con proveedores, contratistas y acreedores varios relacionados con la operación.`
       );
       
       // Fila 40: Otras políticas contables relevantes
-      setPolicyCell(sheet10, 'E40',
+      setPolicyCell(sheet10, 'D40',
         `Bases de preparación: Los estados financieros se preparan bajo NIIF para Pymes adoptadas en Colombia y la Resolución 414 de 2014 de la CGN. Moneda funcional y de presentación: Peso colombiano. Efectivo: Incluye caja, bancos e inversiones de alta liquidez con vencimiento menor a 3 meses. Aportes y contribuciones: Se reconocen según regulación sectorial aplicable a empresas de servicios públicos.`
       );
       
       // Fila 13: Descripción de la política contable sobre costos de financiación
-      setPolicyCell(sheet10, 'E13',
+      setPolicyCell(sheet10, 'D13',
         `Los costos por préstamos directamente atribuibles a la adquisición, construcción o producción de activos aptos se capitalizan como parte del costo del activo. Los demás costos por préstamos se reconocen como gasto en el período en que se incurren. La capitalización se suspende durante períodos prolongados de interrupción de las actividades de desarrollo.`
       );
       
       // Fila 14: Descripción de la política contable sobre préstamos
-      setPolicyCell(sheet10, 'E14',
+      setPolicyCell(sheet10, 'D14',
         `Los préstamos se reconocen inicialmente al valor razonable menos los costos de transacción. Posteriormente se miden al costo amortizado utilizando el método del interés efectivo. Los intereses devengados se reconocen como gasto financiero. Se clasifican como pasivos corrientes o no corrientes según su vencimiento.`
       );
       
       // Fila 15: Descripción de la política contable sobre instrumentos financieros derivados
-      setPolicyCell(sheet10, 'E15',
+      setPolicyCell(sheet10, 'D15',
         `La entidad no utiliza instrumentos financieros derivados para especulación. En caso de utilizarse con fines de cobertura, se reconocen inicialmente al valor razonable y se miden posteriormente según su clasificación. Los cambios en el valor razonable se reconocen en resultados, excepto las coberturas de flujo de efectivo eficaces que se reconocen en otro resultado integral.`
       );
       
       // Fila 18: Descripción de la política contable sobre conversión de moneda extranjera
-      setPolicyCell(sheet10, 'E18',
+      setPolicyCell(sheet10, 'D18',
         `Las transacciones en moneda extranjera se convierten a la moneda funcional usando las tasas de cambio vigentes a la fecha de la transacción. Las partidas monetarias en moneda extranjera al cierre se convierten usando la tasa de cierre. Las diferencias en cambio se reconocen en el resultado del período, excepto las relacionadas con financiamiento de activos aptos.`
       );
       
       // Fila 19: Descripción de la política contable de la moneda funcional
-      setPolicyCell(sheet10, 'E19',
+      setPolicyCell(sheet10, 'D19',
         `La moneda funcional y de presentación de la entidad es el peso colombiano (COP), que es la moneda del entorno económico principal donde opera. Esta determinación se basa en que los ingresos, costos, financiamiento y operaciones se denominan principalmente en pesos colombianos.`
       );
       
       // Fila 20: Descripción de la política contable sobre plusvalía
-      setPolicyCell(sheet10, 'E20',
+      setPolicyCell(sheet10, 'D20',
         `La plusvalía surge de la adquisición de subsidiarias y representa el exceso del costo de adquisición sobre el valor razonable de los activos netos identificables adquiridos. Se mide posteriormente al costo menos pérdidas por deterioro acumuladas. No se amortiza pero se somete a pruebas de deterioro anuales.`
       );
       
       // Fila 21: Descripción de la política contable para subvenciones del gobierno
-      setPolicyCell(sheet10, 'E21',
+      setPolicyCell(sheet10, 'D21',
         `Las subvenciones gubernamentales se reconocen cuando existe seguridad razonable de que se cumplirán las condiciones y que se recibirá la subvención. Se reconocen en resultados sistemáticamente durante los períodos necesarios para asociarlas con los costos relacionados. Las subvenciones para activos se presentan reduciendo el valor en libros del activo o como ingreso diferido.`
       );
       
       // Fila 24: Descripción de la política contable sobre activos intangibles distintos a la plusvalía
-      setPolicyCell(sheet10, 'E24',
+      setPolicyCell(sheet10, 'D24',
         `Los activos intangibles adquiridos separadamente se miden al costo menos amortización y deterioro acumulados. La amortización se calcula por línea recta sobre la vida útil estimada. Los activos con vida útil indefinida no se amortizan pero se someten a pruebas de deterioro anuales. Los activos intangibles generados internamente, excepto costos de desarrollo que cumplan criterios específicos, se reconocen como gasto.`
       );
       
       // Fila 25: Descripción de la política contable sobre inversiones en asociadas
-      setPolicyCell(sheet10, 'E25',
+      setPolicyCell(sheet10, 'D25',
         `Las inversiones en asociadas se reconocen usando el método de participación patrimonial. Se miden inicialmente al costo y posteriormente se ajustan por la participación en los cambios del patrimonio de la asociada. Los dividendos recibidos reducen el valor en libros. Se evalúan indicadores de deterioro anualmente.`
       );
       
       // Fila 26: Descripción de la política contable para inversiones en negocios conjuntos
-      setPolicyCell(sheet10, 'E26',
+      setPolicyCell(sheet10, 'D26',
         `Las inversiones en negocios conjuntos se reconocen usando el método de participación patrimonial. Se miden inicialmente al costo incluyendo costos de transacción. Posteriormente se ajustan por la participación en los resultados y otros cambios en el patrimonio del negocio conjunto.`
       );
       
       // Fila 27: Descripción de la política contable sobre propiedades de inversión
-      setPolicyCell(sheet10, 'E27',
+      setPolicyCell(sheet10, 'D27',
         `Las propiedades de inversión son propiedades mantenidas para obtener rentas o apreciación de capital. Se reconocen inicialmente al costo incluyendo costos de transacción. Posteriormente se miden al modelo del costo (costo menos depreciación acumulada y deterioro). La depreciación se calcula por línea recta sobre la vida útil estimada de los edificios.`
       );
       
       // Fila 29: Descripción de la política contable sobre arrendamientos
-      setPolicyCell(sheet10, 'E29',
+      setPolicyCell(sheet10, 'D29',
         `Los arrendamientos se evalúan al inicio para determinar si transfieren sustancialmente los riesgos y beneficios. Los arrendamientos financieros se reconocen como activo y pasivo al menor entre el valor razonable y el valor presente de los pagos mínimos. Los arrendamientos operativos se reconocen como gasto de forma lineal durante el plazo del arrendamiento.`
       );
       
       // Fila 37: Descripción de la política contable sobre efectivo restringido
-      setPolicyCell(sheet10, 'E37',
+      setPolicyCell(sheet10, 'D37',
         `El efectivo restringido comprende fondos con restricciones de uso por compromisos contractuales, regulatorios o legales. Se clasifica como activo corriente o no corriente según el plazo de la restricción. Las restricciones incluyen fondos para garantías, depósitos en garantía, fondos especiales y recursos con destinación específica.`
       );
       
       // Fila 39: Descripción de la política contable sobre transacciones con partes relacionadas
-      setPolicyCell(sheet10, 'E39',
+      setPolicyCell(sheet10, 'D39',
         `Las transacciones con partes relacionadas se realizan en condiciones de mercado. Se consideran partes relacionadas: accionistas controlantes, subsidiarias, asociadas, directivos clave y sus familiares cercanos. Las transacciones y saldos pendientes se revelan en notas a los estados financieros según los requerimientos de la NIC 24.`
       );
       
       // Fila 41: Descripción de la política contable para inversiones en administración de liquidez
-      setPolicyCell(sheet10, 'E41',
+      setPolicyCell(sheet10, 'D41',
         `Las inversiones de administración de liquidez comprenden instrumentos financieros de alta liquidez fácilmente convertibles en efectivo, con vencimientos mayores a 90 días pero que no forman parte del capital de trabajo operativo. Se miden al costo amortizado o valor razonable según su clasificación y naturaleza del instrumento.`
       );
       
       // Fila 42: Descripción de la política contable sobre préstamos por cobrar
-      setPolicyCell(sheet10, 'E42',
+      setPolicyCell(sheet10, 'D42',
         `Los préstamos por cobrar se reconocen inicialmente al valor razonable más los costos de transacción directamente atribuibles. Posteriormente se miden al costo amortizado usando el método del interés efectivo, menos cualquier deterioro. Se evalúan para deterioro aplicando el modelo de pérdidas crediticias esperadas.`
       );
       
@@ -1613,7 +1615,7 @@ function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWithDataOpt
       ];
       
       for (const row of politicasNA) {
-        setPolicyCell(sheet10, `E${row}`, 'NA');
+        setPolicyCell(sheet10, `D${row}`, 'NA');
       }
     }
   }
