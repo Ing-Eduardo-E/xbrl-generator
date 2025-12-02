@@ -728,6 +728,54 @@ const R414_INTANGIBLES_MAPPINGS: Array<{ row: number; label: string; pucPrefixes
   // Fila 48: Total activos intangibles y plusvalía (AUTOSUMA = F44+F45-F46-F47 - NO LLENAR)
 ];
 
+/**
+ * Mapeo de filas de Efectivo y Equivalentes al Efectivo para R414 - Hoja7 (800100)
+ * Notas - Subclasificaciones de activos, pasivos y patrimonios
+ * Columna: F (consolidado)
+ * 
+ * Filas de autosuma (dejar vacías): 53, 58, 60
+ * Fórmula F53 = F51 + F52
+ * Fórmula F58 = SUMA(F55:F57)
+ * Fórmula F60 = F53 + F58 + F59
+ */
+const R414_EFECTIVO_MAPPINGS: Array<{ row: number; label: string; pucPrefixes: string[]; excludePrefixes?: string[]; useAbsoluteValue?: boolean }> = [
+  // ====== Efectivo (filas 51-53) ======
+  
+  // Fila 51: Efectivo en caja
+  // PUC R414: 1105 - Caja
+  { row: 51, label: 'Efectivo en caja', pucPrefixes: ['1105'] },
+  
+  // Fila 52: Saldos en bancos
+  // PUC R414: 1110 - Depósitos en instituciones financieras, 1120 - Fondos en tránsito
+  { row: 52, label: 'Saldos en bancos', pucPrefixes: ['1110', '1120'] },
+  
+  // Fila 53: Total efectivo (AUTOSUMA = F51+F52 - NO LLENAR)
+  
+  // ====== Equivalentes al efectivo (filas 55-58) ======
+  
+  // Fila 55: Depósitos a corto plazo, clasificados como equivalentes al efectivo
+  // PUC R414: 113301 - Certificados de depósito de ahorro a término (CDT)
+  { row: 55, label: 'Depósitos a corto plazo (CDT)', pucPrefixes: ['113301'] },
+  
+  // Fila 56: Inversiones a corto plazo, clasificadas como equivalentes al efectivo
+  // PUC R414: 113305 - Compromisos reventa inversiones, 113307 - Bonos y títulos
+  { row: 56, label: 'Inversiones a corto plazo', pucPrefixes: ['113305', '113307'] },
+  
+  // Fila 57: Otros acuerdos bancarios, clasificados como equivalentes al efectivo
+  // PUC R414: 113302 - Fondos vendidos, 113303 - Overnight, 113304, 113306, 113390
+  { row: 57, label: 'Otros acuerdos bancarios', pucPrefixes: ['113302', '113303', '113304', '113306', '113390'] },
+  
+  // Fila 58: Total equivalentes al efectivo (AUTOSUMA = SUMA(F55:F57) - NO LLENAR)
+  
+  // ====== Otro efectivo y total (filas 59-60) ======
+  
+  // Fila 59: Otro efectivo y equivalentes al efectivo
+  // PUC R414: 1132 - Efectivo de uso restringido
+  { row: 59, label: 'Otro efectivo y equivalentes', pucPrefixes: ['1132'] },
+  
+  // Fila 60: Total efectivo y equivalentes al efectivo (AUTOSUMA = F53+F58+F59 - NO LLENAR)
+];
+
 /** Datos de cuentas para procesar */
 export interface AccountData {
   code: string;
@@ -1986,6 +2034,36 @@ async function rewriteFinancialDataWithExcelJS(
         // Aplicar valor absoluto si es necesario (amortización/deterioro)
         if (mapping.useAbsoluteValue) {
           totalValue = Math.abs(totalValue);
+        }
+
+        // Escribir valor en columna F
+        if (totalValue !== 0) {
+          const cell = sheet7.getCell(`F${mapping.row}`);
+          cell.value = totalValue;
+          console.log(`[ExcelJS] Hoja7!F${mapping.row} = ${totalValue} (${mapping.label})`);
+        }
+      }
+
+      // ===============================================
+      // Efectivo y Equivalentes al Efectivo (filas 51-60)
+      // ===============================================
+      console.log('[ExcelJS] Escribiendo datos en Hoja7 (Efectivo)...');
+      
+      // Debug: Mostrar cuentas de efectivo (11xx) disponibles
+      const efectivoAccounts = options.consolidatedAccounts.filter(a => a.code.startsWith('11') && a.isLeaf);
+      console.log(`[ExcelJS] Cuentas Efectivo (11xx) encontradas: ${efectivoAccounts.length}`);
+      if (efectivoAccounts.length > 0) {
+        efectivoAccounts.forEach(a => console.log(`  - ${a.code}: ${a.name} = ${a.value}`));
+      }
+
+      for (const mapping of R414_EFECTIVO_MAPPINGS) {
+        // Calcular total consolidado
+        let totalValue = 0;
+        for (const account of options.consolidatedAccounts) {
+          if (!account.isLeaf) continue;
+          if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
+            totalValue += account.value;
+          }
         }
 
         // Escribir valor en columna F
