@@ -67,7 +67,11 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
   // Formulario para datos de la empresa
   const [companyId, setCompanyId] = useState('');
   const [companyName, setCompanyName] = useState('');
-  const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0].replace(/-\d{2}$/, '-12-31'));
+  // Fecha por defecto: 31 de diciembre del año actual
+  const [reportDate, setReportDate] = useState(() => {
+    const year = new Date().getFullYear();
+    return `${year}-12-31`;
+  });
   const [nit, setNit] = useState('');
   const [businessNature, setBusinessNature] = useState('Servicios publicos domiciliarios');
   const [startDate, setStartDate] = useState('');

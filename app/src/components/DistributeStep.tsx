@@ -59,7 +59,12 @@ export function DistributeStep({ onSuccess, onBack }: DistributeStepProps) {
       return;
     }
 
-    // Validar subsidios (pueden ser 0)
+      // Log para debug
+      console.log('📤 Enviando datos al servidor:');
+      console.log('  - Distribución:', { acueducto, alcantarillado, aseo });
+      console.log('  - Usuarios por estrato:', JSON.stringify(usuariosEstrato, null, 2));
+      console.log('  - Subsidios:', { acueducto: subsidioAcueducto, alcantarillado: subsidioAlcantarillado, aseo: subsidioAseo });
+      
     await distributeMutation.mutateAsync({
       acueducto,
       alcantarillado,

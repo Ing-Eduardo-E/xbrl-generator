@@ -207,6 +207,16 @@ export const balanceRouter = router({
         }
 
         // Update session status - guardar también usuariosEstrato y subsidios
+        console.log('\n📥 Backend - Datos recibidos en distributeBalance:');
+        console.log('  - Distribución:', { acueducto: input.acueducto, alcantarillado: input.alcantarillado, aseo: input.aseo });
+        console.log('  - Usuarios por estrato:', input.usuariosEstrato ? 'SÍ (datos presentes)' : 'NO');
+        if (input.usuariosEstrato) {
+          console.log('    Acueducto:', JSON.stringify(input.usuariosEstrato.acueducto));
+          console.log('    Alcantarillado:', JSON.stringify(input.usuariosEstrato.alcantarillado));
+          console.log('    Aseo:', JSON.stringify(input.usuariosEstrato.aseo));
+        }
+        console.log('  - Subsidios:', input.subsidios ? `Acue: ${input.subsidios.acueducto}, Alc: ${input.subsidios.alcantarillado}, Aseo: ${input.subsidios.aseo}` : 'NO');
+        
         const sessionData = {
           distribution: JSON.stringify(input),
           usuariosEstrato: input.usuariosEstrato ? JSON.stringify(input.usuariosEstrato) : null,
@@ -214,6 +224,8 @@ export const balanceRouter = router({
           status: 'distributed',
           updatedAt: new Date(),
         };
+        
+        console.log('  - Guardando en BD:', { usuariosEstrato: sessionData.usuariosEstrato ? 'SÍ' : 'NO', subsidios: sessionData.subsidios ? 'SÍ' : 'NO' });
         
         await db
           .update(balanceSessions)
@@ -558,6 +570,64 @@ export const balanceRouter = router({
     } catch (error) {
       throw new Error(
         error instanceof Error ? error.message : 'Error al obtener información de sesión'
+      );
+    }
+  }),
+
+  /**
+   * DEBUG: Obtener usuarios por estrato y subsidios de la sesión actual
+   * Útil para verificar que los datos se están guardando correctamente
+   */
+  getSessionUsuariosSubsidios: publicProcedure.query(async () => {
+    try {
+      const session = await db
+        .select({
+          id: balanceSessions.id,
+          fileName: balanceSessions.fileName,
+          status: balanceSessions.status,
+          usuariosEstrato: balanceSessions.usuariosEstrato,
+          subsidios: balanceSessions.subsidios,
+          createdAt: balanceSessions.createdAt,
+          updatedAt: balanceSessions.updatedAt,
+        })
+        .from(balanceSessions)
+        .orderBy(desc(balanceSessions.createdAt))
+        .limit(1);
+
+      if (session.length === 0) {
+        return {
+          success: false,
+          message: 'No hay sesión activa',
+          data: null,
+        };
+      }
+
+      const s = session[0];
+      
+      console.log('\n🔍 DEBUG - Consultando usuarios y subsidios de la sesión:');
+      console.log('  - ID:', s.id);
+      console.log('  - Archivo:', s.fileName);
+      console.log('  - Estado:', s.status);
+      console.log('  - Usuarios estrato (raw):', s.usuariosEstrato);
+      console.log('  - Subsidios (raw):', s.subsidios);
+
+      return {
+        success: true,
+        message: 'Datos encontrados',
+        data: {
+          sessionId: s.id,
+          fileName: s.fileName,
+          status: s.status,
+          usuariosEstrato: s.usuariosEstrato ? JSON.parse(s.usuariosEstrato) : null,
+          subsidios: s.subsidios ? JSON.parse(s.subsidios) : null,
+          createdAt: s.createdAt,
+          updatedAt: s.updatedAt,
+        },
+      };
+    } catch (error) {
+      console.error('Error consultando usuarios/subsidios:', error);
+      throw new Error(
+        error instanceof Error ? error.message : 'Error al consultar usuarios/subsidios'
       );
     }
   }),

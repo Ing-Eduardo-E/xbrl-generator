@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const ESTRATOS = [
   { key: "estrato1", label: "Residencial Estrato 1" },
@@ -61,7 +62,23 @@ export function UsuariosEstratoForm({ initialValue, onSubmit }: UsuariosEstratoF
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Calcular total de usuarios para mostrar en el toast
+    let totalUsuarios = 0;
+    for (const servicio of SERVICIOS) {
+      for (const estrato of ESTRATOS) {
+        totalUsuarios += usuarios[servicio.key][estrato.key];
+      }
+    }
+    
     onSubmit(usuarios);
+    
+    // Mostrar confirmación con resumen
+    toast.success('Usuarios guardados correctamente', {
+      description: `Total: ${totalUsuarios.toLocaleString()} usuarios registrados. Los datos se enviarán al servidor cuando presiones "Distribuir Balance".`,
+    });
+    
+    console.log('📊 Usuarios por estrato guardados localmente:', JSON.stringify(usuarios, null, 2));
   };
 
   return (

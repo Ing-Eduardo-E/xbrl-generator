@@ -3229,12 +3229,12 @@ async function rewriteFinancialDataWithExcelJS(
       // Si no, se usa distribución típica por defecto
       // =====================================================
       const estratosResidenciales = [
-        { fila: 19, key: '1', nombre: 'Residencial Estrato 1' },
-        { fila: 20, key: '2', nombre: 'Residencial Estrato 2' },
-        { fila: 21, key: '3', nombre: 'Residencial Estrato 3' },
-        { fila: 22, key: '4', nombre: 'Residencial Estrato 4' },
-        { fila: 23, key: '5', nombre: 'Residencial Estrato 5' },
-        { fila: 24, key: '6', nombre: 'Residencial Estrato 6' }
+        { fila: 19, key: 'estrato1', nombre: 'Residencial Estrato 1' },
+        { fila: 20, key: 'estrato2', nombre: 'Residencial Estrato 2' },
+        { fila: 21, key: 'estrato3', nombre: 'Residencial Estrato 3' },
+        { fila: 22, key: 'estrato4', nombre: 'Residencial Estrato 4' },
+        { fila: 23, key: 'estrato5', nombre: 'Residencial Estrato 5' },
+        { fila: 24, key: 'estrato6', nombre: 'Residencial Estrato 6' }
       ];
       
       const estratosNoResidenciales = [
@@ -3248,23 +3248,26 @@ async function rewriteFinancialDataWithExcelJS(
         // USAR USUARIOS REALES INGRESADOS POR EL USUARIO
         console.log('[ExcelJS] Hoja24 - Usando distribución proporcional por usuarios reales');
         
-        // Sumar usuarios totales residenciales
-        let totalUsuariosResidenciales = 0;
-        for (const estrato of estratosResidenciales) {
+        // Combinar todos los estratos (residenciales + no residenciales) para distribución
+        const todosLosEstratos = [...estratosResidenciales, ...estratosNoResidenciales];
+        
+        // Sumar usuarios totales (residenciales + no residenciales)
+        let totalUsuarios = 0;
+        for (const estrato of todosLosEstratos) {
           const n = Number(options.usuariosEstrato.acueducto[estrato.key]) || 0;
-          totalUsuariosResidenciales += n;
+          totalUsuarios += n;
         }
         
-        console.log(`[ExcelJS] Hoja24 - Total usuarios residenciales acueducto: ${totalUsuariosResidenciales}`);
+        console.log(`[ExcelJS] Hoja24 - Total usuarios acueducto (todos): ${totalUsuarios}`);
         
-        // Distribuir CXC proporcionalmente entre estratos residenciales
-        for (const estrato of estratosResidenciales) {
+        // Distribuir CXC proporcionalmente entre TODOS los estratos con usuarios
+        for (const estrato of todosLosEstratos) {
           const usuarios = Number(options.usuariosEstrato.acueducto[estrato.key]) || 0;
           let valorCorriente = 0, valorNoCorriente = 0;
           
-          if (usuarios > 0 && totalUsuariosResidenciales > 0) {
-            valorCorriente = Math.round(totalCXCCorrientes * usuarios / totalUsuariosResidenciales);
-            valorNoCorriente = Math.round(totalCXCNoCorrientes * usuarios / totalUsuariosResidenciales);
+          if (usuarios > 0 && totalUsuarios > 0) {
+            valorCorriente = Math.round(totalCXCCorrientes * usuarios / totalUsuarios);
+            valorNoCorriente = Math.round(totalCXCNoCorrientes * usuarios / totalUsuarios);
           }
           
           sheet24.getCell(`G${estrato.fila}`).value = valorCorriente;
@@ -3272,15 +3275,9 @@ async function rewriteFinancialDataWithExcelJS(
           sheet24.getCell(`I${estrato.fila}`).value = valorCorriente + valorNoCorriente;
           
           if (valorCorriente + valorNoCorriente !== 0) {
-            console.log(`[ExcelJS] Hoja24 fila ${estrato.fila} (${estrato.nombre}): usuarios=${usuarios}, G=${valorCorriente}, H=${valorNoCorriente}, I=${valorCorriente + valorNoCorriente}`);
+            const porcentaje = totalUsuarios > 0 ? (usuarios / totalUsuarios * 100).toFixed(2) : '0.00';
+            console.log(`[ExcelJS] Hoja24 fila ${estrato.fila} (${estrato.nombre}): usuarios=${usuarios} (${porcentaje}%), G=${valorCorriente}, H=${valorNoCorriente}, I=${valorCorriente + valorNoCorriente}`);
           }
-        }
-        
-        // Limpiar estratos no residenciales (ceros)
-        for (const estrato of estratosNoResidenciales) {
-          sheet24.getCell(`G${estrato.fila}`).value = 0;
-          sheet24.getCell(`H${estrato.fila}`).value = 0;
-          sheet24.getCell(`I${estrato.fila}`).value = 0;
         }
       } else {
         // SIN USUARIOS - Usar distribución típica por defecto
@@ -3329,7 +3326,8 @@ async function rewriteFinancialDataWithExcelJS(
       console.log('[ExcelJS] Escribiendo datos en Hoja30 (FC04 - Subsidios y Contribuciones)...');
       
       // Estructura de estratos subsidiables y servicios
-      const estratosSubsidiables = ['1', '2', '3'];
+      // Las claves deben coincidir con las del formulario: estrato1, estrato2, estrato3
+      const estratosSubsidiables = ['estrato1', 'estrato2', 'estrato3'];
       const serviciosSubsidios = ['acueducto', 'alcantarillado', 'aseo'] as const;
       
       // Subsidios recibidos por servicio
@@ -3345,7 +3343,7 @@ async function rewriteFinancialDataWithExcelJS(
         alcantarillado: {},
         aseo: {}
       };
-      const totalPorEstrato: Record<string, number> = { '1': 0, '2': 0, '3': 0 };
+      const totalPorEstrato: Record<string, number> = { 'estrato1': 0, 'estrato2': 0, 'estrato3': 0 };
 
       for (const servicio of serviciosSubsidios) {
         const subsidio = Number(subsidiosPorServicio[servicio]) || 0;
@@ -3374,24 +3372,24 @@ async function rewriteFinancialDataWithExcelJS(
 
       // Registrar los valores en las celdas correspondientes
       // Acueducto: E14, E15, E16
-      sheet30.getCell('E14').value = distribucionPorEstrato.acueducto['1'];
-      sheet30.getCell('E15').value = distribucionPorEstrato.acueducto['2'];
-      sheet30.getCell('E16').value = distribucionPorEstrato.acueducto['3'];
+      sheet30.getCell('E14').value = distribucionPorEstrato.acueducto['estrato1'];
+      sheet30.getCell('E15').value = distribucionPorEstrato.acueducto['estrato2'];
+      sheet30.getCell('E16').value = distribucionPorEstrato.acueducto['estrato3'];
       
       // Alcantarillado: F14, F15, F16
-      sheet30.getCell('F14').value = distribucionPorEstrato.alcantarillado['1'];
-      sheet30.getCell('F15').value = distribucionPorEstrato.alcantarillado['2'];
-      sheet30.getCell('F16').value = distribucionPorEstrato.alcantarillado['3'];
+      sheet30.getCell('F14').value = distribucionPorEstrato.alcantarillado['estrato1'];
+      sheet30.getCell('F15').value = distribucionPorEstrato.alcantarillado['estrato2'];
+      sheet30.getCell('F16').value = distribucionPorEstrato.alcantarillado['estrato3'];
       
       // Aseo: G14, G15, G16
-      sheet30.getCell('G14').value = distribucionPorEstrato.aseo['1'];
-      sheet30.getCell('G15').value = distribucionPorEstrato.aseo['2'];
-      sheet30.getCell('G16').value = distribucionPorEstrato.aseo['3'];
+      sheet30.getCell('G14').value = distribucionPorEstrato.aseo['estrato1'];
+      sheet30.getCell('G15').value = distribucionPorEstrato.aseo['estrato2'];
+      sheet30.getCell('G16').value = distribucionPorEstrato.aseo['estrato3'];
       
       // Total por estrato: K14, K15, K16
-      sheet30.getCell('K14').value = totalPorEstrato['1'];
-      sheet30.getCell('K15').value = totalPorEstrato['2'];
-      sheet30.getCell('K16').value = totalPorEstrato['3'];
+      sheet30.getCell('K14').value = totalPorEstrato['estrato1'];
+      sheet30.getCell('K15').value = totalPorEstrato['estrato2'];
+      sheet30.getCell('K16').value = totalPorEstrato['estrato3'];
 
       console.log('[ExcelJS] Hoja30 (FC04) - Distribución de subsidios por estrato y servicio:');
       for (const estrato of estratosSubsidiables) {
