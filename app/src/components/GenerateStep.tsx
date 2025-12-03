@@ -34,6 +34,7 @@ interface GenerateStepProps {
 
 /**
  * Funcion para descargar un archivo desde base64
+ * Usa un método que no interfiere con el DOM de React
  */
 function downloadBase64File(base64Data: string, fileName: string, mimeType: string) {
   const byteCharacters = atob(base64Data);
@@ -48,10 +49,15 @@ function downloadBase64File(base64Data: string, fileName: string, mimeType: stri
   const link = document.createElement('a');
   link.href = url;
   link.download = fileName;
-  document.body.appendChild(link);
+  link.style.display = 'none';
+  
+  // Usar click() directamente sin appendChild para evitar conflictos con React DOM
   link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(url);
+  
+  // Limpiar después de un pequeño delay
+  setTimeout(() => {
+    window.URL.revokeObjectURL(url);
+  }, 100);
 }
 
 export function GenerateStep({ onBack, onReset }: GenerateStepProps) {

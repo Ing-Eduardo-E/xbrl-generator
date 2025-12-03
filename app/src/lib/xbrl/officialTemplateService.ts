@@ -2956,7 +2956,7 @@ async function rewriteFinancialDataWithExcelJS(
       // 
       // DISTRIBUCIÓN ESPECIAL PARA SERVICIO DE ASEO:
       // - Fila 72 (Mantenimiento): 40%
-      // - Fila 73 (Disposición final): 60%
+      // - Fila 74 (Disposición final): 60%
       // =====================================================
       
       const costosVentasTotal18 = sumByPrefixes18(aseoAccounts, ['6']);
@@ -2966,23 +2966,23 @@ async function rewriteFinancialDataWithExcelJS(
       const costosDisposicionFinal18 = costosVentasTotal18 - costosMantenimiento18; // Resto para evitar errores de redondeo
       
       sheet18.getCell('F72').value = costosMantenimiento18;
-      sheet18.getCell('F73').value = costosDisposicionFinal18;
+      sheet18.getCell('F74').value = costosDisposicionFinal18;
       
       console.log(`[ExcelJS] Hoja18 - Costos de ventas total: ${costosVentasTotal18}`);
       console.log(`[ExcelJS] Hoja18!F72 (Mantenimiento 40%) = ${costosMantenimiento18}`);
-      console.log(`[ExcelJS] Hoja18!F73 (Disposición final 60%) = ${costosDisposicionFinal18}`);
+      console.log(`[ExcelJS] Hoja18!F74 (Disposición final 60%) = ${costosDisposicionFinal18}`);
       
-      // Limpiar otras celdas de la columna F
-      for (const row of [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 77, 80, 81]) {
+      // Limpiar otras celdas de la columna F (incluyendo F73 que antes tenía datos)
+      for (const row of [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 73, 77, 80, 81]) {
         sheet18.getCell(`F${row}`).value = 0;
       }
       
       // =====================================================
       // COLUMNA G - TOTAL (E + F)
       // Suma de gastos administrativos + gastos operativos por fila
-      // Nota: Incluye fila 73 para disposición final
+      // Nota: Incluye fila 74 para disposición final
       // =====================================================
-      const filasConDatos18 = [13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35, 72, 73, 77, 80, 81];
+      const filasConDatos18 = [13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35, 72, 74, 77, 80, 81];
       for (const row of filasConDatos18) {
         const valorE = sheet18.getCell(`E${row}`).value as number || 0;
         const valorF = sheet18.getCell(`F${row}`).value as number || 0;
@@ -3002,9 +3002,118 @@ async function rewriteFinancialDataWithExcelJS(
       console.log(`[ExcelJS]   TOTAL GASTOS HOJA18 columna E = ${totalGastosHoja18}`);
       console.log(`[ExcelJS]   Costos de ventas (6) columna F = ${costosVentasTotal18} (Hoja3.G15)`);
       console.log(`[ExcelJS]     -> F72 (40%): ${costosMantenimiento18}`);
-      console.log(`[ExcelJS]     -> F73 (60%): ${costosDisposicionFinal18}`);
+      console.log(`[ExcelJS]     -> F74 (60%): ${costosDisposicionFinal18}`);
       
       console.log('[ExcelJS] Hoja18 completada.');
+    }
+    
+    // ===============================================
+    // HOJA22 (900017g): Gastos Consolidados de Todos los Servicios
+    // ===============================================
+    // IMPORTANTE: Hoja22 tiene la misma estructura que Hojas 16, 17, 18
+    // PERO está desplazada una fila más abajo (empieza en fila 14, no 13)
+    // 
+    // Columnas:
+    // - E = Gastos administrativos (Total servicios públicos)
+    // - F = Gastos operativos/costos de ventas (Total servicios públicos)
+    // - G = E + F
+    // - K = Gastos administrativos (Otras actividades - mismo que E por ahora)
+    // - L = Gastos operativos (Otras actividades - mismo que F por ahora)
+    // - M = K + L
+    // 
+    // FILAS DE DATOS (Hoja22 empieza en 14, Hojas 16/17/18 en 13):
+    // Hoja22: 14-20; 22-24; 26; 28-33; 35-36; 38-50; 53-63; 66-71; 73-82
+    // Hojas 16/17/18: 13-19; 21-23; 25; 27-32; 34-35; etc.
+    // ===============================================
+    const sheet22 = workbook.getWorksheet('Hoja22');
+    
+    if (sheet22 && sheet16 && sheet17 && sheet18) {
+      console.log('[ExcelJS] Escribiendo datos en Hoja22 (Gastos Consolidados)...');
+      
+      // Mapeo de filas: Hojas 16/17/18 (fila origen) -> Hoja22 (fila destino)
+      // Hoja22 está desplazada +1 fila respecto a las demás hojas
+      const mapeoFilas: Array<{origen: number; destino: number}> = [
+        // Gastos principales (13-19 -> 14-20)
+        { origen: 13, destino: 14 }, // Beneficios a empleados
+        { origen: 14, destino: 15 }, // Honorarios
+        { origen: 15, destino: 16 }, // Impuestos, Tasas y Contribuciones
+        { origen: 16, destino: 17 }, // Generales
+        { origen: 17, destino: 18 }, // Deterioro
+        { origen: 18, destino: 19 }, // Depreciación
+        { origen: 19, destino: 20 }, // Amortización
+        
+        // Provisiones (21-23 -> 22-24)
+        { origen: 21, destino: 22 }, // Litigios y demandas
+        { origen: 22, destino: 23 }, // Garantías
+        { origen: 23, destino: 24 }, // Diversas
+        
+        // Arrendamientos (25 -> 26)
+        { origen: 25, destino: 26 },
+        
+        // Otros gastos (27-32 -> 28-33)
+        { origen: 27, destino: 28 }, // Comisiones
+        { origen: 28, destino: 29 }, // Ajuste diferencia en cambio
+        { origen: 29, destino: 30 }, // Financieros
+        { origen: 30, destino: 31 }, // Pérdidas MPP
+        { origen: 31, destino: 32 }, // Gastos diversos
+        { origen: 32, destino: 33 }, // Donaciones
+        
+        // Impuestos ganancias (34-35 -> 35-36)
+        { origen: 34, destino: 35 }, // Imp. ganancias corrientes
+        { origen: 35, destino: 36 }, // Imp. ganancias diferido
+        
+        // Operación y mantenimiento (72-81 -> 73-82)
+        { origen: 72, destino: 73 }, // Mantenimiento y reparaciones
+        { origen: 74, destino: 75 }, // Disposición final (Hoja18 usa F74)
+        { origen: 77, destino: 78 }, // Servicios públicos
+        { origen: 80, destino: 81 }, // Seguros
+        { origen: 81, destino: 82 }, // Otros contratos
+      ];
+      
+      // Procesar cada fila según el mapeo
+      for (const { origen, destino } of mapeoFilas) {
+        // Sumar columna E de las 3 hojas
+        const e16 = sheet16.getCell(`E${origen}`).value as number || 0;
+        const e17 = sheet17.getCell(`E${origen}`).value as number || 0;
+        const e18 = sheet18.getCell(`E${origen}`).value as number || 0;
+        const sumaE = e16 + e17 + e18;
+        
+        // Sumar columna F de las 3 hojas
+        const f16 = sheet16.getCell(`F${origen}`).value as number || 0;
+        const f17 = sheet17.getCell(`F${origen}`).value as number || 0;
+        const f18 = sheet18.getCell(`F${origen}`).value as number || 0;
+        const sumaF = f16 + f17 + f18;
+        
+        // Escribir en Hoja22
+        // Columnas E, F, G (Total servicios públicos)
+        sheet22.getCell(`E${destino}`).value = sumaE;
+        sheet22.getCell(`F${destino}`).value = sumaF;
+        sheet22.getCell(`G${destino}`).value = sumaE + sumaF;
+        
+        // Columnas K, L, M (Otras actividades - por ahora igual a E,F,G)
+        // Nota: Si hay actividades no vigiladas, aquí irían esos valores
+        sheet22.getCell(`K${destino}`).value = sumaE;
+        sheet22.getCell(`L${destino}`).value = sumaF;
+        sheet22.getCell(`M${destino}`).value = sumaE + sumaF;
+        
+        // Log solo para filas con valores
+        if (sumaE !== 0 || sumaF !== 0) {
+          console.log(`[ExcelJS] Hoja22 fila ${destino}: E=${sumaE}, F=${sumaF}, G=${sumaE + sumaF}`);
+        }
+      }
+      
+      // DEBUG: Calcular y mostrar totales consolidados
+      let totalE = 0, totalF = 0;
+      for (const { destino } of mapeoFilas) {
+        totalE += sheet22.getCell(`E${destino}`).value as number || 0;
+        totalF += sheet22.getCell(`F${destino}`).value as number || 0;
+      }
+      console.log(`[ExcelJS] Hoja22 - Totales consolidados:`);
+      console.log(`[ExcelJS]   Columna E (Gastos admin): ${totalE}`);
+      console.log(`[ExcelJS]   Columna F (Costos ventas): ${totalF}`);
+      console.log(`[ExcelJS]   Columna G (E+F): ${totalE + totalF}`);
+      
+      console.log('[ExcelJS] Hoja22 completada.');
     }
   }
 
