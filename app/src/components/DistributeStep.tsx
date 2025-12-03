@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { UsuariosEstratoForm, UsuariosEstratoData } from './UsuariosEstratoForm';
 import { Progress } from '@/components/ui/progress';
 import { AlertCircle, CheckCircle2, Droplets, Waves, Trash2 } from 'lucide-react';
 import { cn, formatCurrency, validateDistribution } from '@/lib/utils';
@@ -20,6 +21,14 @@ export function DistributeStep({ onSuccess, onBack }: DistributeStepProps) {
   const [acueducto, setAcueducto] = useState<number>(40);
   const [alcantarillado, setAlcantarillado] = useState<number>(35);
   const [aseo, setAseo] = useState<number>(25);
+
+  // Estado para usuarios por estrato y servicio
+  const [usuariosEstrato, setUsuariosEstrato] = useState<UsuariosEstratoData | null>(null);
+
+  // Estado para subsidios por servicio
+  const [subsidioAcueducto, setSubsidioAcueducto] = useState<number>(0);
+  const [subsidioAlcantarillado, setSubsidioAlcantarillado] = useState<number>(0);
+  const [subsidioAseo, setSubsidioAseo] = useState<number>(0);
 
   const totalsQuery = trpc.balance.getTotals.useQuery();
   const distributeMutation = trpc.balance.distributeBalance.useMutation({
@@ -44,10 +53,23 @@ export function DistributeStep({ onSuccess, onBack }: DistributeStepProps) {
       return;
     }
 
+    // Validar que usuarios por estrato estén definidos
+    if (!usuariosEstrato) {
+      toast.error('Debes ingresar el número de usuarios por estrato y servicio.');
+      return;
+    }
+
+    // Validar subsidios (pueden ser 0)
     await distributeMutation.mutateAsync({
       acueducto,
       alcantarillado,
       aseo,
+      usuariosEstrato,
+      subsidios: {
+        acueducto: subsidioAcueducto,
+        alcantarillado: subsidioAlcantarillado,
+        aseo: subsidioAseo,
+      },
     });
   };
 
@@ -248,6 +270,7 @@ export function DistributeStep({ onSuccess, onBack }: DistributeStepProps) {
         </Card>
       </div>
 
+
       {/* Validation Summary */}
       <Card
         className={cn(
@@ -281,6 +304,52 @@ export function DistributeStep({ onSuccess, onBack }: DistributeStepProps) {
               {validation.message}
             </p>
           )}
+        </div>
+      </Card>
+
+      {/* Usuarios por Estrato y Servicio */}
+      <UsuariosEstratoForm
+        initialValue={usuariosEstrato ?? undefined}
+        onSubmit={setUsuariosEstrato}
+      />
+
+      {/* Subsidios por Servicio */}
+      <Card className="p-6 mt-8">
+        <h3 className="text-lg font-semibold mb-4">Subsidios Recibidos por Servicio</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <Label htmlFor="subsidio-acueducto">Acueducto</Label>
+            <Input
+              id="subsidio-acueducto"
+              type="number"
+              min="0"
+              value={subsidioAcueducto}
+              onChange={(e) => setSubsidioAcueducto(Number(e.target.value) || 0)}
+              className="mt-2"
+            />
+          </div>
+          <div>
+            <Label htmlFor="subsidio-alcantarillado">Alcantarillado</Label>
+            <Input
+              id="subsidio-alcantarillado"
+              type="number"
+              min="0"
+              value={subsidioAlcantarillado}
+              onChange={(e) => setSubsidioAlcantarillado(Number(e.target.value) || 0)}
+              className="mt-2"
+            />
+          </div>
+          <div>
+            <Label htmlFor="subsidio-aseo">Aseo</Label>
+            <Input
+              id="subsidio-aseo"
+              type="number"
+              min="0"
+              value={subsidioAseo}
+              onChange={(e) => setSubsidioAseo(Number(e.target.value) || 0)}
+              className="mt-2"
+            />
+          </div>
         </div>
       </Card>
 

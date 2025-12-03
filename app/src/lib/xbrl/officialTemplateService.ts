@@ -897,6 +897,20 @@ export interface ServiceBalanceData {
   isLeaf: boolean;
 }
 
+/** Estructura de usuarios por estrato y servicio */
+export interface UsuariosEstrato {
+  acueducto: Record<string, number>;
+  alcantarillado: Record<string, number>;
+  aseo: Record<string, number>;
+}
+
+/** Estructura de subsidios por servicio */
+export interface SubsidiosPorServicio {
+  acueducto: number;
+  alcantarillado: number;
+  aseo: number;
+}
+
 /** Opciones extendidas para incluir datos financieros */
 export interface TemplateWithDataOptions extends TemplateCustomization {
   /** Cuentas consolidadas del balance */
@@ -905,6 +919,10 @@ export interface TemplateWithDataOptions extends TemplateCustomization {
   serviceBalances?: ServiceBalanceData[];
   /** Servicios activos para la empresa */
   activeServices?: string[];
+  /** Usuarios por estrato y servicio (para distribución proporcional) */
+  usuariosEstrato?: UsuariosEstrato;
+  /** Subsidios recibidos por servicio */
+  subsidios?: SubsidiosPorServicio;
 }
 
 /** Configuración para personalizar plantillas */
@@ -3168,6 +3186,219 @@ async function rewriteFinancialDataWithExcelJS(
       console.log(`[ExcelJS] Hoja23 - Aseo: I28=${ingresosAseo}, K40=${ingresosAseo}`);
       
       console.log('[ExcelJS] Hoja23 completada.');
+    }
+    
+    // ===============================================
+    // HOJA24 (900021): FC03-1 - CXC Acueducto (Detallado por estrato)
+    // ===============================================
+    // Esta hoja distribuye las cuentas por cobrar por estrato usando
+    // una distribución proporcional basada en el número de usuarios.
+    // 
+    // Datos de entrada (Hoja2 columna I - Acueducto):
+    // - CXC Corrientes: I19 + I20
+    // - CXC No Corrientes: I43 + I44
+    // 
+    // Distribución por estrato (columnas G=Corriente, H=No Corriente, I=Total):
+    // - Filas 19-24: Residencial Estratos 1-6
+    // - Filas 25-28: No residencial (Industrial, Comercial, Oficial, Especial)
+    // ===============================================
+    const sheet24 = workbook.getWorksheet('Hoja24');
+    const sheet2ForHoja24 = workbook.getWorksheet('Hoja2');
+    
+    if (sheet24 && sheet2ForHoja24) {
+      console.log('[ExcelJS] Escribiendo datos en Hoja24 (FC03-1 - CXC Acueducto por estrato)...');
+      
+      // Obtener CXC Corrientes de Hoja2 (I19 + I20)
+      const cxcCorrientes19 = sheet2ForHoja24.getCell('I19').value as number || 0;
+      const cxcCorrientes20 = sheet2ForHoja24.getCell('I20').value as number || 0;
+      const totalCXCCorrientes = cxcCorrientes19 + cxcCorrientes20;
+      
+      // Obtener CXC No Corrientes de Hoja2 (I43 + I44)
+      const cxcNoCorrientes43 = sheet2ForHoja24.getCell('I43').value as number || 0;
+      const cxcNoCorrientes44 = sheet2ForHoja24.getCell('I44').value as number || 0;
+      const totalCXCNoCorrientes = cxcNoCorrientes43 + cxcNoCorrientes44;
+      
+      console.log(`[ExcelJS] Hoja24 - CXC desde Hoja2:`);
+      console.log(`[ExcelJS]   Corrientes (I19+I20): ${cxcCorrientes19} + ${cxcCorrientes20} = ${totalCXCCorrientes}`);
+      console.log(`[ExcelJS]   No Corrientes (I43+I44): ${cxcNoCorrientes43} + ${cxcNoCorrientes44} = ${totalCXCNoCorrientes}`);
+      
+      // =====================================================
+      // DISTRIBUCIÓN POR ESTRATO USANDO USUARIOS REALES
+      // Solo para estratos residenciales (1-6)
+      // Si el usuario proporciona datos de usuarios, se usa distribución proporcional
+      // Si no, se usa distribución típica por defecto
+      // =====================================================
+      const estratosResidenciales = [
+        { fila: 19, key: '1', nombre: 'Residencial Estrato 1' },
+        { fila: 20, key: '2', nombre: 'Residencial Estrato 2' },
+        { fila: 21, key: '3', nombre: 'Residencial Estrato 3' },
+        { fila: 22, key: '4', nombre: 'Residencial Estrato 4' },
+        { fila: 23, key: '5', nombre: 'Residencial Estrato 5' },
+        { fila: 24, key: '6', nombre: 'Residencial Estrato 6' }
+      ];
+      
+      const estratosNoResidenciales = [
+        { fila: 25, key: 'industrial', nombre: 'No residencial industrial' },
+        { fila: 26, key: 'comercial', nombre: 'No residencial comercial' },
+        { fila: 27, key: 'oficial', nombre: 'No residencial oficial' },
+        { fila: 28, key: 'especial', nombre: 'No residencial especial' }
+      ];
+      
+      if (options.usuariosEstrato && options.usuariosEstrato.acueducto) {
+        // USAR USUARIOS REALES INGRESADOS POR EL USUARIO
+        console.log('[ExcelJS] Hoja24 - Usando distribución proporcional por usuarios reales');
+        
+        // Sumar usuarios totales residenciales
+        let totalUsuariosResidenciales = 0;
+        for (const estrato of estratosResidenciales) {
+          const n = Number(options.usuariosEstrato.acueducto[estrato.key]) || 0;
+          totalUsuariosResidenciales += n;
+        }
+        
+        console.log(`[ExcelJS] Hoja24 - Total usuarios residenciales acueducto: ${totalUsuariosResidenciales}`);
+        
+        // Distribuir CXC proporcionalmente entre estratos residenciales
+        for (const estrato of estratosResidenciales) {
+          const usuarios = Number(options.usuariosEstrato.acueducto[estrato.key]) || 0;
+          let valorCorriente = 0, valorNoCorriente = 0;
+          
+          if (usuarios > 0 && totalUsuariosResidenciales > 0) {
+            valorCorriente = Math.round(totalCXCCorrientes * usuarios / totalUsuariosResidenciales);
+            valorNoCorriente = Math.round(totalCXCNoCorrientes * usuarios / totalUsuariosResidenciales);
+          }
+          
+          sheet24.getCell(`G${estrato.fila}`).value = valorCorriente;
+          sheet24.getCell(`H${estrato.fila}`).value = valorNoCorriente;
+          sheet24.getCell(`I${estrato.fila}`).value = valorCorriente + valorNoCorriente;
+          
+          if (valorCorriente + valorNoCorriente !== 0) {
+            console.log(`[ExcelJS] Hoja24 fila ${estrato.fila} (${estrato.nombre}): usuarios=${usuarios}, G=${valorCorriente}, H=${valorNoCorriente}, I=${valorCorriente + valorNoCorriente}`);
+          }
+        }
+        
+        // Limpiar estratos no residenciales (ceros)
+        for (const estrato of estratosNoResidenciales) {
+          sheet24.getCell(`G${estrato.fila}`).value = 0;
+          sheet24.getCell(`H${estrato.fila}`).value = 0;
+          sheet24.getCell(`I${estrato.fila}`).value = 0;
+        }
+      } else {
+        // SIN USUARIOS - Usar distribución típica por defecto
+        console.log('[ExcelJS] Hoja24 - Sin datos de usuarios, usando distribución típica por defecto');
+        
+        const distribucionTipica = [
+          { fila: 19, porcentaje: 0.25 },  // Estrato 1: 25%
+          { fila: 20, porcentaje: 0.30 },  // Estrato 2: 30%
+          { fila: 21, porcentaje: 0.20 },  // Estrato 3: 20%
+          { fila: 22, porcentaje: 0.10 },  // Estrato 4: 10%
+          { fila: 23, porcentaje: 0.05 },  // Estrato 5: 5%
+          { fila: 24, porcentaje: 0.03 },  // Estrato 6: 3%
+          { fila: 25, porcentaje: 0.02 },  // Industrial: 2%
+          { fila: 26, porcentaje: 0.03 },  // Comercial: 3%
+          { fila: 27, porcentaje: 0.01 },  // Oficial: 1%
+          { fila: 28, porcentaje: 0.01 },  // Especial: 1%
+        ];
+        
+        for (const estrato of distribucionTipica) {
+          const valorCorriente = Math.round(totalCXCCorrientes * estrato.porcentaje);
+          const valorNoCorriente = Math.round(totalCXCNoCorrientes * estrato.porcentaje);
+          
+          sheet24.getCell(`G${estrato.fila}`).value = valorCorriente;
+          sheet24.getCell(`H${estrato.fila}`).value = valorNoCorriente;
+          sheet24.getCell(`I${estrato.fila}`).value = valorCorriente + valorNoCorriente;
+        }
+      }
+      
+      console.log(`[ExcelJS] Hoja24 - Totales distribuidos:`);
+      console.log(`[ExcelJS]   Corrientes: ${totalCXCCorrientes}`);
+      console.log(`[ExcelJS]   No Corrientes: ${totalCXCNoCorrientes}`);
+      console.log(`[ExcelJS]   Total: ${totalCXCCorrientes + totalCXCNoCorrientes}`);
+      
+      console.log('[ExcelJS] Hoja24 completada.');
+    }
+    
+    // ===============================================
+    // HOJA30 (900027): FC04 - Información Subsidios y Contribuciones
+    // ===============================================
+    // Distribuir subsidios por estrato (solo 1, 2 y 3) y servicio
+    // Celdas: E14-E16 (Acueducto), F14-F16 (Alcantarillado), G14-G16 (Aseo), K14-K16 (Total por estrato)
+    // ===============================================
+    const sheet30 = workbook.getWorksheet('Hoja30');
+    
+    if (sheet30 && options.usuariosEstrato && options.subsidios) {
+      console.log('[ExcelJS] Escribiendo datos en Hoja30 (FC04 - Subsidios y Contribuciones)...');
+      
+      // Estructura de estratos subsidiables y servicios
+      const estratosSubsidiables = ['1', '2', '3'];
+      const serviciosSubsidios = ['acueducto', 'alcantarillado', 'aseo'] as const;
+      
+      // Subsidios recibidos por servicio
+      const subsidiosPorServicio = options.subsidios;
+      // Usuarios por estrato y servicio
+      const usuariosPorEstrato = options.usuariosEstrato;
+
+      // Para cada servicio, distribuir el subsidio proporcionalmente
+      // entre los estratos 1, 2 y 3 según el número de usuarios
+      // Si un estrato tiene 0 usuarios, no participa
+      const distribucionPorEstrato: Record<string, Record<string, number>> = {
+        acueducto: {},
+        alcantarillado: {},
+        aseo: {}
+      };
+      const totalPorEstrato: Record<string, number> = { '1': 0, '2': 0, '3': 0 };
+
+      for (const servicio of serviciosSubsidios) {
+        const subsidio = Number(subsidiosPorServicio[servicio]) || 0;
+        
+        // Sumar usuarios de estratos 1,2,3 para este servicio
+        let totalUsuarios = 0;
+        for (const estrato of estratosSubsidiables) {
+          const n = Number(usuariosPorEstrato[servicio]?.[estrato]) || 0;
+          totalUsuarios += n;
+        }
+        
+        console.log(`[ExcelJS] Hoja30 - ${servicio}: subsidio=${subsidio}, totalUsuarios123=${totalUsuarios}`);
+        
+        for (const estrato of estratosSubsidiables) {
+          const usuarios = Number(usuariosPorEstrato[servicio]?.[estrato]) || 0;
+          let valor = 0;
+          
+          if (usuarios > 0 && totalUsuarios > 0 && subsidio > 0) {
+            valor = Math.round(subsidio * usuarios / totalUsuarios);
+          }
+          
+          distribucionPorEstrato[servicio][estrato] = valor;
+          totalPorEstrato[estrato] += valor;
+        }
+      }
+
+      // Registrar los valores en las celdas correspondientes
+      // Acueducto: E14, E15, E16
+      sheet30.getCell('E14').value = distribucionPorEstrato.acueducto['1'];
+      sheet30.getCell('E15').value = distribucionPorEstrato.acueducto['2'];
+      sheet30.getCell('E16').value = distribucionPorEstrato.acueducto['3'];
+      
+      // Alcantarillado: F14, F15, F16
+      sheet30.getCell('F14').value = distribucionPorEstrato.alcantarillado['1'];
+      sheet30.getCell('F15').value = distribucionPorEstrato.alcantarillado['2'];
+      sheet30.getCell('F16').value = distribucionPorEstrato.alcantarillado['3'];
+      
+      // Aseo: G14, G15, G16
+      sheet30.getCell('G14').value = distribucionPorEstrato.aseo['1'];
+      sheet30.getCell('G15').value = distribucionPorEstrato.aseo['2'];
+      sheet30.getCell('G16').value = distribucionPorEstrato.aseo['3'];
+      
+      // Total por estrato: K14, K15, K16
+      sheet30.getCell('K14').value = totalPorEstrato['1'];
+      sheet30.getCell('K15').value = totalPorEstrato['2'];
+      sheet30.getCell('K16').value = totalPorEstrato['3'];
+
+      console.log('[ExcelJS] Hoja30 (FC04) - Distribución de subsidios por estrato y servicio:');
+      for (const estrato of estratosSubsidiables) {
+        console.log(`  Estrato ${estrato}: Acueducto=${distribucionPorEstrato.acueducto[estrato]}, Alcantarillado=${distribucionPorEstrato.alcantarillado[estrato]}, Aseo=${distribucionPorEstrato.aseo[estrato]}, Total=${totalPorEstrato[estrato]}`);
+      }
+      
+      console.log('[ExcelJS] Hoja30 completada.');
     }
   }
 

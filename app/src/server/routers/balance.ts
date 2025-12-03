@@ -140,6 +140,18 @@ export const balanceRouter = router({
         acueducto: z.number().min(0).max(100),
         alcantarillado: z.number().min(0).max(100),
         aseo: z.number().min(0).max(100),
+        // Usuarios por estrato y servicio (para distribución proporcional en hojas FC)
+        usuariosEstrato: z.object({
+          acueducto: z.record(z.string(), z.number()),
+          alcantarillado: z.record(z.string(), z.number()),
+          aseo: z.record(z.string(), z.number()),
+        }).optional(),
+        // Subsidios recibidos por servicio
+        subsidios: z.object({
+          acueducto: z.number(),
+          alcantarillado: z.number(),
+          aseo: z.number(),
+        }).optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -194,14 +206,18 @@ export const balanceRouter = router({
           await db.insert(serviceBalances).values(batch);
         }
 
-        // Update session status
+        // Update session status - guardar también usuariosEstrato y subsidios
+        const sessionData = {
+          distribution: JSON.stringify(input),
+          usuariosEstrato: input.usuariosEstrato ? JSON.stringify(input.usuariosEstrato) : null,
+          subsidios: input.subsidios ? JSON.stringify(input.subsidios) : null,
+          status: 'distributed',
+          updatedAt: new Date(),
+        };
+        
         await db
           .update(balanceSessions)
-          .set({
-            distribution: JSON.stringify(input),
-            status: 'distributed',
-            updatedAt: new Date(),
-          })
+          .set(sessionData)
           .where(eq(balanceSessions.status, 'uploaded'));
 
         return {
@@ -407,6 +423,18 @@ export const balanceRouter = router({
         hasRestatedInfo: z.string().optional(),
         restatedPeriod: z.string().optional(),
         includeFinancialData: z.boolean().optional().default(true),
+        // Usuarios por estrato y servicio para distribución proporcional
+        usuariosEstrato: z.object({
+          acueducto: z.record(z.string(), z.number()),
+          alcantarillado: z.record(z.string(), z.number()),
+          aseo: z.record(z.string(), z.number()),
+        }).optional(),
+        // Subsidios recibidos por servicio
+        subsidios: z.object({
+          acueducto: z.number(),
+          alcantarillado: z.number(),
+          aseo: z.number(),
+        }).optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -466,6 +494,12 @@ export const balanceRouter = router({
           activeServices = Object.keys(distribution).filter(s => distribution[s] > 0);
         }
 
+        // Obtener usuariosEstrato y subsidios del input o de la sesión
+        const usuariosEstrato = input.usuariosEstrato || 
+          (session[0].usuariosEstrato ? JSON.parse(session[0].usuariosEstrato) : undefined);
+        const subsidios = input.subsidios ||
+          (session[0].subsidios ? JSON.parse(session[0].subsidios) : undefined);
+
         // Generar el paquete con plantillas oficiales Y datos financieros
         const templatePackage = await generateOfficialTemplatePackageWithData({
           niifGroup,
@@ -481,6 +515,8 @@ export const balanceRouter = router({
           consolidatedAccounts: consolidatedAccounts.length > 0 ? consolidatedAccounts : undefined,
           serviceBalances: serviceBalancesData.length > 0 ? serviceBalancesData : undefined,
           activeServices: activeServices.length > 0 ? activeServices : undefined,
+          usuariosEstrato,
+          subsidios,
         });
 
         return {
