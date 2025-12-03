@@ -3260,6 +3260,22 @@ async function rewriteFinancialDataWithExcelJS(
         
         console.log(`[ExcelJS] Hoja24 - Total usuarios acueducto (todos): ${totalUsuarios}`);
         
+        // =====================================================
+        // PORCENTAJES DE DISTRIBUCIÓN POR RANGO DE VENCIMIENTO
+        // Columnas J a R para rangos, columna S para suma total
+        // =====================================================
+        const rangosVencimiento = [
+          { columna: 'J', porcentaje: 0.11, nombre: 'No vencida' },
+          { columna: 'K', porcentaje: 0.09, nombre: 'Vencida 1-30 días' },
+          { columna: 'L', porcentaje: 0.25, nombre: 'Vencida 31-60 días' },
+          { columna: 'M', porcentaje: 0.15, nombre: 'Vencida 61-90 días' },
+          { columna: 'N', porcentaje: 0.20, nombre: 'Vencida 91-120 días' },
+          { columna: 'O', porcentaje: 0.12, nombre: 'Vencida 121-150 días' },
+          { columna: 'P', porcentaje: 0.08, nombre: 'Vencida 151-180 días' },
+          { columna: 'Q', porcentaje: 0.00, nombre: 'Vencida 181-360 días' },
+          { columna: 'R', porcentaje: 0.00, nombre: 'Vencida >360 días' },
+        ];
+        
         // Distribuir CXC proporcionalmente entre TODOS los estratos con usuarios
         for (const estrato of todosLosEstratos) {
           const usuarios = Number(options.usuariosEstrato.acueducto[estrato.key]) || 0;
@@ -3270,18 +3286,55 @@ async function rewriteFinancialDataWithExcelJS(
             valorNoCorriente = Math.round(totalCXCNoCorrientes * usuarios / totalUsuarios);
           }
           
+          // Columnas G, H, I - CXC Corriente, No Corriente, Total
           sheet24.getCell(`G${estrato.fila}`).value = valorCorriente;
           sheet24.getCell(`H${estrato.fila}`).value = valorNoCorriente;
-          sheet24.getCell(`I${estrato.fila}`).value = valorCorriente + valorNoCorriente;
+          const totalCXCEstrato = valorCorriente + valorNoCorriente;
+          sheet24.getCell(`I${estrato.fila}`).value = totalCXCEstrato;
           
-          if (valorCorriente + valorNoCorriente !== 0) {
+          // =====================================================
+          // Distribuir el total de CXC por rangos de vencimiento
+          // Columnas J a R según porcentajes, S = suma de J:R
+          // =====================================================
+          let sumaRangos = 0;
+          for (const rango of rangosVencimiento) {
+            const valorRango = Math.round(totalCXCEstrato * rango.porcentaje);
+            sheet24.getCell(`${rango.columna}${estrato.fila}`).value = valorRango;
+            sumaRangos += valorRango;
+          }
+          
+          // Columna S = suma de todos los rangos (debe ser igual a columna I)
+          // Ajustar el último valor para que la suma sea exacta
+          const diferencia = totalCXCEstrato - sumaRangos;
+          if (diferencia !== 0) {
+            // Ajustar en la columna L (la de mayor porcentaje) para que cuadre
+            const valorLActual = sheet24.getCell(`L${estrato.fila}`).value as number || 0;
+            sheet24.getCell(`L${estrato.fila}`).value = valorLActual + diferencia;
+            sumaRangos = totalCXCEstrato;
+          }
+          sheet24.getCell(`S${estrato.fila}`).value = sumaRangos;
+          
+          if (totalCXCEstrato !== 0) {
             const porcentaje = totalUsuarios > 0 ? (usuarios / totalUsuarios * 100).toFixed(2) : '0.00';
-            console.log(`[ExcelJS] Hoja24 fila ${estrato.fila} (${estrato.nombre}): usuarios=${usuarios} (${porcentaje}%), G=${valorCorriente}, H=${valorNoCorriente}, I=${valorCorriente + valorNoCorriente}`);
+            console.log(`[ExcelJS] Hoja24 fila ${estrato.fila} (${estrato.nombre}): usuarios=${usuarios} (${porcentaje}%), I=${totalCXCEstrato}, S=${sumaRangos}`);
           }
         }
       } else {
         // SIN USUARIOS - Usar distribución típica por defecto
         console.log('[ExcelJS] Hoja24 - Sin datos de usuarios, usando distribución típica por defecto');
+        
+        // Porcentajes de distribución por rango de vencimiento
+        const rangosVencimiento = [
+          { columna: 'J', porcentaje: 0.11, nombre: 'No vencida' },
+          { columna: 'K', porcentaje: 0.09, nombre: 'Vencida 1-30 días' },
+          { columna: 'L', porcentaje: 0.25, nombre: 'Vencida 31-60 días' },
+          { columna: 'M', porcentaje: 0.15, nombre: 'Vencida 61-90 días' },
+          { columna: 'N', porcentaje: 0.20, nombre: 'Vencida 91-120 días' },
+          { columna: 'O', porcentaje: 0.12, nombre: 'Vencida 121-150 días' },
+          { columna: 'P', porcentaje: 0.08, nombre: 'Vencida 151-180 días' },
+          { columna: 'Q', porcentaje: 0.00, nombre: 'Vencida 181-360 días' },
+          { columna: 'R', porcentaje: 0.00, nombre: 'Vencida >360 días' },
+        ];
         
         const distribucionTipica = [
           { fila: 19, porcentaje: 0.25 },  // Estrato 1: 25%
@@ -3299,10 +3352,28 @@ async function rewriteFinancialDataWithExcelJS(
         for (const estrato of distribucionTipica) {
           const valorCorriente = Math.round(totalCXCCorrientes * estrato.porcentaje);
           const valorNoCorriente = Math.round(totalCXCNoCorrientes * estrato.porcentaje);
+          const totalCXCEstrato = valorCorriente + valorNoCorriente;
           
           sheet24.getCell(`G${estrato.fila}`).value = valorCorriente;
           sheet24.getCell(`H${estrato.fila}`).value = valorNoCorriente;
-          sheet24.getCell(`I${estrato.fila}`).value = valorCorriente + valorNoCorriente;
+          sheet24.getCell(`I${estrato.fila}`).value = totalCXCEstrato;
+          
+          // Distribuir por rangos de vencimiento
+          let sumaRangos = 0;
+          for (const rango of rangosVencimiento) {
+            const valorRango = Math.round(totalCXCEstrato * rango.porcentaje);
+            sheet24.getCell(`${rango.columna}${estrato.fila}`).value = valorRango;
+            sumaRangos += valorRango;
+          }
+          
+          // Ajustar diferencia de redondeo
+          const diferencia = totalCXCEstrato - sumaRangos;
+          if (diferencia !== 0) {
+            const valorLActual = sheet24.getCell(`L${estrato.fila}`).value as number || 0;
+            sheet24.getCell(`L${estrato.fila}`).value = valorLActual + diferencia;
+            sumaRangos = totalCXCEstrato;
+          }
+          sheet24.getCell(`S${estrato.fila}`).value = sumaRangos;
         }
       }
       
