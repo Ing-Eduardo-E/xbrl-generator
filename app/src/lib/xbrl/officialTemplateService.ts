@@ -3115,6 +3115,59 @@ async function rewriteFinancialDataWithExcelJS(
       
       console.log('[ExcelJS] Hoja22 completada.');
     }
+    
+    // ===============================================
+    // HOJA23 (900019): FC02 - Complementario de Ingresos
+    // ===============================================
+    // Esta hoja recibe datos de la Hoja3 (Estado de Resultados):
+    // - Hoja3.E14 (Ingresos Acueducto) → Hoja23.I17 (Comercialización) y K18 (Ingresos netos)
+    // - Hoja3.F14 (Ingresos Alcantarillado) → Hoja23.I22 (Comercialización) y K23 (Ingresos netos)
+    // - Hoja3.G14 (Ingresos Aseo) → Hoja23.I28 (Comercialización) y K40 (Ingresos netos)
+    // ===============================================
+    const sheet23 = workbook.getWorksheet('Hoja23');
+    
+    if (sheet23 && sheet3) {
+      console.log('[ExcelJS] Escribiendo datos en Hoja23 (FC02 - Complementario Ingresos)...');
+      
+      // Obtener los valores de ingresos de la Hoja3 (fila 14)
+      const ingresosAcueducto = sheet3.getCell('E14').value as number || 0;
+      const ingresosAlcantarillado = sheet3.getCell('F14').value as number || 0;
+      const ingresosAseo = sheet3.getCell('G14').value as number || 0;
+      
+      console.log(`[ExcelJS] Hoja23 - Valores de Hoja3.fila14:`);
+      console.log(`[ExcelJS]   E14 (Acueducto): ${ingresosAcueducto}`);
+      console.log(`[ExcelJS]   F14 (Alcantarillado): ${ingresosAlcantarillado}`);
+      console.log(`[ExcelJS]   G14 (Aseo): ${ingresosAseo}`);
+      
+      // =====================================================
+      // ACUEDUCTO (filas 17-18)
+      // =====================================================
+      // I17: Comercialización
+      sheet23.getCell('I17').value = ingresosAcueducto;
+      // K18: Ingresos netos
+      sheet23.getCell('K18').value = ingresosAcueducto;
+      console.log(`[ExcelJS] Hoja23 - Acueducto: I17=${ingresosAcueducto}, K18=${ingresosAcueducto}`);
+      
+      // =====================================================
+      // ALCANTARILLADO (filas 22-23)
+      // =====================================================
+      // I22: Comercialización
+      sheet23.getCell('I22').value = ingresosAlcantarillado;
+      // K23: Ingresos netos
+      sheet23.getCell('K23').value = ingresosAlcantarillado;
+      console.log(`[ExcelJS] Hoja23 - Alcantarillado: I22=${ingresosAlcantarillado}, K23=${ingresosAlcantarillado}`);
+      
+      // =====================================================
+      // ASEO (filas 28 y 40)
+      // =====================================================
+      // I28: Comercialización
+      sheet23.getCell('I28').value = ingresosAseo;
+      // K40: Ingresos netos
+      sheet23.getCell('K40').value = ingresosAseo;
+      console.log(`[ExcelJS] Hoja23 - Aseo: I28=${ingresosAseo}, K40=${ingresosAseo}`);
+      
+      console.log('[ExcelJS] Hoja23 completada.');
+    }
   }
 
   // Escribir el buffer con ExcelJS
