@@ -3386,6 +3386,180 @@ async function rewriteFinancialDataWithExcelJS(
     }
     
     // ===============================================
+    // HOJA25 (900022): FC03-2 - CXC Alcantarillado (Detallado por estrato)
+    // ===============================================
+    // Esta hoja distribuye las cuentas por cobrar de ALCANTARILLADO por estrato
+    // usando una distribución proporcional basada en el número de usuarios.
+    // 
+    // Datos de entrada (Hoja2 columna J - Alcantarillado):
+    // - CXC Corrientes: J19 + J20
+    // - CXC No Corrientes: J43 + J44
+    // 
+    // Distribución por estrato (columnas G=Corriente, H=No Corriente, I=Total):
+    // - Filas 19-24: Residencial Estratos 1-6
+    // - Filas 25-28: No residencial (Industrial, Comercial, Oficial, Especial)
+    // 
+    // Distribución por rangos de vencimiento (columnas J-R, S=suma):
+    // J=No vencida(11%), K=1-30d(9%), L=31-60d(25%), M=61-90d(15%),
+    // N=91-120d(20%), O=121-150d(12%), P=151-180d(8%), Q=181-360d(0%), R=>360d(0%)
+    // ===============================================
+    const sheet25 = workbook.getWorksheet('Hoja25');
+    const sheet2ForHoja25 = workbook.getWorksheet('Hoja2');
+    
+    if (sheet25 && sheet2ForHoja25) {
+      console.log('[ExcelJS] Escribiendo datos en Hoja25 (FC03-2 - CXC Alcantarillado por estrato)...');
+      
+      // Obtener CXC Corrientes de Hoja2 columna J (J19 + J20)
+      const cxcCorrientes19Alc = sheet2ForHoja25.getCell('J19').value as number || 0;
+      const cxcCorrientes20Alc = sheet2ForHoja25.getCell('J20').value as number || 0;
+      const totalCXCCorrientesAlc = cxcCorrientes19Alc + cxcCorrientes20Alc;
+      
+      // Obtener CXC No Corrientes de Hoja2 columna J (J43 + J44)
+      const cxcNoCorrientes43Alc = sheet2ForHoja25.getCell('J43').value as number || 0;
+      const cxcNoCorrientes44Alc = sheet2ForHoja25.getCell('J44').value as number || 0;
+      const totalCXCNoCorrientesAlc = cxcNoCorrientes43Alc + cxcNoCorrientes44Alc;
+      
+      console.log(`[ExcelJS] Hoja25 - CXC Alcantarillado desde Hoja2:`);
+      console.log(`[ExcelJS]   Corrientes (J19+J20): ${cxcCorrientes19Alc} + ${cxcCorrientes20Alc} = ${totalCXCCorrientesAlc}`);
+      console.log(`[ExcelJS]   No Corrientes (J43+J44): ${cxcNoCorrientes43Alc} + ${cxcNoCorrientes44Alc} = ${totalCXCNoCorrientesAlc}`);
+      
+      // Definición de estratos (misma estructura que Hoja24)
+      const estratosResidencialesAlc = [
+        { fila: 19, key: 'estrato1', nombre: 'Residencial Estrato 1' },
+        { fila: 20, key: 'estrato2', nombre: 'Residencial Estrato 2' },
+        { fila: 21, key: 'estrato3', nombre: 'Residencial Estrato 3' },
+        { fila: 22, key: 'estrato4', nombre: 'Residencial Estrato 4' },
+        { fila: 23, key: 'estrato5', nombre: 'Residencial Estrato 5' },
+        { fila: 24, key: 'estrato6', nombre: 'Residencial Estrato 6' }
+      ];
+      
+      const estratosNoResidencialesAlc = [
+        { fila: 25, key: 'industrial', nombre: 'No residencial industrial' },
+        { fila: 26, key: 'comercial', nombre: 'No residencial comercial' },
+        { fila: 27, key: 'oficial', nombre: 'No residencial oficial' },
+        { fila: 28, key: 'especial', nombre: 'No residencial especial' }
+      ];
+      
+      // Porcentajes de distribución por rango de vencimiento
+      const rangosVencimientoAlc = [
+        { columna: 'J', porcentaje: 0.11, nombre: 'No vencida' },
+        { columna: 'K', porcentaje: 0.09, nombre: 'Vencida 1-30 días' },
+        { columna: 'L', porcentaje: 0.25, nombre: 'Vencida 31-60 días' },
+        { columna: 'M', porcentaje: 0.15, nombre: 'Vencida 61-90 días' },
+        { columna: 'N', porcentaje: 0.20, nombre: 'Vencida 91-120 días' },
+        { columna: 'O', porcentaje: 0.12, nombre: 'Vencida 121-150 días' },
+        { columna: 'P', porcentaje: 0.08, nombre: 'Vencida 151-180 días' },
+        { columna: 'Q', porcentaje: 0.00, nombre: 'Vencida 181-360 días' },
+        { columna: 'R', porcentaje: 0.00, nombre: 'Vencida >360 días' },
+      ];
+      
+      if (options.usuariosEstrato && options.usuariosEstrato.alcantarillado) {
+        // USAR USUARIOS REALES INGRESADOS POR EL USUARIO
+        console.log('[ExcelJS] Hoja25 - Usando distribución proporcional por usuarios reales');
+        
+        const todosLosEstratosAlc = [...estratosResidencialesAlc, ...estratosNoResidencialesAlc];
+        
+        // Sumar usuarios totales de alcantarillado
+        let totalUsuariosAlc = 0;
+        for (const estrato of todosLosEstratosAlc) {
+          const n = Number(options.usuariosEstrato.alcantarillado[estrato.key]) || 0;
+          totalUsuariosAlc += n;
+        }
+        
+        console.log(`[ExcelJS] Hoja25 - Total usuarios alcantarillado (todos): ${totalUsuariosAlc}`);
+        
+        // Distribuir CXC proporcionalmente entre TODOS los estratos con usuarios
+        for (const estrato of todosLosEstratosAlc) {
+          const usuarios = Number(options.usuariosEstrato.alcantarillado[estrato.key]) || 0;
+          let valorCorriente = 0, valorNoCorriente = 0;
+          
+          if (usuarios > 0 && totalUsuariosAlc > 0) {
+            valorCorriente = Math.round(totalCXCCorrientesAlc * usuarios / totalUsuariosAlc);
+            valorNoCorriente = Math.round(totalCXCNoCorrientesAlc * usuarios / totalUsuariosAlc);
+          }
+          
+          // Columnas G, H, I - CXC Corriente, No Corriente, Total
+          sheet25.getCell(`G${estrato.fila}`).value = valorCorriente;
+          sheet25.getCell(`H${estrato.fila}`).value = valorNoCorriente;
+          const totalCXCEstrato = valorCorriente + valorNoCorriente;
+          sheet25.getCell(`I${estrato.fila}`).value = totalCXCEstrato;
+          
+          // Distribuir el total de CXC por rangos de vencimiento (columnas J-R, S=suma)
+          let sumaRangos = 0;
+          for (const rango of rangosVencimientoAlc) {
+            const valorRango = Math.round(totalCXCEstrato * rango.porcentaje);
+            sheet25.getCell(`${rango.columna}${estrato.fila}`).value = valorRango;
+            sumaRangos += valorRango;
+          }
+          
+          // Ajustar diferencia de redondeo en columna L
+          const diferencia = totalCXCEstrato - sumaRangos;
+          if (diferencia !== 0) {
+            const valorLActual = sheet25.getCell(`L${estrato.fila}`).value as number || 0;
+            sheet25.getCell(`L${estrato.fila}`).value = valorLActual + diferencia;
+            sumaRangos = totalCXCEstrato;
+          }
+          sheet25.getCell(`S${estrato.fila}`).value = sumaRangos;
+          
+          if (totalCXCEstrato !== 0) {
+            const porcentaje = totalUsuariosAlc > 0 ? (usuarios / totalUsuariosAlc * 100).toFixed(2) : '0.00';
+            console.log(`[ExcelJS] Hoja25 fila ${estrato.fila} (${estrato.nombre}): usuarios=${usuarios} (${porcentaje}%), I=${totalCXCEstrato}, S=${sumaRangos}`);
+          }
+        }
+      } else {
+        // SIN USUARIOS - Usar distribución típica por defecto
+        console.log('[ExcelJS] Hoja25 - Sin datos de usuarios, usando distribución típica por defecto');
+        
+        const distribucionTipicaAlc = [
+          { fila: 19, porcentaje: 0.25 },  // Estrato 1: 25%
+          { fila: 20, porcentaje: 0.30 },  // Estrato 2: 30%
+          { fila: 21, porcentaje: 0.20 },  // Estrato 3: 20%
+          { fila: 22, porcentaje: 0.10 },  // Estrato 4: 10%
+          { fila: 23, porcentaje: 0.05 },  // Estrato 5: 5%
+          { fila: 24, porcentaje: 0.03 },  // Estrato 6: 3%
+          { fila: 25, porcentaje: 0.02 },  // Industrial: 2%
+          { fila: 26, porcentaje: 0.03 },  // Comercial: 3%
+          { fila: 27, porcentaje: 0.01 },  // Oficial: 1%
+          { fila: 28, porcentaje: 0.01 },  // Especial: 1%
+        ];
+        
+        for (const estrato of distribucionTipicaAlc) {
+          const valorCorriente = Math.round(totalCXCCorrientesAlc * estrato.porcentaje);
+          const valorNoCorriente = Math.round(totalCXCNoCorrientesAlc * estrato.porcentaje);
+          const totalCXCEstrato = valorCorriente + valorNoCorriente;
+          
+          sheet25.getCell(`G${estrato.fila}`).value = valorCorriente;
+          sheet25.getCell(`H${estrato.fila}`).value = valorNoCorriente;
+          sheet25.getCell(`I${estrato.fila}`).value = totalCXCEstrato;
+          
+          // Distribuir por rangos de vencimiento
+          let sumaRangos = 0;
+          for (const rango of rangosVencimientoAlc) {
+            const valorRango = Math.round(totalCXCEstrato * rango.porcentaje);
+            sheet25.getCell(`${rango.columna}${estrato.fila}`).value = valorRango;
+            sumaRangos += valorRango;
+          }
+          
+          // Ajustar diferencia de redondeo
+          const diferencia = totalCXCEstrato - sumaRangos;
+          if (diferencia !== 0) {
+            const valorLActual = sheet25.getCell(`L${estrato.fila}`).value as number || 0;
+            sheet25.getCell(`L${estrato.fila}`).value = valorLActual + diferencia;
+            sumaRangos = totalCXCEstrato;
+          }
+          sheet25.getCell(`S${estrato.fila}`).value = sumaRangos;
+        }
+      }
+      
+      console.log(`[ExcelJS] Hoja25 - Totales distribuidos:`);
+      console.log(`[ExcelJS]   Corrientes: ${totalCXCCorrientesAlc}`);
+      console.log(`[ExcelJS]   No Corrientes: ${totalCXCNoCorrientesAlc}`);
+      console.log(`[ExcelJS]   Total: ${totalCXCCorrientesAlc + totalCXCNoCorrientesAlc}`);
+      
+      console.log('[ExcelJS] Hoja25 completada.');
+    }
+    
+    // ===============================================
     // HOJA30 (900027): FC04 - Información Subsidios y Contribuciones
     // ===============================================
     // Distribuir subsidios por estrato (solo 1, 2 y 3) y servicio
