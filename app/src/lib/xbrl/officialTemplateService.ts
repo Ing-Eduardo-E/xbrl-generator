@@ -3125,14 +3125,15 @@ async function rewriteFinancialDataWithExcelJS(
     // - Hoja3.G14 (Ingresos Aseo) → Hoja23.I28 (Comercialización) y K40 (Ingresos netos)
     // ===============================================
     const sheet23 = workbook.getWorksheet('Hoja23');
+    const sheet3ForHoja23 = workbook.getWorksheet('Hoja3');
     
-    if (sheet23 && sheet3) {
+    if (sheet23 && sheet3ForHoja23) {
       console.log('[ExcelJS] Escribiendo datos en Hoja23 (FC02 - Complementario Ingresos)...');
       
       // Obtener los valores de ingresos de la Hoja3 (fila 14)
-      const ingresosAcueducto = sheet3.getCell('E14').value as number || 0;
-      const ingresosAlcantarillado = sheet3.getCell('F14').value as number || 0;
-      const ingresosAseo = sheet3.getCell('G14').value as number || 0;
+      const ingresosAcueducto = sheet3ForHoja23.getCell('E14').value as number || 0;
+      const ingresosAlcantarillado = sheet3ForHoja23.getCell('F14').value as number || 0;
+      const ingresosAseo = sheet3ForHoja23.getCell('G14').value as number || 0;
       
       console.log(`[ExcelJS] Hoja23 - Valores de Hoja3.fila14:`);
       console.log(`[ExcelJS]   E14 (Acueducto): ${ingresosAcueducto}`);
