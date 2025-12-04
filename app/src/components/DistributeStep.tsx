@@ -65,11 +65,18 @@ export function DistributeStep({ onSuccess, onBack }: DistributeStepProps) {
       console.log('  - Usuarios por estrato:', JSON.stringify(usuariosEstrato, null, 2));
       console.log('  - Subsidios:', { acueducto: subsidioAcueducto, alcantarillado: subsidioAlcantarillado, aseo: subsidioAseo });
       
+    // Convertir usuariosEstrato al formato esperado por el router
+    const usuariosEstratoFormatted = usuariosEstrato ? {
+      acueducto: usuariosEstrato.acueducto as Record<string, number>,
+      alcantarillado: usuariosEstrato.alcantarillado as Record<string, number>,
+      aseo: usuariosEstrato.aseo as Record<string, number>,
+    } : undefined;
+
     await distributeMutation.mutateAsync({
       acueducto,
       alcantarillado,
       aseo,
-      usuariosEstrato,
+      usuariosEstrato: usuariosEstratoFormatted,
       subsidios: {
         acueducto: subsidioAcueducto,
         alcantarillado: subsidioAlcantarillado,
