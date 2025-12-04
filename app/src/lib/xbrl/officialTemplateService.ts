@@ -3817,6 +3817,163 @@ async function rewriteFinancialDataWithExcelJS(
     }
     
     // ===============================================
+    // HOJA32 (900028): FC05 - Cuentas por Pagar Corrientes
+    // ===============================================
+    // Esta hoja detalla los pasivos corrientes por tipo de cuenta.
+    // 
+    // Origen de datos (Hoja02):
+    // Total pasivos corrientes = P73-P75 + P78-P80 + P82-P84 + P86-P87
+    // Donde P = columna del servicio (I=Acueducto, J=Alcantarillado, K=Aseo)
+    // 
+    // Destino (Hoja32):
+    // - Filas 15-29: 15 tipos de pasivos
+    // - Col D = Pasivos corrientes (valor)
+    // - Col E = Total (mismo valor que D)
+    // - Col G = No vencidos (10%)
+    // - Col I = Vencidos hasta 30 días (15%)
+    // - Col K = Vencidos hasta 60 días (25%)
+    // - Col L = Vencidos hasta 90 días (30%)
+    // - Col M = Vencidos hasta 180 días (20%)
+    // - Col N = Vencidos hasta 360 días (0%)
+    // - Col O = Vencidos mayor 360 días (0%)
+    // - Col J = I+K+L+M+N+O (Total vencidos)
+    // - Col H = G+J (Total)
+    // ===============================================
+    const sheet32 = workbook.getWorksheet('Hoja32');
+    const sheet2ForHoja32 = workbook.getWorksheet('Hoja2');
+    
+    if (sheet32 && sheet2ForHoja32) {
+      console.log('[ExcelJS] Escribiendo datos en Hoja32 (FC05 - Cuentas por Pagar Corrientes)...');
+      
+      // Función auxiliar para sumar celdas de una columna
+      const sumarCeldasPasivos = (col: string): number => {
+        // Filas a sumar: 73-75, 78-80, 82-84, 86-87
+        const filas = [73, 74, 75, 78, 79, 80, 82, 83, 84, 86, 87];
+        let suma = 0;
+        for (const fila of filas) {
+          const valor = sheet2ForHoja32.getCell(`${col}${fila}`).value as number || 0;
+          suma += valor;
+        }
+        return suma;
+      };
+      
+      // Obtener totales de pasivos corrientes por servicio desde Hoja02
+      const pasivosAcueducto = sumarCeldasPasivos('I');
+      const pasivosAlcantarillado = sumarCeldasPasivos('J');
+      const pasivosAseo = sumarCeldasPasivos('K');
+      const totalPasivos = pasivosAcueducto + pasivosAlcantarillado + pasivosAseo;
+      
+      console.log(`[ExcelJS] Hoja32 - Pasivos corrientes desde Hoja2:`);
+      console.log(`[ExcelJS]   Acueducto (col I): ${pasivosAcueducto}`);
+      console.log(`[ExcelJS]   Alcantarillado (col J): ${pasivosAlcantarillado}`);
+      console.log(`[ExcelJS]   Aseo (col K): ${pasivosAseo}`);
+      console.log(`[ExcelJS]   Total: ${totalPasivos}`);
+      
+      // Definición de tipos de pasivos y su distribución (filas 15-29)
+      // Distribuimos el total entre los 15 tipos de pasivos
+      // Usamos porcentajes típicos para una empresa de servicios públicos
+      const tiposPasivos = [
+        { fila: 15, nombre: 'Nómina por pagar', porcentaje: 0.08 },
+        { fila: 16, nombre: 'Prestaciones sociales por pagar', porcentaje: 0.06 },
+        { fila: 17, nombre: 'Cuentas comerciales por pagar por adquisición de bienes y servicios', porcentaje: 0.35 },
+        { fila: 18, nombre: 'Impuestos por pagar', porcentaje: 0.10 },
+        { fila: 19, nombre: 'Cuentas por pagar a partes relacionadas y asociadas', porcentaje: 0.05 },
+        { fila: 20, nombre: 'Obligaciones financieras por pagar', porcentaje: 0.12 },
+        { fila: 21, nombre: 'Ingresos recibidos por anticipado e ingresos diferidos', porcentaje: 0.04 },
+        { fila: 22, nombre: 'Pasivos por impuestos diferidos', porcentaje: 0.03 },
+        { fila: 23, nombre: 'Provisiones', porcentaje: 0.05 },
+        { fila: 24, nombre: 'Tasas ambientales y tasas de uso por pagar', porcentaje: 0.04 },
+        { fila: 25, nombre: 'Otras tasas y contribuciones por pagar', porcentaje: 0.03 },
+        { fila: 26, nombre: 'Pasivos pretoma (Solo intervenidas)', porcentaje: 0.00 },
+        { fila: 27, nombre: 'Recursos recibidos en administración', porcentaje: 0.02 },
+        { fila: 28, nombre: 'Recursos recibidos a favor de terceros', porcentaje: 0.02 },
+        { fila: 29, nombre: 'Otros pasivos', porcentaje: 0.01 },
+      ];
+      
+      // Porcentajes de distribución por antigüedad
+      const porcentajesAntiguedad = {
+        noVencido: 0.10,      // Col G: 10%
+        hasta30: 0.15,        // Col I: 15%
+        hasta60: 0.25,        // Col K: 25%
+        hasta90: 0.30,        // Col L: 30%
+        hasta180: 0.20,       // Col M: 20%
+        hasta360: 0.00,       // Col N: 0%
+        mayor360: 0.00,       // Col O: 0%
+      };
+      
+      let sumaVerificacion = 0;
+      
+      for (const tipo of tiposPasivos) {
+        // Calcular valor del tipo de pasivo
+        const valorPasivo = Math.round(totalPasivos * tipo.porcentaje);
+        sumaVerificacion += valorPasivo;
+        
+        // Columna D = Pasivos corrientes
+        sheet32.getCell(`D${tipo.fila}`).value = valorPasivo;
+        
+        // Columna E = Total (mismo valor que D, ya que todo es corriente)
+        sheet32.getCell(`E${tipo.fila}`).value = valorPasivo;
+        
+        // Calcular distribución por antigüedad basada en Columna E
+        const noVencido = Math.round(valorPasivo * porcentajesAntiguedad.noVencido);
+        const hasta30 = Math.round(valorPasivo * porcentajesAntiguedad.hasta30);
+        const hasta60 = Math.round(valorPasivo * porcentajesAntiguedad.hasta60);
+        const hasta90 = Math.round(valorPasivo * porcentajesAntiguedad.hasta90);
+        const hasta180 = Math.round(valorPasivo * porcentajesAntiguedad.hasta180);
+        const hasta360 = Math.round(valorPasivo * porcentajesAntiguedad.hasta360);
+        const mayor360 = Math.round(valorPasivo * porcentajesAntiguedad.mayor360);
+        
+        // Columna G = No vencidos (10%)
+        sheet32.getCell(`G${tipo.fila}`).value = noVencido;
+        
+        // Columna I = Vencidos hasta 30 días (15%)
+        sheet32.getCell(`I${tipo.fila}`).value = hasta30;
+        
+        // Columna K = Vencidos hasta 60 días (25%)
+        sheet32.getCell(`K${tipo.fila}`).value = hasta60;
+        
+        // Columna L = Vencidos hasta 90 días (30%)
+        sheet32.getCell(`L${tipo.fila}`).value = hasta90;
+        
+        // Columna M = Vencidos hasta 180 días (20%)
+        sheet32.getCell(`M${tipo.fila}`).value = hasta180;
+        
+        // Columna N = Vencidos hasta 360 días (0%)
+        sheet32.getCell(`N${tipo.fila}`).value = hasta360;
+        
+        // Columna O = Vencidos mayor 360 días (0%)
+        sheet32.getCell(`O${tipo.fila}`).value = mayor360;
+        
+        // Columna J = Total vencidos (I+K+L+M+N+O)
+        const totalVencidos = hasta30 + hasta60 + hasta90 + hasta180 + hasta360 + mayor360;
+        sheet32.getCell(`J${tipo.fila}`).value = totalVencidos;
+        
+        // Columna H = Total (G+J = No vencidos + Total vencidos)
+        const totalH = noVencido + totalVencidos;
+        sheet32.getCell(`H${tipo.fila}`).value = totalH;
+        
+        // Ajustar diferencia de redondeo si H != E
+        if (totalH !== valorPasivo && valorPasivo > 0) {
+          const diferencia = valorPasivo - totalH;
+          // Ajustar en columna K (la de mayor porcentaje de vencidos)
+          const hasta60Ajustado = hasta60 + diferencia;
+          sheet32.getCell(`K${tipo.fila}`).value = hasta60Ajustado;
+          sheet32.getCell(`J${tipo.fila}`).value = totalVencidos + diferencia;
+          sheet32.getCell(`H${tipo.fila}`).value = valorPasivo;
+        }
+        
+        if (valorPasivo !== 0) {
+          console.log(`[ExcelJS] Hoja32 fila ${tipo.fila} (${tipo.nombre}): D=${valorPasivo}, E=${valorPasivo}, H=${valorPasivo}`);
+        }
+      }
+      
+      console.log(`[ExcelJS] Hoja32 - Total pasivos distribuidos: ${sumaVerificacion}`);
+      console.log(`[ExcelJS] Hoja32 - Diferencia con total original: ${totalPasivos - sumaVerificacion}`);
+      
+      console.log('[ExcelJS] Hoja32 completada.');
+    }
+    
+    // ===============================================
     // HOJA35 (900031): FC08 - Conciliación de ingresos
     // ===============================================
     // Esta hoja registra los ingresos por prestación de servicios públicos
