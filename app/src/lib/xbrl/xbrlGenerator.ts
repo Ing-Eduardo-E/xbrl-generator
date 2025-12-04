@@ -5,7 +5,7 @@
 
 import JSZip from 'jszip';
 import { db } from '@/lib/db';
-import { workingAccounts, serviceBalances, balanceSessions } from '../../../drizzle/schema';
+import { workingAccounts, serviceBalances, balanceSessions } from '@drizzle/schema';
 import { eq, sql, desc } from 'drizzle-orm';
 import { 
   getTaxonomyConfig, 

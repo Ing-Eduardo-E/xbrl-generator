@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { db } from '@/lib/db';
-import { workingAccounts, serviceBalances } from '../../../drizzle/schema';
+import { workingAccounts, serviceBalances } from '@drizzle/schema';
 import { eq, sql } from 'drizzle-orm';
 
 export interface ServiceTotals {
