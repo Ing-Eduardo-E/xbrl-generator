@@ -19,9 +19,6 @@
     "paths": {
       "@/*": [
         "./src/*"
-      ],
-      "@drizzle/*": [
-        "./drizzle/*"
       ]
     },
     "plugins": [

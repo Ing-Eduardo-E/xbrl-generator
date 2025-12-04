@@ -24,7 +24,7 @@ import { ROUNDING_DEGREES, type RoundingDegree } from '../xbrl/taxonomyConfig';
 
 import * as XLSX from 'xlsx';
 import { db } from '@/lib/db';
-import { workingAccounts, serviceBalances } from '@drizzle/schema';
+import { workingAccounts, serviceBalances } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { 
   ESF_CONCEPTS, 

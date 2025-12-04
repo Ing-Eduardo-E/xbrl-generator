@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { eq, sql, desc } from 'drizzle-orm';
 import { router, publicProcedure } from '../trpc';
 import { db } from '@/lib/db';
-import { workingAccounts, serviceBalances, balanceSessions } from '@drizzle/schema';
+import { workingAccounts, serviceBalances, balanceSessions } from '@/db/schema';
 import { parseExcelFile } from '@/lib/services/excelParser';
 import { generateExcelWithDistribution, generateConsolidatedExcel } from '@/lib/services/excelGenerator';
 import { generateXBRLCompatibleExcel } from '@/lib/services/xbrlExcelGenerator';
