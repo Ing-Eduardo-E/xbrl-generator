@@ -3817,158 +3817,247 @@ async function rewriteFinancialDataWithExcelJS(
     }
     
     // ===============================================
-    // HOJA32 (900028): FC05 - Cuentas por Pagar Corrientes
+    // HOJA32 (900028b): FC05b - Clase de pasivo por edades de vencimiento
     // ===============================================
-    // Esta hoja detalla los pasivos corrientes por tipo de cuenta.
+    // Esta hoja detalla los pasivos por tipo, tomando los datos REALES
+    // de la Hoja2 (Estado de Situación Financiera).
     // 
-    // Origen de datos (Hoja02):
-    // Total pasivos corrientes = P73-P75 + P78-P80 + P82-P84 + P86-P87
-    // Donde P = columna del servicio (I=Acueducto, J=Alcantarillado, K=Aseo)
+    // Mapeo de Hoja2 a Hoja32:
+    // Los valores se leen directamente de las filas de pasivos de Hoja2
+    // y se colocan en las filas correspondientes de Hoja32.
     // 
-    // Destino (Hoja32):
-    // - Filas 15-29: 15 tipos de pasivos
-    // - Col D = Pasivos corrientes (valor)
-    // - Col E = Total (mismo valor que D)
-    // - Col G = No vencidos (10%)
-    // - Col I = Vencidos hasta 30 días (15%)
-    // - Col K = Vencidos hasta 60 días (25%)
-    // - Col L = Vencidos hasta 90 días (30%)
-    // - Col M = Vencidos hasta 180 días (20%)
-    // - Col N = Vencidos hasta 360 días (0%)
-    // - Col O = Vencidos mayor 360 días (0%)
-    // - Col J = I+K+L+M+N+O (Total vencidos)
-    // - Col H = G+J (Total)
+    // Estructura Hoja32:
+    // - Col D = Pasivos corrientes
+    // - Col E = Total (Corriente + No Corriente)
+    // - Col F = Pasivos no corrientes
+    // - Col G = No vencidos
+    // - Col H = Total por bandas de tiempo (G + J)
+    // - Col I = Vencidos hasta 30 días
+    // - Col J = Total vencidos (I+K+L+M+N+O)
+    // - Col K = Vencidos hasta 60 días
+    // - Col L = Vencidos hasta 90 días
+    // - Col M = Vencidos hasta 180 días
+    // - Col N = Vencidos hasta 360 días
+    // - Col O = Vencidos mayor 360 días
     // ===============================================
     const sheet32 = workbook.getWorksheet('Hoja32');
     const sheet2ForHoja32 = workbook.getWorksheet('Hoja2');
     
     if (sheet32 && sheet2ForHoja32) {
-      console.log('[ExcelJS] Escribiendo datos en Hoja32 (FC05 - Cuentas por Pagar Corrientes)...');
+      console.log('[ExcelJS] Escribiendo datos en Hoja32 (FC05b - Pasivos por edades de vencimiento)...');
       
-      // Función auxiliar para sumar celdas de una columna
-      const sumarCeldasPasivos = (col: string): number => {
-        // Filas a sumar: 73-75, 78-80, 82-84, 86-87
-        const filas = [73, 74, 75, 78, 79, 80, 82, 83, 84, 86, 87];
+      // Función auxiliar para obtener valor de celda sumando columna P (Total) de Hoja2
+      const getValorHoja2 = (filas: number[]): number => {
         let suma = 0;
         for (const fila of filas) {
-          const valor = sheet2ForHoja32.getCell(`${col}${fila}`).value as number || 0;
-          suma += valor;
+          const valor = sheet2ForHoja32.getCell(`P${fila}`).value;
+          if (typeof valor === 'number') {
+            suma += valor;
+          } else if (valor && typeof valor === 'object' && 'result' in valor) {
+            suma += (valor as { result: number }).result || 0;
+          }
         }
         return suma;
       };
       
-      // Obtener totales de pasivos corrientes por servicio desde Hoja02
-      const pasivosAcueducto = sumarCeldasPasivos('I');
-      const pasivosAlcantarillado = sumarCeldasPasivos('J');
-      const pasivosAseo = sumarCeldasPasivos('K');
-      const totalPasivos = pasivosAcueducto + pasivosAlcantarillado + pasivosAseo;
-      
-      console.log(`[ExcelJS] Hoja32 - Pasivos corrientes desde Hoja2:`);
-      console.log(`[ExcelJS]   Acueducto (col I): ${pasivosAcueducto}`);
-      console.log(`[ExcelJS]   Alcantarillado (col J): ${pasivosAlcantarillado}`);
-      console.log(`[ExcelJS]   Aseo (col K): ${pasivosAseo}`);
-      console.log(`[ExcelJS]   Total: ${totalPasivos}`);
-      
-      // Definición de tipos de pasivos y su distribución (filas 15-29)
-      // Distribuimos el total entre los 15 tipos de pasivos
-      // Usamos porcentajes típicos para una empresa de servicios públicos
-      const tiposPasivos = [
-        { fila: 15, nombre: 'Nómina por pagar', porcentaje: 0.08 },
-        { fila: 16, nombre: 'Prestaciones sociales por pagar', porcentaje: 0.06 },
-        { fila: 17, nombre: 'Cuentas comerciales por pagar por adquisición de bienes y servicios', porcentaje: 0.35 },
-        { fila: 18, nombre: 'Impuestos por pagar', porcentaje: 0.10 },
-        { fila: 19, nombre: 'Cuentas por pagar a partes relacionadas y asociadas', porcentaje: 0.05 },
-        { fila: 20, nombre: 'Obligaciones financieras por pagar', porcentaje: 0.12 },
-        { fila: 21, nombre: 'Ingresos recibidos por anticipado e ingresos diferidos', porcentaje: 0.04 },
-        { fila: 22, nombre: 'Pasivos por impuestos diferidos', porcentaje: 0.03 },
-        { fila: 23, nombre: 'Provisiones', porcentaje: 0.05 },
-        { fila: 24, nombre: 'Tasas ambientales y tasas de uso por pagar', porcentaje: 0.04 },
-        { fila: 25, nombre: 'Otras tasas y contribuciones por pagar', porcentaje: 0.03 },
-        { fila: 26, nombre: 'Pasivos pretoma (Solo intervenidas)', porcentaje: 0.00 },
-        { fila: 27, nombre: 'Recursos recibidos en administración', porcentaje: 0.02 },
-        { fila: 28, nombre: 'Recursos recibidos a favor de terceros', porcentaje: 0.02 },
-        { fila: 29, nombre: 'Otros pasivos', porcentaje: 0.01 },
-      ];
-      
-      // Porcentajes de distribución por antigüedad
-      const porcentajesAntiguedad = {
-        noVencido: 0.10,      // Col G: 10%
-        hasta30: 0.15,        // Col I: 15%
-        hasta60: 0.25,        // Col K: 25%
-        hasta90: 0.30,        // Col L: 30%
-        hasta180: 0.20,       // Col M: 20%
-        hasta360: 0.00,       // Col N: 0%
-        mayor360: 0.00,       // Col O: 0%
+      // Función auxiliar para obtener valor corriente (filas de pasivos corrientes)
+      const getValorCorriente = (filas: number[]): number => {
+        return getValorHoja2(filas.filter(f => f >= 67 && f <= 88));
       };
       
-      let sumaVerificacion = 0;
+      // Función auxiliar para obtener valor no corriente (filas de pasivos no corrientes)
+      const getValorNoCorriente = (filas: number[]): number => {
+        return getValorHoja2(filas.filter(f => f >= 89 && f <= 110));
+      };
       
-      for (const tipo of tiposPasivos) {
-        // Calcular valor del tipo de pasivo
-        const valorPasivo = Math.round(totalPasivos * tipo.porcentaje);
-        sumaVerificacion += valorPasivo;
+      // Mapeo de los 15 tipos de pasivos de Hoja32 a las filas de Hoja2
+      // Basado en R414_ESF_PASIVOS definido anteriormente
+      const mapeoHoja32aHoja2 = [
+        { 
+          fila32: 15, 
+          nombre: 'Nómina por pagar',
+          // Fila 69: Provisiones beneficios empleados (parte nómina)
+          filasCorrientes: [69],
+          filasNoCorrientes: []
+        },
+        { 
+          fila32: 16, 
+          nombre: 'Prestaciones sociales por pagar',
+          // Fila 69 ya usada para nómina, aquí usamos parte de beneficios LP
+          filasCorrientes: [],
+          filasNoCorrientes: [91]  // Provisiones beneficios empleados LP
+        },
+        { 
+          fila32: 17, 
+          nombre: 'Cuentas comerciales por pagar por adquisición de bienes y servicios',
+          // Filas 73 (servicios) + 74 (proveedores) + 76 (otras cuentas por pagar)
+          filasCorrientes: [73, 74, 76],
+          filasNoCorrientes: [95]  // Cuentas por pagar bienes LP
+        },
+        { 
+          fila32: 18, 
+          nombre: 'Impuestos por pagar',
+          // Fila 80: Impuesto ganancias por pagar
+          filasCorrientes: [80],
+          filasNoCorrientes: []
+        },
+        { 
+          fila32: 19, 
+          nombre: 'Cuentas por pagar a partes relacionadas y asociadas',
+          // Fila 75: Cuentas por pagar partes relacionadas
+          filasCorrientes: [75],
+          filasNoCorrientes: []
+        },
+        { 
+          fila32: 20, 
+          nombre: 'Obligaciones financieras por pagar',
+          // Filas 78 (títulos deuda) + 79 (préstamos)
+          filasCorrientes: [78, 79],
+          filasNoCorrientes: [100, 101]  // Títulos deuda LP + Préstamos LP
+        },
+        { 
+          fila32: 21, 
+          nombre: 'Ingresos recibidos por anticipado e ingresos diferidos',
+          // Fila 82: Ingresos diferidos corrientes
+          filasCorrientes: [82],
+          filasNoCorrientes: [105]  // Ingresos diferidos LP
+        },
+        { 
+          fila32: 22, 
+          nombre: 'Pasivos por impuestos diferidos',
+          // Fila 83: Pasivos por impuestos diferidos corrientes
+          filasCorrientes: [83],
+          filasNoCorrientes: [103]  // Pasivos por impuestos diferidos LP
+        },
+        { 
+          fila32: 23, 
+          nombre: 'Provisiones',
+          // Fila 70: Otras provisiones corrientes
+          filasCorrientes: [70],
+          filasNoCorrientes: [92]  // Otras provisiones no corrientes
+        },
+        { 
+          fila32: 24, 
+          nombre: 'Tasas ambientales y tasas de uso por pagar',
+          // No hay fila específica en Hoja2 - se deja en 0
+          filasCorrientes: [],
+          filasNoCorrientes: []
+        },
+        { 
+          fila32: 25, 
+          nombre: 'Otras tasas y contribuciones por pagar',
+          // No hay fila específica en Hoja2 - se deja en 0
+          filasCorrientes: [],
+          filasNoCorrientes: []
+        },
+        { 
+          fila32: 26, 
+          nombre: 'Pasivos pretoma (Solo intervenidas)',
+          // No aplica para empresas normales - se deja en 0
+          filasCorrientes: [],
+          filasNoCorrientes: []
+        },
+        { 
+          fila32: 27, 
+          nombre: 'Recursos recibidos en administración',
+          // No hay fila específica en Hoja2 - se deja en 0
+          filasCorrientes: [],
+          filasNoCorrientes: []
+        },
+        { 
+          fila32: 28, 
+          nombre: 'Recursos recibidos a favor de terceros',
+          // No hay fila específica en Hoja2 - se deja en 0
+          filasCorrientes: [],
+          filasNoCorrientes: []
+        },
+        { 
+          fila32: 29, 
+          nombre: 'Otros pasivos',
+          // Filas 86 (otros pasivos financieros) + 87 (otros pasivos no financieros)
+          filasCorrientes: [86, 87],
+          filasNoCorrientes: [108]  // Otros pasivos financieros LP
+        },
+      ];
+      
+      // Porcentajes de distribución por antigüedad para la parte de vencimiento
+      // Estos porcentajes se aplican al TOTAL (columna E)
+      const porcentajesAntiguedad = {
+        noVencido: 0.11,      // Col G: 11%
+        hasta30: 0.09,        // Col I: 9%
+        hasta60: 0.25,        // Col K: 25%
+        hasta90: 0.15,        // Col L: 15%
+        hasta180: 0.20,       // Col M: 20%
+        hasta360: 0.12,       // Col N: 12%
+        mayor360: 0.08,       // Col O: 8%
+      };
+      
+      let totalCorrientes = 0;
+      let totalNoCorrientes = 0;
+      let totalGeneral = 0;
+      
+      for (const mapeo of mapeoHoja32aHoja2) {
+        // Obtener valores reales de Hoja2
+        const valorCorriente = getValorHoja2(mapeo.filasCorrientes);
+        const valorNoCorriente = getValorHoja2(mapeo.filasNoCorrientes);
+        const valorTotal = valorCorriente + valorNoCorriente;
+        
+        totalCorrientes += valorCorriente;
+        totalNoCorrientes += valorNoCorriente;
+        totalGeneral += valorTotal;
         
         // Columna D = Pasivos corrientes
-        sheet32.getCell(`D${tipo.fila}`).value = valorPasivo;
-        
-        // Columna E = Total (mismo valor que D, ya que todo es corriente)
-        sheet32.getCell(`E${tipo.fila}`).value = valorPasivo;
-        
-        // Calcular distribución por antigüedad basada en Columna E
-        const noVencido = Math.round(valorPasivo * porcentajesAntiguedad.noVencido);
-        const hasta30 = Math.round(valorPasivo * porcentajesAntiguedad.hasta30);
-        const hasta60 = Math.round(valorPasivo * porcentajesAntiguedad.hasta60);
-        const hasta90 = Math.round(valorPasivo * porcentajesAntiguedad.hasta90);
-        const hasta180 = Math.round(valorPasivo * porcentajesAntiguedad.hasta180);
-        const hasta360 = Math.round(valorPasivo * porcentajesAntiguedad.hasta360);
-        const mayor360 = Math.round(valorPasivo * porcentajesAntiguedad.mayor360);
-        
-        // Columna G = No vencidos (10%)
-        sheet32.getCell(`G${tipo.fila}`).value = noVencido;
-        
-        // Columna I = Vencidos hasta 30 días (15%)
-        sheet32.getCell(`I${tipo.fila}`).value = hasta30;
-        
-        // Columna K = Vencidos hasta 60 días (25%)
-        sheet32.getCell(`K${tipo.fila}`).value = hasta60;
-        
-        // Columna L = Vencidos hasta 90 días (30%)
-        sheet32.getCell(`L${tipo.fila}`).value = hasta90;
-        
-        // Columna M = Vencidos hasta 180 días (20%)
-        sheet32.getCell(`M${tipo.fila}`).value = hasta180;
-        
-        // Columna N = Vencidos hasta 360 días (0%)
-        sheet32.getCell(`N${tipo.fila}`).value = hasta360;
-        
-        // Columna O = Vencidos mayor 360 días (0%)
-        sheet32.getCell(`O${tipo.fila}`).value = mayor360;
-        
-        // Columna J = Total vencidos (I+K+L+M+N+O)
-        const totalVencidos = hasta30 + hasta60 + hasta90 + hasta180 + hasta360 + mayor360;
-        sheet32.getCell(`J${tipo.fila}`).value = totalVencidos;
-        
-        // Columna H = Total (G+J = No vencidos + Total vencidos)
-        const totalH = noVencido + totalVencidos;
-        sheet32.getCell(`H${tipo.fila}`).value = totalH;
-        
-        // Ajustar diferencia de redondeo si H != E
-        if (totalH !== valorPasivo && valorPasivo > 0) {
-          const diferencia = valorPasivo - totalH;
-          // Ajustar en columna K (la de mayor porcentaje de vencidos)
-          const hasta60Ajustado = hasta60 + diferencia;
-          sheet32.getCell(`K${tipo.fila}`).value = hasta60Ajustado;
-          sheet32.getCell(`J${tipo.fila}`).value = totalVencidos + diferencia;
-          sheet32.getCell(`H${tipo.fila}`).value = valorPasivo;
+        if (valorCorriente !== 0) {
+          sheet32.getCell(`D${mapeo.fila32}`).value = valorCorriente;
         }
         
-        if (valorPasivo !== 0) {
-          console.log(`[ExcelJS] Hoja32 fila ${tipo.fila} (${tipo.nombre}): D=${valorPasivo}, E=${valorPasivo}, H=${valorPasivo}`);
+        // Columna F = Pasivos no corrientes
+        if (valorNoCorriente !== 0) {
+          sheet32.getCell(`F${mapeo.fila32}`).value = valorNoCorriente;
+        }
+        
+        // Columna E = Total (Corriente + No Corriente)
+        if (valorTotal !== 0) {
+          sheet32.getCell(`E${mapeo.fila32}`).value = valorTotal;
+          
+          // Calcular distribución por antigüedad basada en el Total (E)
+          const noVencido = Math.round(valorTotal * porcentajesAntiguedad.noVencido);
+          const hasta30 = Math.round(valorTotal * porcentajesAntiguedad.hasta30);
+          const hasta60 = Math.round(valorTotal * porcentajesAntiguedad.hasta60);
+          const hasta90 = Math.round(valorTotal * porcentajesAntiguedad.hasta90);
+          const hasta180 = Math.round(valorTotal * porcentajesAntiguedad.hasta180);
+          const hasta360 = Math.round(valorTotal * porcentajesAntiguedad.hasta360);
+          const mayor360 = Math.round(valorTotal * porcentajesAntiguedad.mayor360);
+          
+          // Total vencidos
+          const totalVencidos = hasta30 + hasta60 + hasta90 + hasta180 + hasta360 + mayor360;
+          
+          // Total H = noVencido + totalVencidos
+          let totalH = noVencido + totalVencidos;
+          
+          // Ajustar diferencia de redondeo
+          const diferencia = valorTotal - totalH;
+          const hasta60Ajustado = hasta60 + diferencia;
+          
+          // Escribir valores de antigüedad
+          sheet32.getCell(`G${mapeo.fila32}`).value = noVencido;
+          sheet32.getCell(`I${mapeo.fila32}`).value = hasta30;
+          sheet32.getCell(`K${mapeo.fila32}`).value = hasta60Ajustado;
+          sheet32.getCell(`L${mapeo.fila32}`).value = hasta90;
+          sheet32.getCell(`M${mapeo.fila32}`).value = hasta180;
+          sheet32.getCell(`N${mapeo.fila32}`).value = hasta360;
+          sheet32.getCell(`O${mapeo.fila32}`).value = mayor360;
+          sheet32.getCell(`J${mapeo.fila32}`).value = totalVencidos + diferencia;
+          sheet32.getCell(`H${mapeo.fila32}`).value = valorTotal;
+          
+          console.log(`[ExcelJS] Hoja32 fila ${mapeo.fila32} (${mapeo.nombre}): D=${valorCorriente}, F=${valorNoCorriente}, E=${valorTotal}`);
         }
       }
       
-      console.log(`[ExcelJS] Hoja32 - Total pasivos distribuidos: ${sumaVerificacion}`);
-      console.log(`[ExcelJS] Hoja32 - Diferencia con total original: ${totalPasivos - sumaVerificacion}`);
+      console.log(`[ExcelJS] Hoja32 - Resumen:`);
+      console.log(`[ExcelJS]   Total Pasivos Corrientes: ${totalCorrientes}`);
+      console.log(`[ExcelJS]   Total Pasivos No Corrientes: ${totalNoCorrientes}`);
+      console.log(`[ExcelJS]   Total General: ${totalGeneral}`);
       
       console.log('[ExcelJS] Hoja32 completada.');
     }
