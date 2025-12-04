@@ -3815,6 +3815,41 @@ async function rewriteFinancialDataWithExcelJS(
       
       console.log('[ExcelJS] Hoja30 completada.');
     }
+    
+    // ===============================================
+    // HOJA35 (900031): FC08 - Conciliación de ingresos
+    // ===============================================
+    // Esta hoja registra los ingresos por prestación de servicios públicos
+    // domiciliarios tomados de la Hoja03 (Estado de Resultados).
+    // 
+    // Fila 26: "Ingresos de actividades ordinarias por prestación de servicios públicos domiciliarios"
+    // - G26 = Hoja03!E14 (Acueducto)
+    // - H26 = Hoja03!F14 (Alcantarillado)
+    // - I26 = Hoja03!G14 (Aseo)
+    // ===============================================
+    const sheet35 = workbook.getWorksheet('Hoja35');
+    const sheet3ForHoja35 = workbook.getWorksheet('Hoja3');
+    
+    if (sheet35 && sheet3ForHoja35) {
+      console.log('[ExcelJS] Escribiendo datos en Hoja35 (FC08 - Conciliación de ingresos)...');
+      
+      // Obtener ingresos por servicio desde Hoja03 fila 14
+      const ingresosAcueducto = sheet3ForHoja35.getCell('E14').value as number || 0;
+      const ingresosAlcantarillado = sheet3ForHoja35.getCell('F14').value as number || 0;
+      const ingresosAseo = sheet3ForHoja35.getCell('G14').value as number || 0;
+      
+      // Escribir en Hoja35 fila 26
+      sheet35.getCell('G26').value = ingresosAcueducto;
+      sheet35.getCell('H26').value = ingresosAlcantarillado;
+      sheet35.getCell('I26').value = ingresosAseo;
+      
+      console.log(`[ExcelJS] Hoja35 - Ingresos por prestación de servicios (fila 26):`);
+      console.log(`[ExcelJS]   G26 (Acueducto): ${ingresosAcueducto}`);
+      console.log(`[ExcelJS]   H26 (Alcantarillado): ${ingresosAlcantarillado}`);
+      console.log(`[ExcelJS]   I26 (Aseo): ${ingresosAseo}`);
+      
+      console.log('[ExcelJS] Hoja35 completada.');
+    }
   }
 
   // Escribir el buffer con ExcelJS
