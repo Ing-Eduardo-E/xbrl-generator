@@ -12,12 +12,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 
-type NIIFGroup = 'grupo1' | 'grupo2' | 'grupo3' | 'r414';
+type NIIFGroup = 'grupo1' | 'grupo2' | 'grupo3' | 'r414' | 'ife';
+type IFETrimestre = '1T' | '2T' | '3T' | '4T';
 
 interface UploadStepProps {
   onSuccess: () => void;
@@ -26,6 +27,7 @@ interface UploadStepProps {
 export function UploadStep({ onSuccess }: UploadStepProps) {
   const [file, setFile] = useState<File | null>(null);
   const [niifGroup, setNiifGroup] = useState<NIIFGroup>('grupo1');
+  const [ifeTrimestre, setIfeTrimestre] = useState<IFETrimestre>('2T');
   const [isDragging, setIsDragging] = useState(false);
 
   const uploadMutation = trpc.balance.uploadBalance.useMutation({
@@ -138,7 +140,7 @@ export function UploadStep({ onSuccess }: UploadStepProps) {
       {/* NIIF Group Selection */}
       <div className="space-y-3">
         <Label htmlFor="niif-group" className="text-base font-medium">
-          Grupo NIIF de la empresa
+          Grupo NIIF / Tipo de Taxonomía
         </Label>
         <Select value={niifGroup} onValueChange={(v) => setNiifGroup(v as NIIFGroup)}>
           <SelectTrigger id="niif-group" className="w-full max-w-md">
@@ -149,12 +151,44 @@ export function UploadStep({ onSuccess }: UploadStepProps) {
             <SelectItem value="grupo2">Grupo 2 - NIIF PYMES</SelectItem>
             <SelectItem value="grupo3">Grupo 3 - Contabilidad Simplificada</SelectItem>
             <SelectItem value="r414">Resolución 414 - Régimen Simplificado</SelectItem>
+            <SelectItem value="ife">IFE - Informe Financiero Especial (Trimestral)</SelectItem>
           </SelectContent>
         </Select>
         <p className="text-sm text-muted-foreground">
-          Selecciona el grupo NIIF al que pertenece tu empresa según la clasificación SSPD
+          {niifGroup === 'ife' 
+            ? 'IFE es el informe financiero trimestral obligatorio para todas las empresas de servicios públicos'
+            : 'Selecciona el grupo NIIF al que pertenece tu empresa según la clasificación SSPD'
+          }
         </p>
       </div>
+
+      {/* IFE Trimestre Selection - solo visible cuando se selecciona IFE */}
+      {niifGroup === 'ife' && (
+        <div className="space-y-3">
+          <Label htmlFor="ife-trimestre" className="text-base font-medium flex items-center gap-2">
+            <CalendarDays className="w-4 h-4" />
+            Trimestre a reportar
+          </Label>
+          <Select value={ifeTrimestre} onValueChange={(v) => setIfeTrimestre(v as IFETrimestre)}>
+            <SelectTrigger id="ife-trimestre" className="w-full max-w-md">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1T">1er Trimestre (Enero - Marzo)</SelectItem>
+              <SelectItem value="2T">2do Trimestre (Abril - Junio)</SelectItem>
+              <SelectItem value="3T">3er Trimestre (Julio - Septiembre)</SelectItem>
+              <SelectItem value="4T">4to Trimestre (Octubre - Diciembre)</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              <strong>Nota:</strong> El IFE usa el mismo balance consolidado pero con estructura diferente.
+              Las cuentas por cobrar se distribuirán automáticamente por rangos de vencimiento 
+              (55% no vencidas, 25% 1-90 días, 20% 91-180 días).
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* File Upload Area */}
       <div className="space-y-3">

@@ -32,7 +32,7 @@ export const balanceRouter = router({
       z.object({
         fileName: z.string(),
         fileData: z.string(), // Base64 encoded
-        niifGroup: z.enum(['grupo1', 'grupo2', 'grupo3', 'r414']),
+        niifGroup: z.enum(['grupo1', 'grupo2', 'grupo3', 'r414', 'ife']),
       })
     )
     .mutation(async ({ input }) => {
@@ -363,7 +363,7 @@ export const balanceRouter = router({
           throw new Error('No hay una sesión activa. Por favor carga un balance primero.');
         }
 
-        const taxonomyGroup = session[0].niifGroup as 'grupo1' | 'grupo2' | 'grupo3' | 'r414';
+        const taxonomyGroup = session[0].niifGroup as 'grupo1' | 'grupo2' | 'grupo3' | 'r414' | 'ife';
 
         // Verificar que hay datos distribuidos
         const serviceCount = await db

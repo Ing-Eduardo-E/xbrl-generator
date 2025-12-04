@@ -72,6 +72,8 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
     const year = new Date().getFullYear();
     return `${year}-12-31`;
   });
+  // Trimestre para IFE
+  const [ifeTrimestre, setIfeTrimestre] = useState<'1T' | '2T' | '3T' | '4T'>('2T');
   const [nit, setNit] = useState('');
   const [businessNature, setBusinessNature] = useState('Servicios publicos domiciliarios');
   const [startDate, setStartDate] = useState('');
@@ -84,6 +86,22 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
   const downloadExcelQuery = trpc.balance.downloadExcel.useQuery(undefined, {
     enabled: false,
   });
+
+  // Helper para calcular fecha de cierre según trimestre
+  const getIFEReportDate = (trimestre: '1T' | '2T' | '3T' | '4T', year: number) => {
+    const endDates = {
+      '1T': `${year}-03-31`,
+      '2T': `${year}-06-30`,
+      '3T': `${year}-09-30`,
+      '4T': `${year}-12-31`,
+    };
+    return endDates[trimestre];
+  };
+
+  // Obtener la fecha efectiva del reporte (considera si es IFE o no)
+  const effectiveReportDate = sessionQuery.data?.niifGroup === 'ife' 
+    ? getIFEReportDate(ifeTrimestre, new Date().getFullYear())
+    : reportDate;
 
   const downloadOfficialMutation = trpc.balance.downloadOfficialTemplates.useMutation({
     onSuccess: (data) => {
@@ -145,7 +163,7 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
       await downloadOfficialMutation.mutateAsync({
         companyId: companyId.trim(),
         companyName: companyName.trim(),
-        reportDate,
+        reportDate: effectiveReportDate,
         nit: nit.trim() || undefined,
         businessNature: businessNature.trim() || undefined,
         startDate: startDate || undefined,
@@ -330,6 +348,7 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
                  sessionQuery.data?.niifGroup === 'grupo1' ? 'NIIF Plenas (Grupo 1)' :
                  sessionQuery.data?.niifGroup === 'grupo2' ? 'NIIF PYMES (Grupo 2)' :
                  sessionQuery.data?.niifGroup === 'grupo3' ? 'Microempresas (Grupo 3)' :
+                 sessionQuery.data?.niifGroup === 'ife' ? 'IFE - Informe Financiero Especial (Trimestral)' :
                  sessionQuery.data?.niifGroup?.toUpperCase() || 'GRUPO1'}
               </span>
             </div>
@@ -405,18 +424,42 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="reportDate" className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Fecha de cierre del periodo *
-                </Label>
-                <Input
-                  id="reportDate"
-                  type="date"
-                  value={reportDate}
-                  onChange={(e) => setReportDate(e.target.value)}
-                />
-              </div>
+              {/* Fecha de cierre - Para IFE se selecciona trimestre, para otros grupos es fecha */}
+              {sessionQuery.data?.niifGroup === 'ife' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="ifeTrimestre" className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Trimestre del reporte *
+                  </Label>
+                  <Select value={ifeTrimestre} onValueChange={(v) => setIfeTrimestre(v as '1T' | '2T' | '3T' | '4T')}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar trimestre..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1T">1er Trimestre (cierre: 31/03)</SelectItem>
+                      <SelectItem value="2T">2do Trimestre (cierre: 30/06)</SelectItem>
+                      <SelectItem value="3T">3er Trimestre (cierre: 30/09)</SelectItem>
+                      <SelectItem value="4T">4to Trimestre (cierre: 31/12)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Fecha de cierre: {effectiveReportDate}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="reportDate" className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Fecha de cierre del periodo *
+                  </Label>
+                  <Input
+                    id="reportDate"
+                    type="date"
+                    value={reportDate}
+                    onChange={(e) => setReportDate(e.target.value)}
+                  />
+                </div>
+              )}
 
               {/* Fila 5: Grado de redondeo */}
               <div className="space-y-2">

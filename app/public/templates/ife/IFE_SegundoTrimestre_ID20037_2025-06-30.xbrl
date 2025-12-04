@@ -1,0 +1,611 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- XBRL Report (Instance) generated using Reporting Standard S.L. Software -->
+<!-- http://www.reportingstandard.com -->
+<!-- Software (C) 2008-2025 Reporting Standard S.L. All rights reserved -->
+<!-- Generado con : XBRL Editor Express - Editor rápido de informes XBRL - Version: 3.9.1.1400 -->
+<!-- License issued to: 20037 at 20037 -->
+<!-- This document has been created with a valid production license -->
+<xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:co-sspd-ife="http://www.superservicios.gov.co/xbrl/ef/core/2025-03-31" xmlns:xbrldi="http://xbrl.org/2006/xbrldi" xmlns:iso4217="http://www.xbrl.org/2003/iso4217">
+  <link:schemaRef xlink:type="simple" xlink:href="http://www.sui.gov.co/xbrl/Corte_2025/IFE/IFE_PuntoEntradaSegundoTrimestre-2025.xsd"/>
+  <co-sspd-ife:NumeroDeIdentificacionTributariaNIT contextRef="id0">814005646</co-sspd-ife:NumeroDeIdentificacionTributariaNIT>
+  <co-sspd-ife:IdentificacionDeLaEmpresaRUPS contextRef="id0">20037</co-sspd-ife:IdentificacionDeLaEmpresaRUPS>
+  <co-sspd-ife:NombreDeLaEntidadQueInformaUOtrasFormasDeIdentificacion contextRef="id0">EMPRESA DE SERVICIOS PUBLICOS DE LA CRUZ - EMPOCRUZ E.S.P</co-sspd-ife:NombreDeLaEntidadQueInformaUOtrasFormasDeIdentificacion>
+  <co-sspd-ife:FechaDeCierreDelPeriodoSobreElQueSeInforma contextRef="id0">2025-06-30</co-sspd-ife:FechaDeCierreDelPeriodoSobreElQueSeInforma>
+  <co-sspd-ife:DireccionDeLaSedeAdministrativaDeLaEntidad contextRef="id0">Calle 6 Nro. 8-02</co-sspd-ife:DireccionDeLaSedeAdministrativaDeLaEntidad>
+  <co-sspd-ife:CiudadDondeSeEncuentraUbicadaLaSedeAdministrativa contextRef="id0">LA-CRUZ-NARINO</co-sspd-ife:CiudadDondeSeEncuentraUbicadaLaSedeAdministrativa>
+  <co-sspd-ife:TelefonoFijoDeLaSedeAdministrativa contextRef="id0">3116151373</co-sspd-ife:TelefonoFijoDeLaSedeAdministrativa>
+  <co-sspd-ife:TelefonoCelularDeLaSedeAdministrativa contextRef="id0">3116151373</co-sspd-ife:TelefonoCelularDeLaSedeAdministrativa>
+  <co-sspd-ife:EmailCorporativo contextRef="id0">gerencia@empocruz.gov.co</co-sspd-ife:EmailCorporativo>
+  <co-sspd-ife:NumeroDeEmpleadosyContratistas contextRef="id5" unitRef="id6" decimals="INF">35</co-sspd-ife:NumeroDeEmpleadosyContratistas>
+  <co-sspd-ife:NumeroDeEmpleadosyContratistas contextRef="id2" unitRef="id6" decimals="INF">35</co-sspd-ife:NumeroDeEmpleadosyContratistas>
+  <co-sspd-ife:NumeroPromedioDeEmpleadosyContratistas contextRef="id0" unitRef="id6" decimals="INF">35</co-sspd-ife:NumeroPromedioDeEmpleadosyContratistas>
+  <co-sspd-ife:TipoDeDocumentoRL contextRef="id0">01 - CÉDULA DE CIUDADANÍA</co-sspd-ife:TipoDeDocumentoRL>
+  <co-sspd-ife:NumeroDeDocumentoRL contextRef="id0">87249156</co-sspd-ife:NumeroDeDocumentoRL>
+  <co-sspd-ife:NombresRL contextRef="id0">JONATHAN ALEXANDER </co-sspd-ife:NombresRL>
+  <co-sspd-ife:ApellidosRL contextRef="id0">BOLAÑOS MUÑOZ</co-sspd-ife:ApellidosRL>
+  <co-sspd-ife:GrupoDeClasificacion contextRef="id0">R. 414</co-sspd-ife:GrupoDeClasificacion>
+  <co-sspd-ife:DeclaracionDeCumplimientoDelMarcoNormativo contextRef="id0">1. Si cumple</co-sspd-ife:DeclaracionDeCumplimientoDelMarcoNormativo>
+  <co-sspd-ife:InformacionARevelarSobreIncertidumbresSobreLaCapacidadDeLaEntidadParaContinuarComoNegocioEnMarcha contextRef="id0">NA</co-sspd-ife:InformacionARevelarSobreIncertidumbresSobreLaCapacidadDeLaEntidadParaContinuarComoNegocioEnMarcha>
+  <co-sspd-ife:ExplicacionDeLaRazonPorLaQueNoSeConsideraALaEntidadComoNegocioEnMarcha contextRef="id0">NA</co-sspd-ife:ExplicacionDeLaRazonPorLaQueNoSeConsideraALaEntidadComoNegocioEnMarcha>
+  <co-sspd-ife:InformacionARevelarSobreIncertidumbresSobreLaCapacidadDeDarContinuidadALaPrestacionDeUnoOMasServiciosInscritosEnRups contextRef="id0">NA</co-sspd-ife:InformacionARevelarSobreIncertidumbresSobreLaCapacidadDeDarContinuidadALaPrestacionDeUnoOMasServiciosInscritosEnRups>
+  <co-sspd-ife:DuranteElPeriodoSobreElQueSeInformaSeFinalizoLaPrestacionDeUnoOMasServiciosInscritosEnRups contextRef="id0">2. No</co-sspd-ife:DuranteElPeriodoSobreElQueSeInformaSeFinalizoLaPrestacionDeUnoOMasServiciosInscritosEnRups>
+  <co-sspd-ife:InformacionARevelarVariacionesDeFlujoDeEfectivo contextRef="id0">ND</co-sspd-ife:InformacionARevelarVariacionesDeFlujoDeEfectivo>
+  <co-sspd-ife:InformacionRelevanteARevelarSobreElPeriodoCubiertoPorEsteInforme contextRef="id0">ND</co-sspd-ife:InformacionRelevanteARevelarSobreElPeriodoCubiertoPorEsteInforme>
+  <co-sspd-ife:InformacionARevelarSobreLosActivos contextRef="id0">ND</co-sspd-ife:InformacionARevelarSobreLosActivos>
+  <co-sspd-ife:InformacionARevelarSobreLosPasivos contextRef="id0">ND</co-sspd-ife:InformacionARevelarSobreLosPasivos>
+  <co-sspd-ife:InformacionARevelarSobreElPatrimonio contextRef="id0">ND</co-sspd-ife:InformacionARevelarSobreElPatrimonio>
+  <co-sspd-ife:InformacionARevelarSobreIngresos contextRef="id0">ND</co-sspd-ife:InformacionARevelarSobreIngresos>
+  <co-sspd-ife:InformacionARevelarSobreGastos contextRef="id0">ND</co-sspd-ife:InformacionARevelarSobreGastos>
+  <co-sspd-ife:HaHabidoAjustesAInformacionCertificadaEnSuiDeTrimestresAnteriores contextRef="id0">2. No</co-sspd-ife:HaHabidoAjustesAInformacionCertificadaEnSuiDeTrimestresAnteriores>
+  <co-sspd-ife:EfectivoYEquivalentesAlEfectivo contextRef="id8" unitRef="id7" decimals="INF">54599853</co-sspd-ife:EfectivoYEquivalentesAlEfectivo>
+  <co-sspd-ife:ActivosCorrientes contextRef="id8" unitRef="id7" decimals="INF">86745435</co-sspd-ife:ActivosCorrientes>
+  <co-sspd-ife:Activos contextRef="id8" unitRef="id7" decimals="INF">1056259129</co-sspd-ife:Activos>
+  <co-sspd-ife:EfectivoYEquivalentesAlEfectivo contextRef="id9" unitRef="id7" decimals="INF">24639652</co-sspd-ife:EfectivoYEquivalentesAlEfectivo>
+  <co-sspd-ife:ActivosCorrientes contextRef="id9" unitRef="id7" decimals="INF">38787105</co-sspd-ife:ActivosCorrientes>
+  <co-sspd-ife:Activos contextRef="id9" unitRef="id7" decimals="INF">43669273</co-sspd-ife:Activos>
+  <co-sspd-ife:EfectivoYEquivalentesAlEfectivo contextRef="id10" unitRef="id7" decimals="INF">18431788</co-sspd-ife:EfectivoYEquivalentesAlEfectivo>
+  <co-sspd-ife:ActivosCorrientes contextRef="id10" unitRef="id7" decimals="INF">40027968</co-sspd-ife:ActivosCorrientes>
+  <co-sspd-ife:Activos contextRef="id10" unitRef="id7" decimals="INF">50994611</co-sspd-ife:Activos>
+  <co-sspd-ife:EfectivoYEquivalentesAlEfectivo contextRef="id5" unitRef="id7" decimals="INF">97671293</co-sspd-ife:EfectivoYEquivalentesAlEfectivo>
+  <co-sspd-ife:ActivosCorrientes contextRef="id5" unitRef="id7" decimals="INF">165560508</co-sspd-ife:ActivosCorrientes>
+  <co-sspd-ife:Activos contextRef="id5" unitRef="id7" decimals="INF">1150923013</co-sspd-ife:Activos>
+  <co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos contextRef="id8" unitRef="id7" decimals="INF">4715976</co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos>
+  <co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes contextRef="id8" unitRef="id7" decimals="INF">15670249</co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes contextRef="id8" unitRef="id7" decimals="INF">15670249</co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes>
+  <co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos contextRef="id9" unitRef="id7" decimals="INF">6756306</co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos>
+  <co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes contextRef="id9" unitRef="id7" decimals="INF">14147453</co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes contextRef="id9" unitRef="id7" decimals="INF">14147453</co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes>
+  <co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos contextRef="id10" unitRef="id7" decimals="INF">9883529</co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos>
+  <co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes contextRef="id10" unitRef="id7" decimals="INF">21596180</co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes contextRef="id10" unitRef="id7" decimals="INF">21596180</co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes>
+  <co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos contextRef="id5" unitRef="id7" decimals="INF">21355811</co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos>
+  <co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes contextRef="id5" unitRef="id7" decimals="INF">51413882</co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes contextRef="id5" unitRef="id7" decimals="INF">51413882</co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes>
+  <co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes contextRef="id8" unitRef="id7" decimals="INF">10954273</co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes>
+  <co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes contextRef="id9" unitRef="id7" decimals="INF">7391147</co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes>
+  <co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes contextRef="id10" unitRef="id7" decimals="INF">11712651</co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes>
+  <co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes contextRef="id5" unitRef="id7" decimals="INF">30058071</co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes>
+  <co-sspd-ife:InventariosCorrientes contextRef="id8" unitRef="id7" decimals="INF">16475333</co-sspd-ife:InventariosCorrientes>
+  <co-sspd-ife:InventariosCorrientes contextRef="id5" unitRef="id7" decimals="INF">16475333</co-sspd-ife:InventariosCorrientes>
+  <co-sspd-ife:PropiedadesPlantaYEquipo contextRef="id8" unitRef="id7" decimals="INF">718819563</co-sspd-ife:PropiedadesPlantaYEquipo>
+  <co-sspd-ife:ActivosNoCorrientes contextRef="id8" unitRef="id7" decimals="INF">969513694</co-sspd-ife:ActivosNoCorrientes>
+  <co-sspd-ife:PropiedadesPlantaYEquipo contextRef="id9" unitRef="id7" decimals="INF">4882168</co-sspd-ife:PropiedadesPlantaYEquipo>
+  <co-sspd-ife:ActivosNoCorrientes contextRef="id9" unitRef="id7" decimals="INF">4882168</co-sspd-ife:ActivosNoCorrientes>
+  <co-sspd-ife:PropiedadesPlantaYEquipo contextRef="id10" unitRef="id7" decimals="INF">10966643</co-sspd-ife:PropiedadesPlantaYEquipo>
+  <co-sspd-ife:ActivosNoCorrientes contextRef="id10" unitRef="id7" decimals="INF">10966643</co-sspd-ife:ActivosNoCorrientes>
+  <co-sspd-ife:PropiedadesPlantaYEquipo contextRef="id5" unitRef="id7" decimals="INF">734668374</co-sspd-ife:PropiedadesPlantaYEquipo>
+  <co-sspd-ife:ActivosNoCorrientes contextRef="id5" unitRef="id7" decimals="INF">985362505</co-sspd-ife:ActivosNoCorrientes>
+  <co-sspd-ife:ActivosIntangiblesDistintosALaPlusvalia contextRef="id8" unitRef="id7" decimals="INF">7436858</co-sspd-ife:ActivosIntangiblesDistintosALaPlusvalia>
+  <co-sspd-ife:ActivosIntangiblesDistintosALaPlusvalia contextRef="id5" unitRef="id7" decimals="INF">7436858</co-sspd-ife:ActivosIntangiblesDistintosALaPlusvalia>
+  <co-sspd-ife:OtrosActivosNoFinancierosNoCorrientes contextRef="id8" unitRef="id7" decimals="INF">243257273</co-sspd-ife:OtrosActivosNoFinancierosNoCorrientes>
+  <co-sspd-ife:OtrosActivosNoFinancierosNoCorrientes contextRef="id5" unitRef="id7" decimals="INF">243257273</co-sspd-ife:OtrosActivosNoFinancierosNoCorrientes>
+  <co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes contextRef="id8" unitRef="id7" decimals="INF">12048807</co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes>
+  <co-sspd-ife:PasivosCorrientesTotales contextRef="id8" unitRef="id7" decimals="INF">12048807</co-sspd-ife:PasivosCorrientesTotales>
+  <co-sspd-ife:Pasivos contextRef="id8" unitRef="id7" decimals="INF">12048807</co-sspd-ife:Pasivos>
+  <co-sspd-ife:PatrimonioYPasivos contextRef="id8" unitRef="id7" decimals="INF">1056259129</co-sspd-ife:PatrimonioYPasivos>
+  <co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes contextRef="id9" unitRef="id7" decimals="INF">8725643</co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes>
+  <co-sspd-ife:PasivosCorrientesTotales contextRef="id9" unitRef="id7" decimals="INF">8725643</co-sspd-ife:PasivosCorrientesTotales>
+  <co-sspd-ife:Pasivos contextRef="id9" unitRef="id7" decimals="INF">8725643</co-sspd-ife:Pasivos>
+  <co-sspd-ife:PatrimonioYPasivos contextRef="id9" unitRef="id7" decimals="INF">43669273</co-sspd-ife:PatrimonioYPasivos>
+  <co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes contextRef="id10" unitRef="id7" decimals="INF">36332539</co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes>
+  <co-sspd-ife:PasivosCorrientesTotales contextRef="id10" unitRef="id7" decimals="INF">36332539</co-sspd-ife:PasivosCorrientesTotales>
+  <co-sspd-ife:Pasivos contextRef="id10" unitRef="id7" decimals="INF">36332539</co-sspd-ife:Pasivos>
+  <co-sspd-ife:PatrimonioYPasivos contextRef="id10" unitRef="id7" decimals="INF">50994611</co-sspd-ife:PatrimonioYPasivos>
+  <co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes contextRef="id5" unitRef="id7" decimals="INF">57106989</co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes>
+  <co-sspd-ife:PasivosCorrientesTotales contextRef="id5" unitRef="id7" decimals="INF">57106989</co-sspd-ife:PasivosCorrientesTotales>
+  <co-sspd-ife:Pasivos contextRef="id5" unitRef="id7" decimals="INF">57106989</co-sspd-ife:Pasivos>
+  <co-sspd-ife:PatrimonioYPasivos contextRef="id5" unitRef="id7" decimals="INF">1150923013</co-sspd-ife:PatrimonioYPasivos>
+  <co-sspd-ife:Capital contextRef="id8" unitRef="id7" decimals="INF">1041350874</co-sspd-ife:Capital>
+  <co-sspd-ife:Patrimonio contextRef="id8" unitRef="id7" decimals="INF">1044210322</co-sspd-ife:Patrimonio>
+  <co-sspd-ife:Capital contextRef="id9" unitRef="id7" decimals="INF">9845150</co-sspd-ife:Capital>
+  <co-sspd-ife:Patrimonio contextRef="id9" unitRef="id7" decimals="INF">34943630</co-sspd-ife:Patrimonio>
+  <co-sspd-ife:Capital contextRef="id10" unitRef="id7" decimals="INF">10122540</co-sspd-ife:Capital>
+  <co-sspd-ife:Patrimonio contextRef="id10" unitRef="id7" decimals="INF">14662072</co-sspd-ife:Patrimonio>
+  <co-sspd-ife:Capital contextRef="id5" unitRef="id7" decimals="INF">1061318564</co-sspd-ife:Capital>
+  <co-sspd-ife:Patrimonio contextRef="id5" unitRef="id7" decimals="INF">1093816024</co-sspd-ife:Patrimonio>
+  <co-sspd-ife:GananciasAcumuladas contextRef="id8" unitRef="id7" decimals="INF">2859448</co-sspd-ife:GananciasAcumuladas>
+  <co-sspd-ife:EfectosPorAdopcionNIF contextRef="id8" unitRef="id7" decimals="INF">2859448</co-sspd-ife:EfectosPorAdopcionNIF>
+  <co-sspd-ife:GananciasAcumuladas contextRef="id9" unitRef="id7" decimals="INF">25098480</co-sspd-ife:GananciasAcumuladas>
+  <co-sspd-ife:EfectosPorAdopcionNIF contextRef="id9" unitRef="id7" decimals="INF">25098480</co-sspd-ife:EfectosPorAdopcionNIF>
+  <co-sspd-ife:GananciasAcumuladas contextRef="id10" unitRef="id7" decimals="INF">4539532</co-sspd-ife:GananciasAcumuladas>
+  <co-sspd-ife:EfectosPorAdopcionNIF contextRef="id10" unitRef="id7" decimals="INF">4539532</co-sspd-ife:EfectosPorAdopcionNIF>
+  <co-sspd-ife:GananciasAcumuladas contextRef="id5" unitRef="id7" decimals="INF">32497460</co-sspd-ife:GananciasAcumuladas>
+  <co-sspd-ife:EfectosPorAdopcionNIF contextRef="id5" unitRef="id7" decimals="INF">32497460</co-sspd-ife:EfectosPorAdopcionNIF>
+  <co-sspd-ife:IngresosDeActividadesOrdinarias contextRef="id16" unitRef="id7" decimals="INF">288598804</co-sspd-ife:IngresosDeActividadesOrdinarias>
+  <co-sspd-ife:GananciaBruta contextRef="id16" unitRef="id7" decimals="INF">107751841</co-sspd-ife:GananciaBruta>
+  <co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion contextRef="id16" unitRef="id7" decimals="INF">2859448</co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion>
+  <co-sspd-ife:GananciaPerdidaAntesDeImpuestos contextRef="id16" unitRef="id7" decimals="INF">2859448</co-sspd-ife:GananciaPerdidaAntesDeImpuestos>
+  <co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas contextRef="id16" unitRef="id7" decimals="INF">2859448</co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas>
+  <co-sspd-ife:GananciaPerdida contextRef="id16" unitRef="id7" decimals="INF">2859448</co-sspd-ife:GananciaPerdida>
+  <co-sspd-ife:IngresosDeActividadesOrdinarias contextRef="id17" unitRef="id7" decimals="INF">64899827</co-sspd-ife:IngresosDeActividadesOrdinarias>
+  <co-sspd-ife:GananciaBruta contextRef="id17" unitRef="id7" decimals="INF">-9247898</co-sspd-ife:GananciaBruta>
+  <co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion contextRef="id17" unitRef="id7" decimals="INF">25098480</co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion>
+  <co-sspd-ife:GananciaPerdidaAntesDeImpuestos contextRef="id17" unitRef="id7" decimals="INF">25098480</co-sspd-ife:GananciaPerdidaAntesDeImpuestos>
+  <co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas contextRef="id17" unitRef="id7" decimals="INF">25098480</co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas>
+  <co-sspd-ife:GananciaPerdida contextRef="id17" unitRef="id7" decimals="INF">25098480</co-sspd-ife:GananciaPerdida>
+  <co-sspd-ife:IngresosDeActividadesOrdinarias contextRef="id18" unitRef="id7" decimals="INF">112430345</co-sspd-ife:IngresosDeActividadesOrdinarias>
+  <co-sspd-ife:GananciaBruta contextRef="id18" unitRef="id7" decimals="INF">15196285</co-sspd-ife:GananciaBruta>
+  <co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion contextRef="id18" unitRef="id7" decimals="INF">4539532</co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion>
+  <co-sspd-ife:GananciaPerdidaAntesDeImpuestos contextRef="id18" unitRef="id7" decimals="INF">4539532</co-sspd-ife:GananciaPerdidaAntesDeImpuestos>
+  <co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas contextRef="id18" unitRef="id7" decimals="INF">4539532</co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas>
+  <co-sspd-ife:GananciaPerdida contextRef="id18" unitRef="id7" decimals="INF">4539532</co-sspd-ife:GananciaPerdida>
+  <co-sspd-ife:IngresosDeActividadesOrdinarias contextRef="id1" unitRef="id7" decimals="INF">465928976</co-sspd-ife:IngresosDeActividadesOrdinarias>
+  <co-sspd-ife:GananciaBruta contextRef="id1" unitRef="id7" decimals="INF">113700228</co-sspd-ife:GananciaBruta>
+  <co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion contextRef="id1" unitRef="id7" decimals="INF">32497460</co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion>
+  <co-sspd-ife:GananciaPerdidaAntesDeImpuestos contextRef="id1" unitRef="id7" decimals="INF">32497460</co-sspd-ife:GananciaPerdidaAntesDeImpuestos>
+  <co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas contextRef="id1" unitRef="id7" decimals="INF">32497460</co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas>
+  <co-sspd-ife:GananciaPerdida contextRef="id1" unitRef="id7" decimals="INF">32497460</co-sspd-ife:GananciaPerdida>
+  <co-sspd-ife:CostoDeVentas contextRef="id16" unitRef="id7" decimals="INF">180846963</co-sspd-ife:CostoDeVentas>
+  <co-sspd-ife:CostoDeVentas contextRef="id17" unitRef="id7" decimals="INF">74147725</co-sspd-ife:CostoDeVentas>
+  <co-sspd-ife:CostoDeVentas contextRef="id18" unitRef="id7" decimals="INF">97234060</co-sspd-ife:CostoDeVentas>
+  <co-sspd-ife:CostoDeVentas contextRef="id1" unitRef="id7" decimals="INF">352228748</co-sspd-ife:CostoDeVentas>
+  <co-sspd-ife:GastosDeAdministracionOperacionYVentas contextRef="id16" unitRef="id7" decimals="INF">50494231</co-sspd-ife:GastosDeAdministracionOperacionYVentas>
+  <co-sspd-ife:GastosDeAdministracionOperacionYVentas contextRef="id17" unitRef="id7" decimals="INF">24432692</co-sspd-ife:GastosDeAdministracionOperacionYVentas>
+  <co-sspd-ife:GastosDeAdministracionOperacionYVentas contextRef="id18" unitRef="id7" decimals="INF">6515385</co-sspd-ife:GastosDeAdministracionOperacionYVentas>
+  <co-sspd-ife:GastosDeAdministracionOperacionYVentas contextRef="id1" unitRef="id7" decimals="INF">81442308</co-sspd-ife:GastosDeAdministracionOperacionYVentas>
+  <co-sspd-ife:OtrosIngresos contextRef="id16" unitRef="id7" decimals="INF">7013179</co-sspd-ife:OtrosIngresos>
+  <co-sspd-ife:OtrosIngresos contextRef="id17" unitRef="id7" decimals="INF">75000000</co-sspd-ife:OtrosIngresos>
+  <co-sspd-ife:OtrosIngresos contextRef="id1" unitRef="id7" decimals="INF">82013179</co-sspd-ife:OtrosIngresos>
+  <co-sspd-ife:OtrosGastos contextRef="id16" unitRef="id7" decimals="INF">61411341</co-sspd-ife:OtrosGastos>
+  <co-sspd-ife:OtrosGastos contextRef="id17" unitRef="id7" decimals="INF">16220930</co-sspd-ife:OtrosGastos>
+  <co-sspd-ife:OtrosGastos contextRef="id18" unitRef="id7" decimals="INF">4141368</co-sspd-ife:OtrosGastos>
+  <co-sspd-ife:OtrosGastos contextRef="id1" unitRef="id7" decimals="INF">81773639</co-sspd-ife:OtrosGastos>
+  <co-sspd-ife:IncrementosDisminucionesEnElEfectivoYEquivalentesAlEfectivo contextRef="id0" unitRef="id7" decimals="INF">14097404</co-sspd-ife:IncrementosDisminucionesEnElEfectivoYEquivalentesAlEfectivo>
+  <co-sspd-ife:EfectivoYEquivalentesAlEfectivo contextRef="id2" unitRef="id7" decimals="INF">111768697</co-sspd-ife:EfectivoYEquivalentesAlEfectivo>
+  <co-sspd-ife:EfectivoYEquivalentesAlEfectivo contextRef="id24" unitRef="id7" decimals="INF">32439054</co-sspd-ife:EfectivoYEquivalentesAlEfectivo>
+  <co-sspd-ife:ActivosCorrientes contextRef="id2" unitRef="id7" decimals="INF">232224246</co-sspd-ife:ActivosCorrientes>
+  <co-sspd-ife:ActivosCorrientes contextRef="id24" unitRef="id7" decimals="INF">102334720</co-sspd-ife:ActivosCorrientes>
+  <co-sspd-ife:Activos contextRef="id2" unitRef="id7" decimals="INF">1225530027</co-sspd-ife:Activos>
+  <co-sspd-ife:Activos contextRef="id24" unitRef="id7" decimals="INF">1079791690</co-sspd-ife:Activos>
+  <co-sspd-ife:EfectivoYEquivalentesAlEfectivo contextRef="id25" unitRef="id7" decimals="INF">26996806</co-sspd-ife:EfectivoYEquivalentesAlEfectivo>
+  <co-sspd-ife:ActivosCorrientes contextRef="id25" unitRef="id7" decimals="INF">49241259</co-sspd-ife:ActivosCorrientes>
+  <co-sspd-ife:Activos contextRef="id25" unitRef="id7" decimals="INF">54123427</co-sspd-ife:Activos>
+  <co-sspd-ife:EfectivoYEquivalentesAlEfectivo contextRef="id26" unitRef="id7" decimals="INF">52332837</co-sspd-ife:EfectivoYEquivalentesAlEfectivo>
+  <co-sspd-ife:ActivosCorrientes contextRef="id26" unitRef="id7" decimals="INF">80648267</co-sspd-ife:ActivosCorrientes>
+  <co-sspd-ife:Activos contextRef="id26" unitRef="id7" decimals="INF">91614910</co-sspd-ife:Activos>
+  <co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos contextRef="id24" unitRef="id7" decimals="INF">19322948</co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos>
+  <co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes contextRef="id24" unitRef="id7" decimals="INF">43792194</co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes contextRef="id24" unitRef="id7" decimals="INF">53921333</co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes>
+  <co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos contextRef="id25" unitRef="id7" decimals="INF">9102524</co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos>
+  <co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes contextRef="id25" unitRef="id7" decimals="INF">22244453</co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes contextRef="id25" unitRef="id7" decimals="INF">22244453</co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes>
+  <co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos contextRef="id26" unitRef="id7" decimals="INF">12982174</co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos>
+  <co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes contextRef="id26" unitRef="id7" decimals="INF">28315430</co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes contextRef="id26" unitRef="id7" decimals="INF">28315430</co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes>
+  <co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos contextRef="id2" unitRef="id7" decimals="INF">41407646</co-sspd-ife:CuentasComercialesCobrarCorrientesDiferentesASubsidiosYAprovechamientoServiciosPublicos>
+  <co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes contextRef="id2" unitRef="id7" decimals="INF">94352077</co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes contextRef="id2" unitRef="id7" decimals="INF">104481216</co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes>
+  <co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes contextRef="id24" unitRef="id7" decimals="INF">24469246</co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes>
+  <co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes contextRef="id25" unitRef="id7" decimals="INF">13141929</co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes>
+  <co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes contextRef="id26" unitRef="id7" decimals="INF">15333256</co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes>
+  <co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes contextRef="id2" unitRef="id7" decimals="INF">52944431</co-sspd-ife:CuentasComercialesCobrarPorSubsidiosCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarPorVentaDeBienesCorrientes contextRef="id24" unitRef="id7" decimals="INF">118030</co-sspd-ife:CuentasComercialesPorCobrarPorVentaDeBienesCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarPorVentaDeBienesCorrientes contextRef="id2" unitRef="id7" decimals="INF">118030</co-sspd-ife:CuentasComercialesPorCobrarPorVentaDeBienesCorrientes>
+  <co-sspd-ife:OtrasCuentasPorCobrarCorrientes contextRef="id24" unitRef="id7" decimals="INF">10011109</co-sspd-ife:OtrasCuentasPorCobrarCorrientes>
+  <co-sspd-ife:OtrasCuentasPorCobrarCorrientes contextRef="id2" unitRef="id7" decimals="INF">10011109</co-sspd-ife:OtrasCuentasPorCobrarCorrientes>
+  <co-sspd-ife:InventariosCorrientes contextRef="id24" unitRef="id7" decimals="INF">15974333</co-sspd-ife:InventariosCorrientes>
+  <co-sspd-ife:InventariosCorrientes contextRef="id2" unitRef="id7" decimals="INF">15974333</co-sspd-ife:InventariosCorrientes>
+  <co-sspd-ife:PropiedadesPlantaYEquipo contextRef="id24" unitRef="id7" decimals="INF">718819563</co-sspd-ife:PropiedadesPlantaYEquipo>
+  <co-sspd-ife:ActivosNoCorrientes contextRef="id24" unitRef="id7" decimals="INF">977456970</co-sspd-ife:ActivosNoCorrientes>
+  <co-sspd-ife:PropiedadesPlantaYEquipo contextRef="id25" unitRef="id7" decimals="INF">4882168</co-sspd-ife:PropiedadesPlantaYEquipo>
+  <co-sspd-ife:ActivosNoCorrientes contextRef="id25" unitRef="id7" decimals="INF">4882168</co-sspd-ife:ActivosNoCorrientes>
+  <co-sspd-ife:PropiedadesPlantaYEquipo contextRef="id26" unitRef="id7" decimals="INF">10966643</co-sspd-ife:PropiedadesPlantaYEquipo>
+  <co-sspd-ife:ActivosNoCorrientes contextRef="id26" unitRef="id7" decimals="INF">10966643</co-sspd-ife:ActivosNoCorrientes>
+  <co-sspd-ife:PropiedadesPlantaYEquipo contextRef="id2" unitRef="id7" decimals="INF">734668374</co-sspd-ife:PropiedadesPlantaYEquipo>
+  <co-sspd-ife:ActivosNoCorrientes contextRef="id2" unitRef="id7" decimals="INF">993305781</co-sspd-ife:ActivosNoCorrientes>
+  <co-sspd-ife:ActivosIntangiblesDistintosALaPlusvalia contextRef="id24" unitRef="id7" decimals="INF">15380134</co-sspd-ife:ActivosIntangiblesDistintosALaPlusvalia>
+  <co-sspd-ife:ActivosIntangiblesDistintosALaPlusvalia contextRef="id2" unitRef="id7" decimals="INF">15380134</co-sspd-ife:ActivosIntangiblesDistintosALaPlusvalia>
+  <co-sspd-ife:OtrosActivosNoFinancierosNoCorrientes contextRef="id24" unitRef="id7" decimals="INF">243257273</co-sspd-ife:OtrosActivosNoFinancierosNoCorrientes>
+  <co-sspd-ife:OtrosActivosNoFinancierosNoCorrientes contextRef="id2" unitRef="id7" decimals="INF">243257273</co-sspd-ife:OtrosActivosNoFinancierosNoCorrientes>
+  <co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes contextRef="id24" unitRef="id7" decimals="INF">2638563</co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes>
+  <co-sspd-ife:PasivosCorrientesTotales contextRef="id24" unitRef="id7" decimals="INF">8494203</co-sspd-ife:PasivosCorrientesTotales>
+  <co-sspd-ife:Pasivos contextRef="id24" unitRef="id7" decimals="INF">8494203</co-sspd-ife:Pasivos>
+  <co-sspd-ife:PatrimonioYPasivos contextRef="id24" unitRef="id7" decimals="INF">1079791690</co-sspd-ife:PatrimonioYPasivos>
+  <co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes contextRef="id25" unitRef="id7" decimals="INF">1268565</co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes>
+  <co-sspd-ife:PasivosCorrientesTotales contextRef="id25" unitRef="id7" decimals="INF">5297397</co-sspd-ife:PasivosCorrientesTotales>
+  <co-sspd-ife:Pasivos contextRef="id25" unitRef="id7" decimals="INF">5297397</co-sspd-ife:Pasivos>
+  <co-sspd-ife:PatrimonioYPasivos contextRef="id25" unitRef="id7" decimals="INF">54123427</co-sspd-ife:PatrimonioYPasivos>
+  <co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes contextRef="id26" unitRef="id7" decimals="INF">31307349</co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes>
+  <co-sspd-ife:PasivosCorrientesTotales contextRef="id26" unitRef="id7" decimals="INF">36211804</co-sspd-ife:PasivosCorrientesTotales>
+  <co-sspd-ife:Pasivos contextRef="id26" unitRef="id7" decimals="INF">36211804</co-sspd-ife:Pasivos>
+  <co-sspd-ife:PatrimonioYPasivos contextRef="id26" unitRef="id7" decimals="INF">91614910</co-sspd-ife:PatrimonioYPasivos>
+  <co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes contextRef="id2" unitRef="id7" decimals="INF">35214477</co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagarCorrientes>
+  <co-sspd-ife:PasivosCorrientesTotales contextRef="id2" unitRef="id7" decimals="INF">50003404</co-sspd-ife:PasivosCorrientesTotales>
+  <co-sspd-ife:Pasivos contextRef="id2" unitRef="id7" decimals="INF">50003404</co-sspd-ife:Pasivos>
+  <co-sspd-ife:PatrimonioYPasivos contextRef="id2" unitRef="id7" decimals="INF">1225530027</co-sspd-ife:PatrimonioYPasivos>
+  <co-sspd-ife:ObligacionesLaboralesCorrientes contextRef="id24" unitRef="id7" decimals="INF">5855640</co-sspd-ife:ObligacionesLaboralesCorrientes>
+  <co-sspd-ife:ObligacionesLaboralesCorrientes contextRef="id25" unitRef="id7" decimals="INF">4028832</co-sspd-ife:ObligacionesLaboralesCorrientes>
+  <co-sspd-ife:ObligacionesLaboralesCorrientes contextRef="id26" unitRef="id7" decimals="INF">4904455</co-sspd-ife:ObligacionesLaboralesCorrientes>
+  <co-sspd-ife:ObligacionesLaboralesCorrientes contextRef="id2" unitRef="id7" decimals="INF">14788927</co-sspd-ife:ObligacionesLaboralesCorrientes>
+  <co-sspd-ife:Capital contextRef="id24" unitRef="id7" decimals="INF">1041350874</co-sspd-ife:Capital>
+  <co-sspd-ife:Patrimonio contextRef="id24" unitRef="id7" decimals="INF">1071297487</co-sspd-ife:Patrimonio>
+  <co-sspd-ife:Capital contextRef="id25" unitRef="id7" decimals="INF">9845150</co-sspd-ife:Capital>
+  <co-sspd-ife:Patrimonio contextRef="id25" unitRef="id7" decimals="INF">48826030</co-sspd-ife:Patrimonio>
+  <co-sspd-ife:Capital contextRef="id26" unitRef="id7" decimals="INF">10170790</co-sspd-ife:Capital>
+  <co-sspd-ife:Patrimonio contextRef="id26" unitRef="id7" decimals="INF">55403106</co-sspd-ife:Patrimonio>
+  <co-sspd-ife:Capital contextRef="id2" unitRef="id7" decimals="INF">1061366814</co-sspd-ife:Capital>
+  <co-sspd-ife:Patrimonio contextRef="id2" unitRef="id7" decimals="INF">1175526623</co-sspd-ife:Patrimonio>
+  <co-sspd-ife:GananciasAcumuladas contextRef="id24" unitRef="id7" decimals="INF">29946613</co-sspd-ife:GananciasAcumuladas>
+  <co-sspd-ife:EfectosPorAdopcionNIF contextRef="id24" unitRef="id7" decimals="INF">29946613</co-sspd-ife:EfectosPorAdopcionNIF>
+  <co-sspd-ife:GananciasAcumuladas contextRef="id25" unitRef="id7" decimals="INF">38980880</co-sspd-ife:GananciasAcumuladas>
+  <co-sspd-ife:EfectosPorAdopcionNIF contextRef="id25" unitRef="id7" decimals="INF">38980880</co-sspd-ife:EfectosPorAdopcionNIF>
+  <co-sspd-ife:GananciasAcumuladas contextRef="id26" unitRef="id7" decimals="INF">45232316</co-sspd-ife:GananciasAcumuladas>
+  <co-sspd-ife:EfectosPorAdopcionNIF contextRef="id26" unitRef="id7" decimals="INF">45232316</co-sspd-ife:EfectosPorAdopcionNIF>
+  <co-sspd-ife:GananciasAcumuladas contextRef="id2" unitRef="id7" decimals="INF">114159809</co-sspd-ife:GananciasAcumuladas>
+  <co-sspd-ife:EfectosPorAdopcionNIF contextRef="id2" unitRef="id7" decimals="INF">114159809</co-sspd-ife:EfectosPorAdopcionNIF>
+  <co-sspd-ife:IngresosDeActividadesOrdinarias contextRef="id32" unitRef="id7" decimals="INF">549440143</co-sspd-ife:IngresosDeActividadesOrdinarias>
+  <co-sspd-ife:GananciaBruta contextRef="id32" unitRef="id7" decimals="INF">193013824</co-sspd-ife:GananciaBruta>
+  <co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion contextRef="id32" unitRef="id7" decimals="INF">13623334</co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion>
+  <co-sspd-ife:GananciaPerdidaAntesDeImpuestos contextRef="id32" unitRef="id7" decimals="INF">29946613</co-sspd-ife:GananciaPerdidaAntesDeImpuestos>
+  <co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas contextRef="id32" unitRef="id7" decimals="INF">29946613</co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas>
+  <co-sspd-ife:GananciaPerdida contextRef="id32" unitRef="id7" decimals="INF">29946613</co-sspd-ife:GananciaPerdida>
+  <co-sspd-ife:IngresosDeActividadesOrdinarias contextRef="id33" unitRef="id7" decimals="INF">180509891</co-sspd-ife:IngresosDeActividadesOrdinarias>
+  <co-sspd-ife:GananciaBruta contextRef="id33" unitRef="id7" decimals="INF">26868</co-sspd-ife:GananciaBruta>
+  <co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion contextRef="id33" unitRef="id7" decimals="INF">41842835</co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion>
+  <co-sspd-ife:GananciaPerdidaAntesDeImpuestos contextRef="id33" unitRef="id7" decimals="INF">38980880</co-sspd-ife:GananciaPerdidaAntesDeImpuestos>
+  <co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas contextRef="id33" unitRef="id7" decimals="INF">38980880</co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas>
+  <co-sspd-ife:GananciaPerdida contextRef="id33" unitRef="id7" decimals="INF">38980880</co-sspd-ife:GananciaPerdida>
+  <co-sspd-ife:IngresosDeActividadesOrdinarias contextRef="id34" unitRef="id7" decimals="INF">261207690</co-sspd-ife:IngresosDeActividadesOrdinarias>
+  <co-sspd-ife:GananciaBruta contextRef="id34" unitRef="id7" decimals="INF">64958278</co-sspd-ife:GananciaBruta>
+  <co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion contextRef="id34" unitRef="id7" decimals="INF">45995504</co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion>
+  <co-sspd-ife:GananciaPerdidaAntesDeImpuestos contextRef="id34" unitRef="id7" decimals="INF">45232316</co-sspd-ife:GananciaPerdidaAntesDeImpuestos>
+  <co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas contextRef="id34" unitRef="id7" decimals="INF">45232316</co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas>
+  <co-sspd-ife:GananciaPerdida contextRef="id34" unitRef="id7" decimals="INF">45232316</co-sspd-ife:GananciaPerdida>
+  <co-sspd-ife:IngresosDeActividadesOrdinarias contextRef="id0" unitRef="id7" decimals="INF">991157724</co-sspd-ife:IngresosDeActividadesOrdinarias>
+  <co-sspd-ife:GananciaBruta contextRef="id0" unitRef="id7" decimals="INF">257998970</co-sspd-ife:GananciaBruta>
+  <co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion contextRef="id0" unitRef="id7" decimals="INF">101461673</co-sspd-ife:GananciaPerdidaPorActividadesDeOperacion>
+  <co-sspd-ife:GananciaPerdidaAntesDeImpuestos contextRef="id0" unitRef="id7" decimals="INF">114159809</co-sspd-ife:GananciaPerdidaAntesDeImpuestos>
+  <co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas contextRef="id0" unitRef="id7" decimals="INF">114159809</co-sspd-ife:GananciaPerdidaProcedenteDeOperacionesContinuadas>
+  <co-sspd-ife:GananciaPerdida contextRef="id0" unitRef="id7" decimals="INF">114159809</co-sspd-ife:GananciaPerdida>
+  <co-sspd-ife:CostoDeVentas contextRef="id32" unitRef="id7" decimals="INF">356426319</co-sspd-ife:CostoDeVentas>
+  <co-sspd-ife:CostoDeVentas contextRef="id33" unitRef="id7" decimals="INF">180483023</co-sspd-ife:CostoDeVentas>
+  <co-sspd-ife:CostoDeVentas contextRef="id34" unitRef="id7" decimals="INF">196249412</co-sspd-ife:CostoDeVentas>
+  <co-sspd-ife:CostoDeVentas contextRef="id0" unitRef="id7" decimals="INF">733158754</co-sspd-ife:CostoDeVentas>
+  <co-sspd-ife:GastosDeAdministracionOperacionYVentas contextRef="id32" unitRef="id7" decimals="INF">144077842</co-sspd-ife:GastosDeAdministracionOperacionYVentas>
+  <co-sspd-ife:GastosDeAdministracionOperacionYVentas contextRef="id33" unitRef="id7" decimals="INF">101584033</co-sspd-ife:GastosDeAdministracionOperacionYVentas>
+  <co-sspd-ife:GastosDeAdministracionOperacionYVentas contextRef="id34" unitRef="id7" decimals="INF">17202774</co-sspd-ife:GastosDeAdministracionOperacionYVentas>
+  <co-sspd-ife:GastosDeAdministracionOperacionYVentas contextRef="id0" unitRef="id7" decimals="INF">262864649</co-sspd-ife:GastosDeAdministracionOperacionYVentas>
+  <co-sspd-ife:OtrosIngresos contextRef="id32" unitRef="id7" decimals="INF">346590</co-sspd-ife:OtrosIngresos>
+  <co-sspd-ife:OtrosIngresos contextRef="id33" unitRef="id7" decimals="INF">150000000</co-sspd-ife:OtrosIngresos>
+  <co-sspd-ife:OtrosIngresos contextRef="id0" unitRef="id7" decimals="INF">150346590</co-sspd-ife:OtrosIngresos>
+  <co-sspd-ife:OtrosGastos contextRef="id32" unitRef="id7" decimals="INF">35659238</co-sspd-ife:OtrosGastos>
+  <co-sspd-ife:OtrosGastos contextRef="id33" unitRef="id7" decimals="INF">6600000</co-sspd-ife:OtrosGastos>
+  <co-sspd-ife:OtrosGastos contextRef="id34" unitRef="id7" decimals="INF">1760000</co-sspd-ife:OtrosGastos>
+  <co-sspd-ife:OtrosGastos contextRef="id0" unitRef="id7" decimals="INF">44019238</co-sspd-ife:OtrosGastos>
+  <co-sspd-ife:IngresosFinancieros contextRef="id32" unitRef="id7" decimals="INF">22237136</co-sspd-ife:IngresosFinancieros>
+  <co-sspd-ife:IngresosFinancieros contextRef="id0" unitRef="id7" decimals="INF">22237136</co-sspd-ife:IngresosFinancieros>
+  <co-sspd-ife:CostosFinancieros contextRef="id32" unitRef="id7" decimals="INF">5913857</co-sspd-ife:CostosFinancieros>
+  <co-sspd-ife:CostosFinancieros contextRef="id33" unitRef="id7" decimals="INF">2861955</co-sspd-ife:CostosFinancieros>
+  <co-sspd-ife:CostosFinancieros contextRef="id34" unitRef="id7" decimals="INF">763188</co-sspd-ife:CostosFinancieros>
+  <co-sspd-ife:CostosFinancieros contextRef="id0" unitRef="id7" decimals="INF">9539000</co-sspd-ife:CostosFinancieros>
+  <co-sspd-ife:CuentasComercialesPorCobrarCorrientesAcueducto contextRef="id41" unitRef="id7" decimals="INF">43792194</co-sspd-ife:CuentasComercialesPorCobrarCorrientesAcueducto>
+  <co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes contextRef="id41" unitRef="id7" decimals="INF">94352077</co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes contextRef="id41" unitRef="id7" decimals="INF">104481216</co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarNetas contextRef="id2" unitRef="id7" decimals="INF">104481216</co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarNetas>
+  <co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarNetas contextRef="id41" unitRef="id7" decimals="INF">104481216</co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarNetas>
+  <co-sspd-ife:CuentasComercialesPorCobrarCorrientesAcueducto contextRef="id44" unitRef="id7" decimals="INF">43792194</co-sspd-ife:CuentasComercialesPorCobrarCorrientesAcueducto>
+  <co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes contextRef="id44" unitRef="id7" decimals="INF">94352077</co-sspd-ife:CuentasComercialesPorCobrarPorPrestacionDeServiciosPublicosCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes contextRef="id44" unitRef="id7" decimals="INF">104481216</co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarNetas contextRef="id44" unitRef="id7" decimals="INF">104481216</co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarNetas>
+  <co-sspd-ife:CuentasComercialesPorCobrarCorrientesAcueducto contextRef="id2" unitRef="id7" decimals="INF">43792194</co-sspd-ife:CuentasComercialesPorCobrarCorrientesAcueducto>
+  <co-sspd-ife:CuentasComercialesPorCobrarCorrientesAlcantarillado contextRef="id41" unitRef="id7" decimals="INF">22244453</co-sspd-ife:CuentasComercialesPorCobrarCorrientesAlcantarillado>
+  <co-sspd-ife:CuentasComercialesPorCobrarCorrientesAlcantarillado contextRef="id44" unitRef="id7" decimals="INF">22244453</co-sspd-ife:CuentasComercialesPorCobrarCorrientesAlcantarillado>
+  <co-sspd-ife:CuentasComercialesPorCobrarCorrientesAlcantarillado contextRef="id2" unitRef="id7" decimals="INF">22244453</co-sspd-ife:CuentasComercialesPorCobrarCorrientesAlcantarillado>
+  <co-sspd-ife:CuentasComercialesPorCobrarCorrientesAseo contextRef="id41" unitRef="id7" decimals="INF">28315430</co-sspd-ife:CuentasComercialesPorCobrarCorrientesAseo>
+  <co-sspd-ife:CuentasComercialesPorCobrarCorrientesAseo contextRef="id44" unitRef="id7" decimals="INF">28315430</co-sspd-ife:CuentasComercialesPorCobrarCorrientesAseo>
+  <co-sspd-ife:CuentasComercialesPorCobrarCorrientesAseo contextRef="id2" unitRef="id7" decimals="INF">28315430</co-sspd-ife:CuentasComercialesPorCobrarCorrientesAseo>
+  <co-sspd-ife:CuentasComercialesPorPagar contextRef="id46" unitRef="id7" decimals="INF">35214477</co-sspd-ife:CuentasComercialesPorPagar>
+  <co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagar contextRef="id46" unitRef="id7" decimals="INF">35214477</co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagar>
+  <co-sspd-ife:CuentasComercialesPorPagarOtrasCuentasPorPagarYOtrosPasivosFinancieros contextRef="id46" unitRef="id7" decimals="INF">50003404</co-sspd-ife:CuentasComercialesPorPagarOtrasCuentasPorPagarYOtrosPasivosFinancieros>
+  <co-sspd-ife:CuentasComercialesPorPagar contextRef="id52" unitRef="id7" decimals="INF">35214477</co-sspd-ife:CuentasComercialesPorPagar>
+  <co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagar contextRef="id52" unitRef="id7" decimals="INF">35214477</co-sspd-ife:CuentasComercialesPorPagarYOtrasCuentasPorPagar>
+  <co-sspd-ife:CuentasComercialesPorPagarOtrasCuentasPorPagarYOtrosPasivosFinancieros contextRef="id52" unitRef="id7" decimals="INF">50003404</co-sspd-ife:CuentasComercialesPorPagarOtrasCuentasPorPagarYOtrosPasivosFinancieros>
+  <co-sspd-ife:ObligacionesLaborales contextRef="id46" unitRef="id7" decimals="INF">14788927</co-sspd-ife:ObligacionesLaborales>
+  <co-sspd-ife:ObligacionesLaborales contextRef="id52" unitRef="id7" decimals="INF">14788927</co-sspd-ife:ObligacionesLaborales>
+  <co-sspd-ife:IngresosDeActividadesOrdinarias contextRef="id53" unitRef="id7" decimals="INF">549440143</co-sspd-ife:IngresosDeActividadesOrdinarias>
+  <co-sspd-ife:Ingresos contextRef="id53" unitRef="id7" decimals="INF">572023869</co-sspd-ife:Ingresos>
+  <co-sspd-ife:Ingresos contextRef="id0" unitRef="id7" decimals="INF">1163741450</co-sspd-ife:Ingresos>
+  <co-sspd-ife:IngresosDeActividadesOrdinarias contextRef="id54" unitRef="id7" decimals="INF">180509891</co-sspd-ife:IngresosDeActividadesOrdinarias>
+  <co-sspd-ife:Ingresos contextRef="id54" unitRef="id7" decimals="INF">330509891</co-sspd-ife:Ingresos>
+  <co-sspd-ife:IngresosDeActividadesOrdinarias contextRef="id55" unitRef="id7" decimals="INF">261207690</co-sspd-ife:IngresosDeActividadesOrdinarias>
+  <co-sspd-ife:Ingresos contextRef="id55" unitRef="id7" decimals="INF">261207690</co-sspd-ife:Ingresos>
+  <co-sspd-ife:DemasIngresos contextRef="id53" unitRef="id7" decimals="INF">22583726</co-sspd-ife:DemasIngresos>
+  <co-sspd-ife:DemasIngresos contextRef="id54" unitRef="id7" decimals="INF">150000000</co-sspd-ife:DemasIngresos>
+  <co-sspd-ife:DemasIngresos contextRef="id0" unitRef="id7" decimals="INF">172583726</co-sspd-ife:DemasIngresos>
+  <co-sspd-ife:CostosYGastos contextRef="id53" unitRef="id7" decimals="INF">542077256</co-sspd-ife:CostosYGastos>
+  <co-sspd-ife:CostosYGastos contextRef="id54" unitRef="id7" decimals="INF">291529011</co-sspd-ife:CostosYGastos>
+  <co-sspd-ife:CostosYGastos contextRef="id55" unitRef="id7" decimals="INF">215975374</co-sspd-ife:CostosYGastos>
+  <co-sspd-ife:CostosYGastos contextRef="id0" unitRef="id7" decimals="INF">1049581641</co-sspd-ife:CostosYGastos>
+  <co-sspd-ife:ImpuestosTasasYContribuciones contextRef="id53" unitRef="id7" decimals="INF">0</co-sspd-ife:ImpuestosTasasYContribuciones>
+  <co-sspd-ife:ImpuestosTasasYContribuciones contextRef="id54" unitRef="id7" decimals="INF">0</co-sspd-ife:ImpuestosTasasYContribuciones>
+  <co-sspd-ife:ImpuestosTasasYContribuciones contextRef="id55" unitRef="id7" decimals="INF">0</co-sspd-ife:ImpuestosTasasYContribuciones>
+  <co-sspd-ife:ImpuestosTasasYContribuciones contextRef="id0" unitRef="id7" decimals="INF">0</co-sspd-ife:ImpuestosTasasYContribuciones>
+  <co-sspd-ife:GastosFinancieros contextRef="id53" unitRef="id7" decimals="INF">5913857</co-sspd-ife:GastosFinancieros>
+  <co-sspd-ife:GastosFinancieros contextRef="id54" unitRef="id7" decimals="INF">2861955</co-sspd-ife:GastosFinancieros>
+  <co-sspd-ife:GastosFinancieros contextRef="id55" unitRef="id7" decimals="INF">763188</co-sspd-ife:GastosFinancieros>
+  <co-sspd-ife:GastosFinancieros contextRef="id0" unitRef="id7" decimals="INF">9539000</co-sspd-ife:GastosFinancieros>
+  <co-sspd-ife:GastoPorDeterioro contextRef="id53" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorDeterioro>
+  <co-sspd-ife:GastoPorDeterioro contextRef="id54" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorDeterioro>
+  <co-sspd-ife:GastoPorDeterioro contextRef="id55" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorDeterioro>
+  <co-sspd-ife:GastoPorDeterioro contextRef="id0" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorDeterioro>
+  <co-sspd-ife:GastoPorDepreciacion contextRef="id53" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorDepreciacion>
+  <co-sspd-ife:GastoPorDepreciacion contextRef="id54" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorDepreciacion>
+  <co-sspd-ife:GastoPorDepreciacion contextRef="id55" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorDepreciacion>
+  <co-sspd-ife:GastoPorDepreciacion contextRef="id0" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorDepreciacion>
+  <co-sspd-ife:GastoPorAmortizacion contextRef="id53" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorAmortizacion>
+  <co-sspd-ife:GastoPorAmortizacion contextRef="id54" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorAmortizacion>
+  <co-sspd-ife:GastoPorAmortizacion contextRef="id55" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorAmortizacion>
+  <co-sspd-ife:GastoPorAmortizacion contextRef="id0" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorAmortizacion>
+  <co-sspd-ife:GastoPorProvisiones contextRef="id53" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorProvisiones>
+  <co-sspd-ife:GastoPorProvisiones contextRef="id54" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorProvisiones>
+  <co-sspd-ife:GastoPorProvisiones contextRef="id55" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorProvisiones>
+  <co-sspd-ife:GastoPorProvisiones contextRef="id0" unitRef="id7" decimals="INF">0</co-sspd-ife:GastoPorProvisiones>
+  <co-sspd-ife:CuentasComercialesPorCobrarBrutasCorrientesPorVentaDeBienes contextRef="id41" unitRef="id7" decimals="INF">118030</co-sspd-ife:CuentasComercialesPorCobrarBrutasCorrientesPorVentaDeBienes>
+  <co-sspd-ife:CuentasComercialesPorCobrarPorVentaDeBienesCorrientes contextRef="id41" unitRef="id7" decimals="INF">118030</co-sspd-ife:CuentasComercialesPorCobrarPorVentaDeBienesCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarBrutasCorrientesPorVentaDeBienes contextRef="id2" unitRef="id7" decimals="INF">118030</co-sspd-ife:CuentasComercialesPorCobrarBrutasCorrientesPorVentaDeBienes>
+  <co-sspd-ife:OtrasCuentasComercialesPorCobrarBrutasCorrientes contextRef="id41" unitRef="id7" decimals="INF">10011109</co-sspd-ife:OtrasCuentasComercialesPorCobrarBrutasCorrientes>
+  <co-sspd-ife:OtrasCuentasPorCobrarCorrientes contextRef="id41" unitRef="id7" decimals="INF">10011109</co-sspd-ife:OtrasCuentasPorCobrarCorrientes>
+  <co-sspd-ife:OtrasCuentasComercialesPorCobrarBrutasCorrientes contextRef="id2" unitRef="id7" decimals="INF">10011109</co-sspd-ife:OtrasCuentasComercialesPorCobrarBrutasCorrientes>
+  <co-sspd-ife:CuentasComercialesPorCobrarBrutasCorrientesPorVentaDeBienes contextRef="id44" unitRef="id7" decimals="INF">118030</co-sspd-ife:CuentasComercialesPorCobrarBrutasCorrientesPorVentaDeBienes>
+  <co-sspd-ife:CuentasComercialesPorCobrarPorVentaDeBienesCorrientes contextRef="id44" unitRef="id7" decimals="INF">118030</co-sspd-ife:CuentasComercialesPorCobrarPorVentaDeBienesCorrientes>
+  <co-sspd-ife:OtrasCuentasComercialesPorCobrarBrutasCorrientes contextRef="id44" unitRef="id7" decimals="INF">10011109</co-sspd-ife:OtrasCuentasComercialesPorCobrarBrutasCorrientes>
+  <co-sspd-ife:OtrasCuentasPorCobrarCorrientes contextRef="id44" unitRef="id7" decimals="INF">10011109</co-sspd-ife:OtrasCuentasPorCobrarCorrientes>
+  <xbrli:context id="id0">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:startDate>2025-04-01</xbrli:startDate>
+      <xbrli:endDate>2025-06-30</xbrli:endDate>
+    </xbrli:period>
+  </xbrli:context>
+  <xbrli:context id="id5">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2025-03-31</xbrli:instant>
+    </xbrli:period>
+  </xbrli:context>
+  <xbrli:context id="id2">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2025-06-30</xbrli:instant>
+    </xbrli:period>
+  </xbrli:context>
+  <xbrli:context id="id8">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2025-03-31</xbrli:instant>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:EstadoSituacionFinancieraEje">co-sspd-ife:AcueductoMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id9">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2025-03-31</xbrli:instant>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:EstadoSituacionFinancieraEje">co-sspd-ife:AlcantarilladoMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id10">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2025-03-31</xbrli:instant>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:EstadoSituacionFinancieraEje">co-sspd-ife:AseoMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id16">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:startDate>2024-04-01</xbrli:startDate>
+      <xbrli:endDate>2024-06-30</xbrli:endDate>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:AcueductoMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id17">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:startDate>2024-04-01</xbrli:startDate>
+      <xbrli:endDate>2024-06-30</xbrli:endDate>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:AlcantarilladoMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id18">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:startDate>2024-04-01</xbrli:startDate>
+      <xbrli:endDate>2024-06-30</xbrli:endDate>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:AseoMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id1">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:startDate>2024-04-01</xbrli:startDate>
+      <xbrli:endDate>2024-06-30</xbrli:endDate>
+    </xbrli:period>
+  </xbrli:context>
+  <xbrli:context id="id24">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2025-06-30</xbrli:instant>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:EstadoSituacionFinancieraEje">co-sspd-ife:AcueductoMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id25">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2025-06-30</xbrli:instant>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:EstadoSituacionFinancieraEje">co-sspd-ife:AlcantarilladoMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id26">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2025-06-30</xbrli:instant>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:EstadoSituacionFinancieraEje">co-sspd-ife:AseoMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id32">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:startDate>2025-04-01</xbrli:startDate>
+      <xbrli:endDate>2025-06-30</xbrli:endDate>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:AcueductoMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id33">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:startDate>2025-04-01</xbrli:startDate>
+      <xbrli:endDate>2025-06-30</xbrli:endDate>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:AlcantarilladoMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id34">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:startDate>2025-04-01</xbrli:startDate>
+      <xbrli:endDate>2025-06-30</xbrli:endDate>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:AseoMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id41">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2025-06-30</xbrli:instant>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarEje">co-sspd-ife:VencidasDeNoventayUnoACientoOchentaDiasMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id44">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2025-06-30</xbrli:instant>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:CuentasComercialesPorCobrarYOtrasCuentasPorCobrarEje">co-sspd-ife:VencidasMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id46">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2025-06-30</xbrli:instant>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:CuentasComercialesPorPagarOtrasCuentasPorPagarYOtrosPasivosFinancierosEje">co-sspd-ife:NoVencidasMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id52">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2025-06-30</xbrli:instant>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:CuentasComercialesPorPagarOtrasCuentasPorPagarYOtrosPasivosFinancierosEje">co-sspd-ife:TotalMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id53">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:startDate>2025-04-01</xbrli:startDate>
+      <xbrli:endDate>2025-06-30</xbrli:endDate>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:IngresosYGastosEje">co-sspd-ife:AcueductoMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id54">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:startDate>2025-04-01</xbrli:startDate>
+      <xbrli:endDate>2025-06-30</xbrli:endDate>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:IngresosYGastosEje">co-sspd-ife:AlcantarilladoMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:context id="id55">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:startDate>2025-04-01</xbrli:startDate>
+      <xbrli:endDate>2025-06-30</xbrli:endDate>
+    </xbrli:period>
+    <xbrli:scenario>
+      <xbrldi:explicitMember dimension="co-sspd-ife:IngresosYGastosEje">co-sspd-ife:AseoMember</xbrldi:explicitMember>
+    </xbrli:scenario>
+  </xbrli:context>
+  <xbrli:unit id="id6">
+    <xbrli:measure>xbrli:pure</xbrli:measure>
+  </xbrli:unit>
+  <xbrli:unit id="id7">
+    <xbrli:measure>iso4217:COP</xbrli:measure>
+  </xbrli:unit>
+</xbrli:xbrl>

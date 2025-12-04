@@ -81,12 +81,12 @@ const TEMPLATE_PATHS: Record<NiifGroup, {
     outputPrefix: 'R533_Individual',
   },
   ife: {
-    xbrlt: '',
-    xml: '',
-    xlsx: '',
-    xbrl: '',
-    basePrefix: 'IFE_Individual',
-    outputPrefix: 'IFE_Individual',
+    xbrlt: 'ife/IFE_SegundoTrimestre_ID20037_2025-06-30.xbrlt',
+    xml: 'ife/IFE_SegundoTrimestre_ID20037_2025-06-30.xml',
+    xlsx: 'ife/IFE_SegundoTrimestre_ID20037_2025-06-30.xlsx',
+    xbrl: 'ife/IFE_SegundoTrimestre_ID20037_2025-06-30.xbrl',
+    basePrefix: 'IFE_SegundoTrimestre',
+    outputPrefix: 'IFE',
   },
 };
 
@@ -150,7 +150,17 @@ const SHEET_MAPPING: Record<NiifGroup, Record<string, string>> = {
     '900023': 'Hoja26',
   },
   r533: {},
-  ife: {},
+  ife: {
+    // IFE tiene estructura diferente con 8 hojas trimestrales
+    '110000t': 'Hoja1',   // Información general
+    '120000t': 'Hoja2',   // Información adicional (variaciones, ajustes)
+    '210000t': 'Hoja3',   // Estado de Situación Financiera por servicio
+    '310000t': 'Hoja4',   // Estado de Resultados por servicio
+    '900020t': 'Hoja5',   // FC03t - CXC por rangos de vencimiento
+    '900028t': 'Hoja6',   // FC05t - CXP detallado
+    '900050t': 'Hoja7',   // FC08t - Ingresos y Gastos
+    '900060t': 'Hoja8',   // FC09t - Deterioro de activos
+  },
 };
 
 /**
@@ -1072,6 +1082,43 @@ function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWithDataOpt
       } else {
         setTextCell(sheet1, 'E21', '2. No');
       }
+    } else if (options.niifGroup === 'ife') {
+      // Orden específico para IFE trimestral
+      // Según IFE_SegundoTrimestre_ID20037_2025-06-30.xml:
+      // E13: NIT
+      // E14: ID RUPS
+      // E15: Nombre de la entidad
+      // E16: Fecha de cierre del período
+      // E18: Dirección sede administrativa
+      // E19: Ciudad
+      // E20: Teléfono fijo
+      // E21: Teléfono celular
+      // E22: Email corporativo
+      // E24: Número de empleados inicio período
+      // E25: Número de empleados fin período
+      // E26: Promedio empleados
+      // E28: Tipo documento RL (Representante Legal)
+      // E29: Número documento RL
+      // E30: Nombres RL
+      // E31: Apellidos RL
+      // E33: Grupo de clasificación
+      // E34: Declaración de cumplimiento
+      // E35: Incertidumbres negocio en marcha
+      // E36: No es negocio en marcha
+      // E38: Incertidumbres servicios RUPS
+      // E39: Finalizó prestación servicios RUPS
+      // E40: Detalle finalización servicios
+      setTextCell(sheet1, 'E13', options.nit);
+      setTextCell(sheet1, 'E14', options.companyId);
+      setTextCell(sheet1, 'E15', options.companyName);
+      setTextCell(sheet1, 'E16', options.reportDate);
+      // Campos adicionales que pueden llenarse con valores por defecto o dejarse vacíos
+      // El usuario puede completarlos manualmente en Excel antes de generar el XBRL
+      setTextCell(sheet1, 'E33', '1'); // Grupo de clasificación - asumimos Grupo 1
+      setTextCell(sheet1, 'E34', '1. Sí'); // Declaración de cumplimiento
+      setTextCell(sheet1, 'E35', '2. No'); // Incertidumbres negocio en marcha
+      setTextCell(sheet1, 'E38', '2. No'); // Incertidumbres servicios RUPS
+      setTextCell(sheet1, 'E39', '2. No'); // Finalizó prestación servicios
     } else {
       // Orden para Grupo 1, 2, 3 (puede variar ligeramente)
       setTextCell(sheet1, 'E13', options.companyName);
@@ -2020,6 +2067,259 @@ function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWithDataOpt
       
       // Fila 32: Mencione que indicadores calcula. Explique los elementos que componen cada indicador
       setInfoCell(sheet11, 'E32', 'NA');
+    }
+  }
+  
+  // ===============================================
+  // PARTE 3: LLENAR DATOS PARA IFE (TRIMESTRAL)
+  // ===============================================
+  if (options.niifGroup === 'ife' && options.consolidatedAccounts && options.consolidatedAccounts.length > 0) {
+    const serviceBalances = options.serviceBalances || [];
+    const activeServices = options.activeServices || ['acueducto', 'alcantarillado', 'aseo'];
+    
+    // Función para establecer valor numérico en celda
+    const setNumericCellIFE = (sheet: XLSX.WorkSheet, cell: string, value: number) => {
+      if (value !== 0 && value !== undefined && !isNaN(value)) {
+        const stringValue = String(value);
+        sheet[cell] = { 
+          t: 's',  // Tipo STRING
+          v: stringValue,
+          w: stringValue,
+          h: stringValue
+        };
+      }
+    };
+    
+    // Agrupar cuentas por servicio
+    const accountsByServiceIFE: Record<string, ServiceBalanceData[]> = {};
+    for (const service of activeServices) {
+      accountsByServiceIFE[service] = serviceBalances.filter(sb => sb.service === service);
+    }
+    
+    // Función helper para verificar prefijos
+    const matchesPrefixesIFE = (code: string, prefixes: string[], excludes?: string[]): boolean => {
+      if (excludes) {
+        for (const exclude of excludes) {
+          if (code.startsWith(exclude)) return false;
+        }
+      }
+      for (const prefix of prefixes) {
+        if (code.startsWith(prefix)) return true;
+      }
+      return false;
+    };
+    
+    // Columnas de servicio para IFE (Hoja3 ESF y Hoja4 ER)
+    const IFE_SERVICE_COLUMNS: Record<string, string> = {
+      acueducto: 'I',
+      alcantarillado: 'J',
+      aseo: 'K',
+      energia: 'L',
+      gas: 'M',
+      glp: 'N',
+      xm: 'O',
+      otras: 'P',
+      total: 'Q',
+    };
+    
+    // ===============================================
+    // HOJA3 IFE (210000t): Estado de Situación Financiera
+    // ===============================================
+    const sheet3IFE = workbook.Sheets['Hoja3'];
+    if (sheet3IFE) {
+      // Mapeos del ESF para IFE - período actual (columnas I-Q fila de datos)
+      const IFE_ESF_MAPPINGS = [
+        // === ACTIVOS CORRIENTES ===
+        { row: 15, label: 'Efectivo y equivalentes', pucPrefixes: ['11'] },
+        { row: 16, label: 'Efectivo de uso restringido', pucPrefixes: ['1115'] },
+        { row: 19, label: 'CXC comerciales (diferentes subsidios)', pucPrefixes: ['1305', '1310'], excludePrefixes: ['130580', '130585'] },
+        { row: 20, label: 'CXC por subsidios', pucPrefixes: ['130580', '130585', '1315'] },
+        { row: 23, label: 'CXC servicios públicos', pucPrefixes: ['1305', '1310', '130580', '130585', '1315'] },
+        { row: 24, label: 'CXC venta de bienes', pucPrefixes: ['1325', '1330'] },
+        { row: 25, label: 'Otras CXC corrientes', pucPrefixes: ['1335', '1340', '1345', '1350', '1355', '1360', '1365', '1370', '1380', '1385'] },
+        { row: 27, label: 'Inventarios corrientes', pucPrefixes: ['14'] },
+        { row: 29, label: 'Activos por impuestos corrientes', pucPrefixes: ['1905', '1910'] },
+        { row: 30, label: 'Pagos anticipados', pucPrefixes: ['1705', '1710'] },
+        { row: 31, label: 'Otros activos corrientes', pucPrefixes: ['17', '19'], excludePrefixes: ['1905', '1910', '1705', '1710'] },
+        // === ACTIVOS NO CORRIENTES ===
+        { row: 35, label: 'CXC no corrientes', pucPrefixes: ['12'] },
+        { row: 36, label: 'Inversiones en subsidiarias/asociadas', pucPrefixes: ['120505', '120510', '120515'] },
+        { row: 37, label: 'Otras inversiones', pucPrefixes: ['1205'], excludePrefixes: ['120505', '120510', '120515'] },
+        { row: 38, label: 'PPE', pucPrefixes: ['16'] },
+        { row: 39, label: 'Propiedades de inversión', pucPrefixes: ['1968'] },
+        { row: 40, label: 'Plusvalía', pucPrefixes: ['1960'] },
+        { row: 41, label: 'Intangibles', pucPrefixes: ['197'] },
+        { row: 44, label: 'Activos biológicos', pucPrefixes: ['1610'] },
+        { row: 45, label: 'Activo por impuesto diferido', pucPrefixes: ['1910'] },
+        { row: 46, label: 'Otros activos no corrientes', pucPrefixes: ['18', '19'], excludePrefixes: ['1910'] },
+        // === PASIVOS CORRIENTES ===
+        { row: 51, label: 'Obligaciones financieras corrientes', pucPrefixes: ['21', '22'] },
+        { row: 52, label: 'Proveedores corrientes', pucPrefixes: ['23', '24'] },
+        { row: 53, label: 'Otras cuentas por pagar corrientes', pucPrefixes: ['25'] },
+        { row: 54, label: 'Provisiones corrientes', pucPrefixes: ['27'] },
+        { row: 55, label: 'Pasivo por impuestos corrientes', pucPrefixes: ['2405', '2410'] },
+        { row: 56, label: 'Otros pasivos corrientes', pucPrefixes: ['26', '29'], excludePrefixes: ['2905'] },
+        // === PASIVOS NO CORRIENTES ===
+        { row: 60, label: 'Obligaciones financieras no corrientes', pucPrefixes: ['21', '22'] },
+        { row: 61, label: 'Provisiones no corrientes', pucPrefixes: ['27'] },
+        { row: 62, label: 'Pasivo por impuesto diferido', pucPrefixes: ['2905'] },
+        { row: 63, label: 'Otros pasivos no corrientes', pucPrefixes: ['28', '29'], excludePrefixes: ['2905'] },
+        // === PATRIMONIO ===
+        { row: 67, label: 'Capital', pucPrefixes: ['32'] },
+        { row: 68, label: 'Prima de emisión', pucPrefixes: ['3205'] },
+        { row: 69, label: 'Reservas', pucPrefixes: ['33'] },
+        { row: 70, label: 'Resultados acumulados', pucPrefixes: ['36', '37'] },
+        { row: 71, label: 'Resultado del ejercicio', pucPrefixes: ['35'] },
+        { row: 72, label: 'Otros componentes patrimonio', pucPrefixes: ['34', '38'] },
+      ];
+      
+      for (const mapping of IFE_ESF_MAPPINGS) {
+        // Calcular total consolidado
+        let totalValue = 0;
+        for (const account of options.consolidatedAccounts) {
+          if (!account.isLeaf) continue;
+          if (matchesPrefixesIFE(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
+            totalValue += account.value;
+          }
+        }
+        
+        // Escribir valor total en columna Q
+        if (totalValue !== 0) {
+          setNumericCellIFE(sheet3IFE, `${IFE_SERVICE_COLUMNS.total}${mapping.row}`, totalValue);
+        }
+        
+        // Escribir valores por servicio
+        for (const service of activeServices) {
+          const serviceColumn = IFE_SERVICE_COLUMNS[service];
+          if (!serviceColumn) continue;
+          
+          let serviceValue = 0;
+          const serviceAccounts = accountsByServiceIFE[service] || [];
+          for (const account of serviceAccounts) {
+            if (!account.isLeaf) continue;
+            if (matchesPrefixesIFE(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
+              serviceValue += account.value;
+            }
+          }
+          
+          if (serviceValue !== 0) {
+            setNumericCellIFE(sheet3IFE, `${serviceColumn}${mapping.row}`, serviceValue);
+          }
+        }
+      }
+    }
+    
+    // ===============================================
+    // HOJA4 IFE (310000t): Estado de Resultados
+    // ===============================================
+    const sheet4IFE = workbook.Sheets['Hoja4'];
+    if (sheet4IFE) {
+      // Mapeos del Estado de Resultados para IFE
+      const IFE_ER_MAPPINGS = [
+        { row: 14, label: 'Ingresos de actividades ordinarias', pucPrefixes: ['43'] },
+        { row: 15, label: 'Costo de ventas', pucPrefixes: ['6', '62', '63'] },
+        { row: 17, label: 'Otros ingresos', pucPrefixes: ['41', '42', '44', '47', '48'], excludePrefixes: ['4802', '4807', '4808', '4810', '4815'] },
+        { row: 18, label: 'Gastos de administración y ventas', pucPrefixes: ['51', '52'] },
+        { row: 19, label: 'Ingresos financieros', pucPrefixes: ['4802', '4807', '4808', '4810', '4815'] },
+        { row: 20, label: 'Costos financieros', pucPrefixes: ['5802', '5803', '5807'] },
+        { row: 21, label: 'Participación asociadas', pucPrefixes: ['4815', '5815'] },
+        { row: 22, label: 'Otros gastos', pucPrefixes: ['53', '54', '56', '58'], excludePrefixes: ['5802', '5803', '5807', '5815'] },
+        { row: 25, label: 'Impuesto corriente', pucPrefixes: ['540101'] },
+        { row: 26, label: 'Impuesto diferido', pucPrefixes: ['5410'] },
+      ];
+      
+      for (const mapping of IFE_ER_MAPPINGS) {
+        // Calcular total consolidado
+        let totalValue = 0;
+        for (const account of options.consolidatedAccounts) {
+          if (!account.isLeaf) continue;
+          if (matchesPrefixesIFE(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
+            totalValue += account.value;
+          }
+        }
+        
+        // Escribir valor total
+        if (totalValue !== 0) {
+          setNumericCellIFE(sheet4IFE, `${IFE_SERVICE_COLUMNS.total}${mapping.row}`, totalValue);
+        }
+        
+        // Escribir valores por servicio
+        for (const service of activeServices) {
+          const serviceColumn = IFE_SERVICE_COLUMNS[service];
+          if (!serviceColumn) continue;
+          
+          let serviceValue = 0;
+          const serviceAccounts = accountsByServiceIFE[service] || [];
+          for (const account of serviceAccounts) {
+            if (!account.isLeaf) continue;
+            if (matchesPrefixesIFE(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
+              serviceValue += account.value;
+            }
+          }
+          
+          if (serviceValue !== 0) {
+            setNumericCellIFE(sheet4IFE, `${serviceColumn}${mapping.row}`, serviceValue);
+          }
+        }
+      }
+    }
+    
+    // ===============================================
+    // HOJA5 IFE (900020t): CXC por Rangos de Vencimiento
+    // Columnas: F=NoVencidas, G=1-90, H=91-180, I=181-360, J=>360, K=Deterioro, L=Total
+    // Filas: 17=Acueducto, 18=Alcantarillado, 19=Aseo, 20=Energía, 21=Gas, 22=GLP, 23=XM
+    // ===============================================
+    const sheet5IFE = workbook.Sheets['Hoja5'];
+    if (sheet5IFE) {
+      // Mapeo de filas de CXC por servicio
+      const IFE_CXC_SERVICE_ROWS: Record<string, number> = {
+        acueducto: 17,
+        alcantarillado: 18,
+        aseo: 19,
+        energia: 20,
+        gas: 21,
+        glp: 22,
+        xm: 23,
+      };
+      
+      // Porcentajes por defecto para distribución de CXC
+      // No vencidas 55%, 1-90 días 25%, 91-180 días 20%, resto 0%
+      const CXC_PERCENTAGES = [
+        { column: 'F', percentage: 55 },  // No vencidas
+        { column: 'G', percentage: 25 },  // 1-90 días
+        { column: 'H', percentage: 20 },  // 91-180 días
+        { column: 'I', percentage: 0 },   // 181-360 días
+        { column: 'J', percentage: 0 },   // Más de 360 días
+      ];
+      
+      // Calcular CXC total por servicio (cuentas 1305, 1310, etc.)
+      for (const service of activeServices) {
+        const row = IFE_CXC_SERVICE_ROWS[service];
+        if (!row) continue;
+        
+        // Calcular CXC total del servicio
+        let totalCXC = 0;
+        const serviceAccounts = accountsByServiceIFE[service] || [];
+        for (const account of serviceAccounts) {
+          if (!account.isLeaf) continue;
+          if (matchesPrefixesIFE(account.code, ['1305', '1310', '1315'])) {
+            totalCXC += account.value;
+          }
+        }
+        
+        if (totalCXC !== 0) {
+          // Distribuir por rangos de vencimiento según porcentajes
+          for (const range of CXC_PERCENTAGES) {
+            const rangeValue = Math.round(totalCXC * range.percentage / 100);
+            if (rangeValue !== 0) {
+              setNumericCellIFE(sheet5IFE, `${range.column}${row}`, rangeValue);
+            }
+          }
+          
+          // Escribir total en columna L
+          setNumericCellIFE(sheet5IFE, `L${row}`, totalCXC);
+        }
+      }
     }
   }
   
@@ -4144,6 +4444,73 @@ function customizeXbrlt(content: string, options: TemplateCustomization, outputF
     `config="${newConfigName}"`
   );
   
+  // ============================================================
+  // MANEJO ESPECIAL PARA IFE (Trimestral)
+  // ============================================================
+  if (options.niifGroup === 'ife') {
+    // Para IFE, la fecha de reporte indica el trimestre
+    // Formato esperado: YYYY-MM-DD donde MM-DD es 03-31, 06-30, 09-30 o 12-31
+    const reportYear = options.reportDate.split('-')[0];
+    const reportMonth = options.reportDate.split('-')[1];
+    
+    // Determinar el trimestre basado en el mes de cierre
+    let trimestre: '1T' | '2T' | '3T' | '4T';
+    let startMonth: string;
+    let endMonth: string;
+    let endDay: string;
+    let prevInstant: string;
+    
+    switch (reportMonth) {
+      case '03':
+        trimestre = '1T';
+        startMonth = '01';
+        endMonth = '03';
+        endDay = '31';
+        prevInstant = `${parseInt(reportYear) - 1}-12-31`;
+        break;
+      case '06':
+        trimestre = '2T';
+        startMonth = '04';
+        endMonth = '06';
+        endDay = '30';
+        prevInstant = `${reportYear}-03-31`;
+        break;
+      case '09':
+        trimestre = '3T';
+        startMonth = '07';
+        endMonth = '09';
+        endDay = '30';
+        prevInstant = `${reportYear}-06-30`;
+        break;
+      case '12':
+      default:
+        trimestre = '4T';
+        startMonth = '10';
+        endMonth = '12';
+        endDay = '31';
+        prevInstant = `${reportYear}-09-30`;
+        break;
+    }
+    
+    const newStartDate = `${reportYear}-${startMonth}-01`;
+    const newEndDate = `${reportYear}-${endMonth}-${endDay}`;
+    const newInstant = newEndDate;
+    
+    // La plantilla IFE viene con datos del 2do trimestre 2025
+    // Reemplazar fechas del template original por las del trimestre seleccionado
+    
+    // Fechas del template original (2do trimestre 2025)
+    customized = customized.replace(/<startDate>2025-04-01<\/startDate>/g, `<startDate>${newStartDate}</startDate>`);
+    customized = customized.replace(/<endDate>2025-06-30<\/endDate>/g, `<endDate>${newEndDate}</endDate>`);
+    customized = customized.replace(/<instant>2025-06-30<\/instant>/g, `<instant>${newInstant}</instant>`);
+    customized = customized.replace(/<instant>2025-03-31<\/instant>/g, `<instant>${prevInstant}</instant>`);
+    
+    return customized;
+  }
+  
+  // ============================================================
+  // TAXONOMÍAS ANUALES (Grupo 1, 2, 3, R414, R533)
+  // ============================================================
   // Actualizar fechas en los períodos según la fecha de reporte del usuario
   // La plantilla original tiene fechas de 2024 (año actual) y 2023 (año anterior)
   // Debemos reemplazarlas por el año del reporte del usuario y su año anterior

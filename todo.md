@@ -1,9 +1,44 @@
 # TODO - Generador de Taxonomías XBRL
 
-## Estado Actual del Proyecto (v2.3)
+## Estado Actual del Proyecto (v2.4)
 
-**Última Actualización**: 2025-01-27
+**Última Actualización**: 2025-01-28
 **Stack**: Next.js 15 + React 19 + TypeScript + Tailwind CSS + shadcn/ui + tRPC + Drizzle ORM
+
+## 🆕 IFE - Informe Financiero Especial Trimestral (EN PROGRESO)
+
+### Descripción
+IFE es la taxonomía trimestral obligatoria de la SSPD desde 2020. Las empresas deben reportar
+4 veces al año (por trimestre) además del reporte anual R414/Grupo.
+
+### Diferencias IFE vs R414/Grupos:
+- **Periodicidad**: Trimestral (1T, 2T, 3T, 4T) vs Anual
+- **CxC**: Por rangos de vencimiento vs por tipo de servicio
+- **Estructura**: 8 hojas simplificadas vs 60+ hojas completas
+
+### Implementación en Progreso:
+- [x] Tipos TypeScript para trimestres (`IFETrimestre`)
+- [x] Configuración de entry points por trimestre
+- [x] Funciones para generar URLs IFE dinámicas
+- [x] Configuración de rangos de vencimiento CxC/CxP
+- [x] Plantillas IFE copiadas a `public/templates/ife/`
+- [x] Configuración de TEMPLATE_PATHS y SHEET_MAPPING para IFE
+- [x] UI: Selector de IFE en UploadStep
+- [x] UI: Selector de trimestre en UploadStep/GenerateStep cuando es IFE
+- [x] Backend: Router balance acepta 'ife' como grupo
+- [x] Backend: customizeXbrlt maneja fechas trimestrales IFE
+- [x] Implementar llenado de Hoja1 IFE (información general)
+- [x] Implementar llenado de Hoja3 IFE (ESF por servicio)
+- [x] Implementar llenado de Hoja4 IFE (ER por servicio)
+- [x] Implementar llenado de Hoja5 IFE (CxC por rangos vencimiento con distribución automática)
+- [ ] Pruebas con XBRL Express
+
+### Distribución CxC por Vencimiento (por defecto):
+- No vencidas: 55%
+- 1-90 días: 25%
+- 91-180 días: 20%
+- 181-360 días: 0%
+- >360 días: 0%
 
 ## 🆕 Automatización de Hojas XBRL (EN PROGRESO)
 

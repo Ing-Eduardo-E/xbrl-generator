@@ -22,6 +22,130 @@ export type ReportType = 'individual' | 'consolidado';
 /** Tipo de flujo de efectivo */
 export type CashFlowType = 'directo' | 'indirecto';
 
+/** 
+ * Trimestre para IFE (Informe Financiero Especial)
+ * IFE es una taxonomía trimestral obligatoria desde 2020
+ */
+export type IFETrimestre = '1T' | '2T' | '3T' | '4T';
+
+/**
+ * Mapeo de trimestres a nombres en español para URLs
+ */
+export const IFE_TRIMESTRE_NAMES: Record<IFETrimestre, string> = {
+  '1T': 'Primer',
+  '2T': 'Segundo', 
+  '3T': 'Tercer',
+  '4T': 'Cuarto',
+};
+
+/**
+ * Mapeo de trimestres a fechas de cierre (mes-día)
+ */
+export const IFE_TRIMESTRE_END_DATES: Record<IFETrimestre, string> = {
+  '1T': '03-31',
+  '2T': '06-30',
+  '3T': '09-30',
+  '4T': '12-31',
+};
+
+/**
+ * Rangos de vencimiento para Cuentas por Cobrar (CxC) en IFE
+ * Estos son los miembros del eje CuentasComercialesPorCobrarYOtrasCuentasPorCobrarEje
+ */
+export interface CxCAgingRange {
+  id: string;
+  name: string;
+  xbrlMember: string;
+  /** Porcentaje por defecto de distribución */
+  defaultPercentage: number;
+  /** Columna Excel en la hoja FC03t (900020t) */
+  column: string;
+}
+
+/**
+ * Configuración de rangos de vencimiento CxC para IFE
+ * Los porcentajes por defecto son: 55% no vencidas, 25% 1-90 días, 20% 91-180 días, 0% resto
+ */
+export const IFE_CXC_AGING_RANGES: CxCAgingRange[] = [
+  { 
+    id: 'noVencidas', 
+    name: 'No Vencidas', 
+    xbrlMember: 'NoVencidasMember', 
+    defaultPercentage: 55,
+    column: 'F',  // Columna F en Hoja5 (900020t)
+  },
+  { 
+    id: '1a90', 
+    name: '1 a 90 días', 
+    xbrlMember: 'VencidasDeUnoANoventaDiasMember', 
+    defaultPercentage: 25,
+    column: 'G',  // Columna G en Hoja5
+  },
+  { 
+    id: '91a180', 
+    name: '91 a 180 días', 
+    xbrlMember: 'VencidasDeNoventayUnoACientoOchentaDiasMember', 
+    defaultPercentage: 20,
+    column: 'H',  // Columna H en Hoja5
+  },
+  { 
+    id: '181a360', 
+    name: '181 a 360 días', 
+    xbrlMember: 'VencidasDeCientoOchentayUnoATrescientosSesentaDiasMember', 
+    defaultPercentage: 0,
+    column: 'I',  // Columna I en Hoja5
+  },
+  { 
+    id: 'mas360', 
+    name: 'Más de 360 días', 
+    xbrlMember: 'MasDeTrescientosSesentaDiasMember', 
+    defaultPercentage: 0,
+    column: 'J',  // Columna J en Hoja5
+  },
+];
+
+/**
+ * Rangos de vencimiento para Cuentas por Pagar (CxP) en IFE
+ * Eje: CuentasComercialesPorPagarOtrasCuentasPorPagarYOtrosPasivosFinancierosEje
+ */
+export const IFE_CXP_AGING_RANGES: CxCAgingRange[] = [
+  { 
+    id: 'noVencidas', 
+    name: 'No Vencidas', 
+    xbrlMember: 'NoVencidasMember', 
+    defaultPercentage: 100,
+    column: 'I',
+  },
+  { 
+    id: '1a90', 
+    name: '1 a 90 días', 
+    xbrlMember: 'VencidasDeUnoANoventaDiasMember', 
+    defaultPercentage: 0,
+    column: 'J',
+  },
+  { 
+    id: '91a180', 
+    name: '91 a 180 días', 
+    xbrlMember: 'VencidasDeNoventayUnoACientoOchentaDiasMember', 
+    defaultPercentage: 0,
+    column: 'K',
+  },
+  { 
+    id: '181a360', 
+    name: '181 a 360 días', 
+    xbrlMember: 'VencidasDeCientoOchentayUnoATrescientosSesentaDiasMember', 
+    defaultPercentage: 0,
+    column: 'L',
+  },
+  { 
+    id: 'mas360', 
+    name: 'Más de 360 días', 
+    xbrlMember: 'MasDeTrescientosSesentaDiasMember', 
+    defaultPercentage: 0,
+    column: 'M',
+  },
+];
+
 /** Grado de redondeo para estados financieros */
 export type RoundingDegree = '1' | '2' | '3' | '4';
 
@@ -146,6 +270,61 @@ export function getEntryPointUrl(
 }
 
 /**
+ * Genera la URL del punto de entrada para IFE (Informe Financiero Especial) trimestral
+ * 
+ * IFE usa un formato de URL diferente basado en trimestres:
+ * - Formato: IFE_PuntoEntrada{Trimestre}Trimestre-{year}.xsd
+ * - Ejemplo: IFE_PuntoEntradaSegundoTrimestre-2025.xsd
+ * 
+ * @param year - Año de la taxonomía (ej: '2025')
+ * @param trimestre - Trimestre del informe ('1T', '2T', '3T', '4T')
+ * @returns URL completa del punto de entrada IFE
+ */
+export function getIFEEntryPointUrl(
+  year: TaxonomyYear,
+  trimestre: IFETrimestre
+): string {
+  const trimestreName = IFE_TRIMESTRE_NAMES[trimestre];
+  return `${TAXONOMY_CATALOG.baseUrl}/Corte_${year}/IFE/IFE_PuntoEntrada${trimestreName}Trimestre-${year}.xsd`;
+}
+
+/**
+ * Genera la fecha de cierre para un trimestre IFE
+ * @param year - Año (ej: '2025')
+ * @param trimestre - Trimestre ('1T', '2T', '3T', '4T')
+ * @returns Fecha en formato YYYY-MM-DD
+ */
+export function getIFEReportDate(year: TaxonomyYear, trimestre: IFETrimestre): string {
+  return `${year}-${IFE_TRIMESTRE_END_DATES[trimestre]}`;
+}
+
+/**
+ * Genera el namespace para IFE trimestral
+ * El namespace usa la fecha del trimestre, no fin de año
+ * Ejemplo: http://www.superservicios.gov.co/xbrl/ef/core/2025-03-31
+ */
+export function getIFENamespace(year: TaxonomyYear, trimestre: IFETrimestre): string {
+  return `http://www.superservicios.gov.co/xbrl/ef/core/${year}-${IFE_TRIMESTRE_END_DATES[trimestre]}`;
+}
+
+/**
+ * Obtiene la configuración completa de IFE para un año y trimestre específico
+ */
+export function getIFEConfig(year: TaxonomyYear, trimestre: IFETrimestre): TaxonomyConfig {
+  const baseConfig = TAXONOMY_CONFIGS.ife;
+  const trimestreName = IFE_TRIMESTRE_NAMES[trimestre];
+  
+  return {
+    ...baseConfig,
+    name: `Informe Financiero Especial (IFE) - ${trimestreName} Trimestre ${year}`,
+    namespace: getIFENamespace(year, trimestre),
+    entryPoint: getIFEEntryPointUrl(year, trimestre),
+    baseUrl: `${TAXONOMY_CATALOG.baseUrl}/Corte_${year}/IFE/`,
+    packageFile: `SSPD_IFE_${year}-${IFE_TRIMESTRE_END_DATES[trimestre]}.zip`,
+  };
+}
+
+/**
  * Obtiene la URL del paquete ZIP de una taxonomía
  */
 export function getTaxonomyPackageUrl(year: TaxonomyYear, group: NiifGroup): string {
@@ -247,14 +426,22 @@ export const TAXONOMY_CONFIGS: Record<NiifGroup, TaxonomyConfig> = {
     ],
   },
   ife: {
-    name: 'Informe Financiero Especial (IFE)',
+    name: 'Informe Financiero Especial (IFE) - Trimestral',
     prefix: 'co-sspd-ife',
-    namespace: 'http://www.superservicios.gov.co/xbrl/ife/2024-12-31',
-    entryPoint: 'http://www.sui.gov.co/xbrl/Corte_2024/ife/PuntoEntrada_IFE_Individual-2024.xsd',
-    baseUrl: 'http://www.sui.gov.co/xbrl/Corte_2024/ife/',
-    packageFile: 'SSPD_IFE_2024-12-31.zip',
+    namespace: 'http://www.superservicios.gov.co/xbrl/ef/core/2025-03-31', // Se actualiza dinámicamente
+    entryPoint: 'http://www.sui.gov.co/xbrl/Corte_2025/IFE/IFE_PuntoEntradaPrimerTrimestre-2025.xsd', // Se actualiza
+    baseUrl: 'http://www.sui.gov.co/xbrl/Corte_2025/IFE/',
+    packageFile: 'SSPD_IFE_2025-03-31.zip',
+    // IFE tiene los mismos servicios que otros grupos para ESF y ER
     services: [
-      { id: 'total', name: 'Total', xbrlMember: '', column: 'I', ifrsSuffix: 0, sspdSuffix: 0 },
+      { id: 'acueducto', name: 'Acueducto', xbrlMember: 'AcueductoMember', column: 'I', ifrsSuffix: 0, sspdSuffix: 0 },
+      { id: 'alcantarillado', name: 'Alcantarillado', xbrlMember: 'AlcantarilladoMember', column: 'J', ifrsSuffix: 0, sspdSuffix: 0 },
+      { id: 'aseo', name: 'Aseo', xbrlMember: 'AseoMember', column: 'K', ifrsSuffix: 0, sspdSuffix: 0 },
+      { id: 'energia', name: 'Energía Eléctrica', xbrlMember: 'EnergiaElectricaMember', column: 'L', ifrsSuffix: 0, sspdSuffix: 0 },
+      { id: 'gas', name: 'Gas Natural', xbrlMember: 'GasNaturalMember', column: 'M', ifrsSuffix: 0, sspdSuffix: 0 },
+      { id: 'glp', name: 'GLP', xbrlMember: 'GasLicuadoDePetroleoMember', column: 'N', ifrsSuffix: 0, sspdSuffix: 0 },
+      { id: 'xmm', name: 'XMM', xbrlMember: 'OperadorDelSistemaYAdministradorDelMercadoDeEnergiaXMMember', column: 'O', ifrsSuffix: 0, sspdSuffix: 0 },
+      { id: 'otras', name: 'Otras Actividades', xbrlMember: 'OtrasActividadesNoVigiladasMember', column: 'P', ifrsSuffix: 0, sspdSuffix: 0 },
     ],
   },
 };
@@ -324,7 +511,17 @@ export const AVAILABLE_GROUPS: { value: NiifGroup; label: string }[] = [
   { value: 'grupo3', label: 'Grupo 3 - Microempresas' },
   { value: 'r414', label: 'Resolución 414 - Sector Público' },
   { value: 'r533', label: 'Resolución 533 - Marco Normativo' },
-  { value: 'ife', label: 'Informe Financiero Especial (IFE)' },
+  { value: 'ife', label: 'Informe Financiero Especial (IFE) - Trimestral' },
+];
+
+/**
+ * Lista de trimestres disponibles para IFE
+ */
+export const AVAILABLE_TRIMESTRES: { value: IFETrimestre; label: string }[] = [
+  { value: '1T', label: 'Primer Trimestre (Ene-Mar)' },
+  { value: '2T', label: 'Segundo Trimestre (Abr-Jun)' },
+  { value: '3T', label: 'Tercer Trimestre (Jul-Sep)' },
+  { value: '4T', label: 'Cuarto Trimestre (Oct-Dic)' },
 ];
 
 /**
