@@ -3560,6 +3560,178 @@ async function rewriteFinancialDataWithExcelJS(
     }
     
     // ===============================================
+    // HOJA26 (900023): FC03-3 - CXC Aseo (Detallado por estrato)
+    // ===============================================
+    // Esta hoja distribuye las cuentas por cobrar de ASEO por estrato
+    // usando una distribución proporcional basada en el número de usuarios.
+    // 
+    // DIFERENCIAS CON HOJA24/25:
+    // - Columnas de destino empiezan en E (no en G)
+    //   E=Corriente, F=No Corriente, G=Total, H-P=Rangos vencimiento, Q=Suma
+    // - Filas de datos empiezan en 15 (no en 19)
+    // 
+    // Datos de entrada (Hoja2 columna K - Aseo):
+    // - CXC Corrientes: K19 + K20
+    // - CXC No Corrientes: K43 + K44
+    // ===============================================
+    const sheet26 = workbook.getWorksheet('Hoja26');
+    const sheet2ForHoja26 = workbook.getWorksheet('Hoja2');
+    
+    if (sheet26 && sheet2ForHoja26) {
+      console.log('[ExcelJS] Escribiendo datos en Hoja26 (FC03-3 - CXC Aseo por estrato)...');
+      
+      // Obtener CXC Corrientes de Hoja2 columna K (K19 + K20)
+      const cxcCorrientes19Aseo = sheet2ForHoja26.getCell('K19').value as number || 0;
+      const cxcCorrientes20Aseo = sheet2ForHoja26.getCell('K20').value as number || 0;
+      const totalCXCCorrientesAseo = cxcCorrientes19Aseo + cxcCorrientes20Aseo;
+      
+      // Obtener CXC No Corrientes de Hoja2 columna K (K43 + K44)
+      const cxcNoCorrientes43Aseo = sheet2ForHoja26.getCell('K43').value as number || 0;
+      const cxcNoCorrientes44Aseo = sheet2ForHoja26.getCell('K44').value as number || 0;
+      const totalCXCNoCorrientesAseo = cxcNoCorrientes43Aseo + cxcNoCorrientes44Aseo;
+      
+      console.log(`[ExcelJS] Hoja26 - CXC Aseo desde Hoja2:`);
+      console.log(`[ExcelJS]   Corrientes (K19+K20): ${cxcCorrientes19Aseo} + ${cxcCorrientes20Aseo} = ${totalCXCCorrientesAseo}`);
+      console.log(`[ExcelJS]   No Corrientes (K43+K44): ${cxcNoCorrientes43Aseo} + ${cxcNoCorrientes44Aseo} = ${totalCXCNoCorrientesAseo}`);
+      
+      // Definición de estratos para ASEO - FILAS EMPIEZAN EN 15
+      const estratosResidencialesAseo = [
+        { fila: 15, key: 'estrato1', nombre: 'Residencial Estrato 1' },
+        { fila: 16, key: 'estrato2', nombre: 'Residencial Estrato 2' },
+        { fila: 17, key: 'estrato3', nombre: 'Residencial Estrato 3' },
+        { fila: 18, key: 'estrato4', nombre: 'Residencial Estrato 4' },
+        { fila: 19, key: 'estrato5', nombre: 'Residencial Estrato 5' },
+        { fila: 20, key: 'estrato6', nombre: 'Residencial Estrato 6' }
+      ];
+      
+      const estratosNoResidencialesAseo = [
+        { fila: 21, key: 'industrial', nombre: 'No residencial industrial' },
+        { fila: 22, key: 'comercial', nombre: 'No residencial comercial' },
+        { fila: 23, key: 'oficial', nombre: 'No residencial oficial' },
+        { fila: 24, key: 'especial', nombre: 'No residencial especial' }
+      ];
+      
+      // Porcentajes de distribución por rango de vencimiento
+      // COLUMNAS EMPIEZAN EN H (no en J) para rangos de vencimiento
+      const rangosVencimientoAseo = [
+        { columna: 'H', porcentaje: 0.11, nombre: 'No vencida' },
+        { columna: 'I', porcentaje: 0.09, nombre: 'Vencida 1-30 días' },
+        { columna: 'J', porcentaje: 0.25, nombre: 'Vencida 31-60 días' },
+        { columna: 'K', porcentaje: 0.15, nombre: 'Vencida 61-90 días' },
+        { columna: 'L', porcentaje: 0.20, nombre: 'Vencida 91-120 días' },
+        { columna: 'M', porcentaje: 0.12, nombre: 'Vencida 121-150 días' },
+        { columna: 'N', porcentaje: 0.08, nombre: 'Vencida 151-180 días' },
+        { columna: 'O', porcentaje: 0.00, nombre: 'Vencida 181-360 días' },
+        { columna: 'P', porcentaje: 0.00, nombre: 'Vencida >360 días' },
+      ];
+      
+      if (options.usuariosEstrato && options.usuariosEstrato.aseo) {
+        // USAR USUARIOS REALES INGRESADOS POR EL USUARIO
+        console.log('[ExcelJS] Hoja26 - Usando distribución proporcional por usuarios reales');
+        
+        const todosLosEstratosAseo = [...estratosResidencialesAseo, ...estratosNoResidencialesAseo];
+        
+        // Sumar usuarios totales de aseo
+        let totalUsuariosAseo = 0;
+        for (const estrato of todosLosEstratosAseo) {
+          const n = Number(options.usuariosEstrato.aseo[estrato.key]) || 0;
+          totalUsuariosAseo += n;
+        }
+        
+        console.log(`[ExcelJS] Hoja26 - Total usuarios aseo (todos): ${totalUsuariosAseo}`);
+        
+        // Distribuir CXC proporcionalmente entre TODOS los estratos con usuarios
+        for (const estrato of todosLosEstratosAseo) {
+          const usuarios = Number(options.usuariosEstrato.aseo[estrato.key]) || 0;
+          let valorCorriente = 0, valorNoCorriente = 0;
+          
+          if (usuarios > 0 && totalUsuariosAseo > 0) {
+            valorCorriente = Math.round(totalCXCCorrientesAseo * usuarios / totalUsuariosAseo);
+            valorNoCorriente = Math.round(totalCXCNoCorrientesAseo * usuarios / totalUsuariosAseo);
+          }
+          
+          // Columnas E, F, G - CXC Corriente, No Corriente, Total (diferente a Hoja24/25)
+          sheet26.getCell(`E${estrato.fila}`).value = valorCorriente;
+          sheet26.getCell(`F${estrato.fila}`).value = valorNoCorriente;
+          const totalCXCEstrato = valorCorriente + valorNoCorriente;
+          sheet26.getCell(`G${estrato.fila}`).value = totalCXCEstrato;
+          
+          // Distribuir el total de CXC por rangos de vencimiento (columnas H-P, Q=suma)
+          let sumaRangos = 0;
+          for (const rango of rangosVencimientoAseo) {
+            const valorRango = Math.round(totalCXCEstrato * rango.porcentaje);
+            sheet26.getCell(`${rango.columna}${estrato.fila}`).value = valorRango;
+            sumaRangos += valorRango;
+          }
+          
+          // Ajustar diferencia de redondeo en columna J (la de mayor porcentaje)
+          const diferencia = totalCXCEstrato - sumaRangos;
+          if (diferencia !== 0) {
+            const valorJActual = sheet26.getCell(`J${estrato.fila}`).value as number || 0;
+            sheet26.getCell(`J${estrato.fila}`).value = valorJActual + diferencia;
+            sumaRangos = totalCXCEstrato;
+          }
+          sheet26.getCell(`Q${estrato.fila}`).value = sumaRangos;
+          
+          if (totalCXCEstrato !== 0) {
+            const porcentaje = totalUsuariosAseo > 0 ? (usuarios / totalUsuariosAseo * 100).toFixed(2) : '0.00';
+            console.log(`[ExcelJS] Hoja26 fila ${estrato.fila} (${estrato.nombre}): usuarios=${usuarios} (${porcentaje}%), G=${totalCXCEstrato}, Q=${sumaRangos}`);
+          }
+        }
+      } else {
+        // SIN USUARIOS - Usar distribución típica por defecto
+        console.log('[ExcelJS] Hoja26 - Sin datos de usuarios, usando distribución típica por defecto');
+        
+        const distribucionTipicaAseo = [
+          { fila: 15, porcentaje: 0.25 },  // Estrato 1: 25%
+          { fila: 16, porcentaje: 0.30 },  // Estrato 2: 30%
+          { fila: 17, porcentaje: 0.20 },  // Estrato 3: 20%
+          { fila: 18, porcentaje: 0.10 },  // Estrato 4: 10%
+          { fila: 19, porcentaje: 0.05 },  // Estrato 5: 5%
+          { fila: 20, porcentaje: 0.03 },  // Estrato 6: 3%
+          { fila: 21, porcentaje: 0.02 },  // Industrial: 2%
+          { fila: 22, porcentaje: 0.03 },  // Comercial: 3%
+          { fila: 23, porcentaje: 0.01 },  // Oficial: 1%
+          { fila: 24, porcentaje: 0.01 },  // Especial: 1%
+        ];
+        
+        for (const estrato of distribucionTipicaAseo) {
+          const valorCorriente = Math.round(totalCXCCorrientesAseo * estrato.porcentaje);
+          const valorNoCorriente = Math.round(totalCXCNoCorrientesAseo * estrato.porcentaje);
+          const totalCXCEstrato = valorCorriente + valorNoCorriente;
+          
+          sheet26.getCell(`E${estrato.fila}`).value = valorCorriente;
+          sheet26.getCell(`F${estrato.fila}`).value = valorNoCorriente;
+          sheet26.getCell(`G${estrato.fila}`).value = totalCXCEstrato;
+          
+          // Distribuir por rangos de vencimiento
+          let sumaRangos = 0;
+          for (const rango of rangosVencimientoAseo) {
+            const valorRango = Math.round(totalCXCEstrato * rango.porcentaje);
+            sheet26.getCell(`${rango.columna}${estrato.fila}`).value = valorRango;
+            sumaRangos += valorRango;
+          }
+          
+          // Ajustar diferencia de redondeo
+          const diferencia = totalCXCEstrato - sumaRangos;
+          if (diferencia !== 0) {
+            const valorJActual = sheet26.getCell(`J${estrato.fila}`).value as number || 0;
+            sheet26.getCell(`J${estrato.fila}`).value = valorJActual + diferencia;
+            sumaRangos = totalCXCEstrato;
+          }
+          sheet26.getCell(`Q${estrato.fila}`).value = sumaRangos;
+        }
+      }
+      
+      console.log(`[ExcelJS] Hoja26 - Totales distribuidos:`);
+      console.log(`[ExcelJS]   Corrientes: ${totalCXCCorrientesAseo}`);
+      console.log(`[ExcelJS]   No Corrientes: ${totalCXCNoCorrientesAseo}`);
+      console.log(`[ExcelJS]   Total: ${totalCXCCorrientesAseo + totalCXCNoCorrientesAseo}`);
+      
+      console.log('[ExcelJS] Hoja26 completada.');
+    }
+    
+    // ===============================================
     // HOJA30 (900027): FC04 - Información Subsidios y Contribuciones
     // ===============================================
     // Distribuir subsidios por estrato (solo 1, 2 y 3) y servicio
