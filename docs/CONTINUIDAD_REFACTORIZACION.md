@@ -1,255 +1,246 @@
 # Documento de Continuidad - Refactorización de Taxonomías
 
 **Fecha de Creación**: 2025-12-05
-**Última Sesión**: 2025-12-05
+**Última Actualización**: 2025-12-06
 **Branch**: `desarrollo` (sincronizado con `focused-dubinsky`)
-**Estado**: Plan aprobado, listo para Fase 1
+**Estado**: Fase 1 y 2 completadas, Fase 3 en progreso
 
 ---
 
-## Contexto del Proyecto
+## Progreso Actual
 
-### ¿Qué es este proyecto?
-XBRL Taxonomy Generator - Aplicación web para automatizar la generación de taxonomías XBRL para empresas de servicios públicos colombianas que reportan a la SSPD.
+### ✅ Fase 1: Preparación - COMPLETADA
+- [x] Crear estructura de carpetas nueva
+- [x] Crear `types.ts` con interfaces compartidas
+- [x] Crear `shared/baseTemplateService.ts` con clase abstracta
+- [x] Crear `shared/excelUtils.ts` extrayendo funciones comunes
+- [x] Crear `shared/pucUtils.ts` extrayendo funciones de PUC
+- [x] Crear `shared/index.ts` para exportaciones
 
-### ¿Por qué refactorizar?
-El archivo `officialTemplateService.ts` tiene **4,914 líneas** con toda la lógica de todas las taxonomías mezclada. Esto hace imposible:
-- Mantener una taxonomía sin afectar otras
-- Hacer testing aislado
-- Agregar nuevas taxonomías fácilmente
-- Entender el código rápidamente
+### ✅ Fase 2: Extracción Mapeos R414 - COMPLETADA
+- [x] Extraer `R414_ESF_ACTIVOS` a `r414/mappings/esfMappings.ts`
+- [x] Extraer `R414_ESF_PASIVOS` a `r414/mappings/esfMappings.ts`
+- [x] Extraer `R414_ESF_PATRIMONIO` a `r414/mappings/esfMappings.ts`
+- [x] Extraer `R414_ER_MAPPINGS` a `r414/mappings/erMappings.ts`
+- [x] Extraer `R414_PPE_MAPPINGS` a `r414/mappings/ppeMappings.ts`
+- [x] Extraer `R414_INTANGIBLES_MAPPINGS` a `r414/mappings/ppeMappings.ts`
+- [x] Extraer `R414_EFECTIVO_MAPPINGS` a `r414/mappings/ppeMappings.ts`
+- [x] Extraer `R414_PROVISIONES_MAPPINGS` a `r414/mappings/ppeMappings.ts`
+- [x] Extraer `R414_OTRAS_PROVISIONES_MAPPINGS` a `r414/mappings/ppeMappings.ts`
+- [x] Extraer `R414_BENEFICIOS_EMPLEADOS_MAPPINGS` a `r414/mappings/ppeMappings.ts`
+- [x] Crear `r414/index.ts` con configuración de plantillas
 
-### Estado Actual de Producción
-- **R414**: En producción, funcionando correctamente
-- **Grupo 1, 2, 3**: Implementados, pendiente validación completa
-- **IFE**: Implementación casi completa, falta pruebas XBRL Express
-
----
-
-## Análisis Completado
-
-### Archivos Problemáticos Identificados
-
-| Archivo | Líneas | Ubicación |
-|---------|--------|-----------|
-| `officialTemplateService.ts` | 4,914 | `app/src/lib/xbrl/` |
-| `xbrlExcelGenerator.ts` | 1,430 | `app/src/lib/services/` |
-| `taxonomyConfig.ts` | 812 | `app/src/lib/xbrl/` |
-| `xbrlGenerator.ts` | 815 | `app/src/lib/xbrl/` |
-| `balance.ts` | 646 | `app/src/server/routers/` |
-
-### Contenido de officialTemplateService.ts
-
-```
-Líneas 34-91:     TEMPLATE_PATHS (rutas por grupo)
-Líneas 97-164:    SHEET_MAPPING (mapeo hojas Excel por grupo)
-Líneas 170-195:   SERVICE_COLUMNS y R414_SERVICE_COLUMNS
-Líneas 201-506:   R414_ESF_MAPPINGS (Activos, Pasivos, Patrimonio)
-Líneas 512-600:   R414_ER_MAPPINGS (Estado de Resultados)
-Líneas 602-688:   R414_PPE_MAPPINGS (Propiedad, Planta y Equipo)
-Líneas 690-748:   R414_INTANGIBLES_MAPPINGS
-Líneas 750-800:   R414_EFECTIVO_MAPPINGS
-Líneas 801-867:   R414_PROVISIONES_MAPPINGS
-Líneas 869-973:   R414_BENEFICIOS_EMPLEADOS_MAPPINGS
-Líneas 974-1032:  Funciones auxiliares (getTemplatesBasePath, loadTemplate, etc.)
-Líneas 1033-2341: customizeExcelWithData (función gigante)
-Líneas 2342-4408: rewriteFinancialDataWithExcelJS (función gigante)
-Líneas 4409-4687: customizeExcel, customizeXbrlt, customizeXml, generateReadme
-Líneas 4688-4911: Exports públicos
-```
+### 🔄 Fase 3: Crear R414TemplateService - EN PROGRESO
+- [ ] Crear `r414/R414TemplateService.ts` que extienda `BaseTemplateService`
+- [ ] Implementar `fillESFSheet()` para R414
+- [ ] Implementar `fillERSheet()` para R414
+- [ ] Implementar `fillHoja7Sheet()` para notas
+- [ ] Modificar `officialTemplateService.ts` para delegar a R414TemplateService
 
 ---
 
-## Plan de Refactorización Aprobado
-
-### Nueva Estructura Propuesta
+## Estructura Actual de Archivos
 
 ```
 app/src/lib/xbrl/
-├── index.ts                          # Exports públicos
-├── types.ts                          # Tipos compartidos
+├── index.ts                    # Exports principales (actualizado)
+├── types.ts                    # ✅ NUEVO - Tipos compartidos
 ├── shared/
-│   ├── baseTemplateService.ts        # Clase base abstracta
-│   ├── excelUtils.ts                 # Utilidades Excel
-│   ├── pucUtils.ts                   # Utilidades PUC
-│   └── xmlUtils.ts                   # Utilidades XML
+│   ├── index.ts               # ✅ NUEVO
+│   ├── baseTemplateService.ts # ✅ NUEVO - Clase abstracta base
+│   ├── excelUtils.ts          # ✅ NUEVO - Utilidades Excel
+│   └── pucUtils.ts            # ✅ NUEVO - Utilidades PUC
+├── r414/
+│   ├── index.ts               # ✅ NUEVO - Config y exports R414
+│   └── mappings/
+│       ├── index.ts           # ✅ NUEVO
+│       ├── esfMappings.ts     # ✅ NUEVO - ESF (Activos, Pasivos, Patrimonio)
+│       ├── erMappings.ts      # ✅ NUEVO - Estado de Resultados
+│       └── ppeMappings.ts     # ✅ NUEVO - PPE, Intangibles, Efectivo, Provisiones
+├── grupo1/mappings/           # Carpeta creada (vacía)
+├── grupo2/mappings/           # Carpeta creada (vacía)
+├── grupo3/mappings/           # Carpeta creada (vacía)
+├── ife/mappings/              # Carpeta creada (vacía)
 │
-├── r414/                             # Taxonomía R414 (PRODUCCIÓN)
-│   ├── index.ts
-│   ├── config.ts
-│   ├── mappings/
-│   │   ├── esf.ts                    # ~300 líneas de R414_ESF_*
-│   │   ├── er.ts                     # ~60 líneas
-│   │   ├── ppe.ts                    # ~90 líneas
-│   │   ├── intangibles.ts            # ~60 líneas
-│   │   ├── efectivo.ts               # ~50 líneas
-│   │   ├── provisiones.ts            # ~70 líneas
-│   │   └── beneficiosEmpleados.ts    # ~100 líneas
-│   ├── templateService.ts
-│   └── generator.ts
-│
-├── grupo1/                           # Similar estructura
-├── grupo2/
-├── grupo3/
-└── ife/
+├── officialTemplateService.ts # ORIGINAL - 4,914 líneas (aún sin modificar)
+├── taxonomyConfig.ts          # ORIGINAL
+├── xbrlGenerator.ts           # ORIGINAL
+└── xbrlExcelGenerator.ts      # ORIGINAL
 ```
-
-### Fases de Implementación
-
-#### Fase 1: Preparación (SIN CAMBIOS EN PRODUCCIÓN)
-- [ ] Crear estructura de carpetas nueva
-- [ ] Crear `types.ts` con interfaces compartidas
-- [ ] Crear `shared/baseTemplateService.ts` con clase abstracta
-- [ ] Crear `shared/excelUtils.ts` extrayendo funciones comunes
-- [ ] Crear `shared/pucUtils.ts` extrayendo funciones de PUC
-- [ ] Escribir tests de snapshot para R414 actual
-
-#### Fase 2: Extracción R414 (CRÍTICO)
-- [ ] Extraer `R414_ESF_ACTIVOS` a `r414/mappings/esf.ts`
-- [ ] Extraer `R414_ESF_PASIVOS` a `r414/mappings/esf.ts`
-- [ ] Extraer `R414_ESF_PATRIMONIO` a `r414/mappings/esf.ts`
-- [ ] Extraer `R414_ER_MAPPINGS` a `r414/mappings/er.ts`
-- [ ] Extraer `R414_PPE_MAPPINGS` a `r414/mappings/ppe.ts`
-- [ ] Extraer otros mapeos R414
-- [ ] Crear `R414TemplateService` extendiendo base
-- [ ] Ejecutar tests de regresión
-- [ ] Validar con XBRL Express en staging
-
-#### Fase 3: Migración Grupos 1-3
-- [ ] Extraer configuraciones Grupo 1
-- [ ] Extraer configuraciones Grupo 2
-- [ ] Extraer configuraciones Grupo 3
-- [ ] Crear servicios específicos por grupo
-- [ ] Validar cada grupo
-
-#### Fase 4: Migración IFE
-- [ ] Extraer mapeos y configuraciones IFE
-- [ ] Implementar `IFETemplateService`
-- [ ] Completar pruebas XBRL Express
-
-#### Fase 5: Limpieza
-- [ ] Eliminar código legacy
-- [ ] Actualizar imports
-- [ ] Actualizar documentación
 
 ---
 
-## Cómo Continuar
+## Próximos Pasos para Continuar
 
-### 1. Verificar Estado del Repositorio
+### Opción A: Crear R414TemplateService (Recomendado)
+
+1. **Crear `r414/R414TemplateService.ts`**:
+```typescript
+import { BaseTemplateService } from '../shared/baseTemplateService';
+import { R414_ESF_MAPPINGS, R414_ER_MAPPINGS, R414_SERVICE_COLUMNS } from './mappings';
+import type { NiifGroup, TemplatePaths, ESFMapping, SheetMapping } from '../types';
+
+export class R414TemplateService extends BaseTemplateService {
+  readonly group: NiifGroup = 'r414';
+
+  readonly templatePaths: TemplatePaths = {
+    xbrlt: 'r414/R414Ind_ID20037_2024-12-31.xbrlt',
+    xml: 'r414/R414Ind_ID20037_2024-12-31.xml',
+    xlsx: 'r414/R414Ind_ID20037_2024-12-31.xlsx',
+    xbrl: 'r414/R414Ind_ID20037_2024-12-31.xbrl',
+    basePrefix: 'R414Ind',
+    outputPrefix: 'R414_Individual',
+  };
+
+  getESFMappings(): ESFMapping[] {
+    return R414_ESF_MAPPINGS;
+  }
+
+  getServiceColumns() {
+    return R414_SERVICE_COLUMNS;
+  }
+
+  getSheetMapping(): SheetMapping {
+    return {
+      '110000': 'Hoja1',
+      '210000': 'Hoja2',
+      '310000': 'Hoja3',
+      // ... etc
+    };
+  }
+
+  fillESFSheet(worksheet, accounts, serviceBalances, distribution) {
+    // Copiar lógica de officialTemplateService.ts líneas 1181-1242
+  }
+
+  fillERSheet(worksheet, accounts, serviceBalances, distribution) {
+    // Copiar lógica de officialTemplateService.ts líneas 1297-1358
+  }
+}
+```
+
+2. **Modificar `officialTemplateService.ts`**:
+   - En la función `generateOfficialTemplatePackageWithData()`:
+   - Agregar: `if (options.niifGroup === 'r414') { return new R414TemplateService().generateTemplatePackage(options); }`
+
+3. **Verificar**:
+   - Ejecutar `pnpm type-check`
+   - Probar la generación de R414 en el navegador
+   - Validar el archivo generado en XBRL Express
+
+### Opción B: Continuar Extrayendo Mapeos de Otras Taxonomías
+
+Si prefieres primero extraer todos los mapeos antes de crear los servicios:
+- Analizar `officialTemplateService.ts` para Grupo1/2/3
+- Crear archivos en `grupo1/mappings/`, etc.
+
+---
+
+## Comandos para Verificar Estado
+
 ```bash
+# Ver estado del repositorio
 cd C:\Users\rekin\.claude-worktrees\xbrl-generator\focused-dubinsky
 git status
 git log --oneline -5
-```
 
-### 2. Sincronizar con desarrollo
-```bash
-git fetch origin
-git log --oneline origin/desarrollo -3
-```
+# Verificar que compila
+cd app && pnpm type-check
 
-### 3. Comenzar Fase 1
-Crear la estructura de carpetas:
-```bash
-mkdir -p app/src/lib/xbrl/shared
-mkdir -p app/src/lib/xbrl/r414/mappings
-mkdir -p app/src/lib/xbrl/grupo1/mappings
-mkdir -p app/src/lib/xbrl/grupo2/mappings
-mkdir -p app/src/lib/xbrl/grupo3/mappings
-mkdir -p app/src/lib/xbrl/ife/mappings
-```
-
-### 4. Primer Archivo a Crear
-`app/src/lib/xbrl/types.ts`:
-```typescript
-/**
- * Tipos compartidos para todas las taxonomías XBRL
- */
-
-export type NiifGroup = 'grupo1' | 'grupo2' | 'grupo3' | 'r414' | 'r533' | 'ife';
-export type TaxonomyYear = '2017' | '2018' | '2019' | '2020' | '2021' | '2022' | '2023' | '2024' | '2025';
-
-export interface ESFMapping {
-  row: number;
-  label: string;
-  pucPrefixes: string[];
-  excludePrefixes?: string[];
-}
-
-export interface TaxonomyProcessor {
-  readonly group: NiifGroup;
-  generateTemplatePackage(options: TemplateOptions): Promise<Buffer>;
-  fillExcelData(workbook: any, data: AccountData[]): void;
-  getMappings(): TaxonomyMappings;
-}
-
-// ... más tipos
+# Iniciar servidor de desarrollo para probar
+pnpm dev
 ```
 
 ---
 
-## Archivos Importantes de Referencia
+## Archivos Clave Creados
 
-### Documentación
-- `docs/plan_refactorizacion_taxonomias.md` - Plan detallado
-- `CLAUDE.md` - Contexto general del proyecto
-- `todo.md` - Estado de tareas
-- `README.md` - Instrucciones de uso
+### types.ts (298 líneas)
+Contiene todas las interfaces compartidas:
+- `NiifGroup`, `TaxonomyYear`, `ReportType`
+- `ESFMapping`, `ServiceColumnMapping`, `SheetMapping`
+- `AccountData`, `ServiceBalanceData`
+- `TaxonomyProcessor` (interface para Strategy pattern)
 
-### Código Fuente Principal
-- `app/src/lib/xbrl/officialTemplateService.ts` - Archivo a refactorizar
-- `app/src/lib/xbrl/taxonomyConfig.ts` - Configuraciones actuales
-- `app/src/server/routers/balance.ts` - Router tRPC
+### shared/baseTemplateService.ts (410 líneas)
+Clase abstracta base con métodos:
+- `generateTemplatePackage()` - Genera el ZIP completo
+- `fillExcelData()` - Llena datos en workbook
+- `loadTemplate()`, `loadBinaryTemplate()` - Carga archivos
+- `sumAccountsByPrefix()`, `sumServiceAccountsByPrefix()` - Cálculos
+- `customizeXbrlt()`, `customizeXml()`, `customizeXbrl()` - Personalización
+- Métodos abstractos: `fillESFSheet()`, `fillERSheet()`, `getESFMappings()`, etc.
 
-### Plantillas XBRL
-- `app/public/templates/r414/` - Plantillas R414
-- `app/public/templates/grupo1/` - Plantillas Grupo 1
-- `app/public/templates/grupo2/` - Plantillas Grupo 2
-- `app/public/templates/grupo3/` - Plantillas Grupo 3
-- `app/public/templates/ife/` - Plantillas IFE
+### r414/mappings/esfMappings.ts (~380 líneas)
+- `R414_SERVICE_COLUMNS` - Columnas por servicio (I, J, K, P)
+- `R414_ESF_ACTIVOS` - Mapeos de activos (filas 15-31)
+- `R414_ESF_PASIVOS` - Mapeos de pasivos (filas 69-108)
+- `R414_ESF_PATRIMONIO` - Mapeos de patrimonio (filas 113-130)
+- `R414_ESF_MAPPINGS` - Combinación de todos
+
+### r414/mappings/erMappings.ts (~120 líneas)
+- `R414_ER_COLUMNS` - Columnas ER (E, F, G, L)
+- `R414_ER_MAPPINGS` - Mapeos de Estado de Resultados
+
+### r414/mappings/ppeMappings.ts (~505 líneas)
+- `R414_PPE_MAPPINGS` - Propiedad, Planta y Equipo (filas 14-34)
+- `R414_INTANGIBLES_MAPPINGS` - Intangibles y Plusvalía (filas 37-48)
+- `R414_EFECTIVO_MAPPINGS` - Efectivo y Equivalentes (filas 51-60)
+- `R414_PROVISIONES_MAPPINGS` - Provisiones (filas 63-73)
+- `R414_OTRAS_PROVISIONES_MAPPINGS` - Otras Provisiones (filas 75-77)
+- `R414_BENEFICIOS_EMPLEADOS_MAPPINGS` - Beneficios a Empleados (filas 79-83)
 
 ---
 
-## Comandos Útiles
+## Commits Realizados
 
-```bash
-# Desarrollo
-cd app && pnpm dev
-
-# Base de datos
-pnpm db:push
-pnpm db:studio
-
-# Verificar tipos
-pnpm type-check
-
-# Buscar en código
-grep -rn "R414_ESF" app/src/
-grep -rn "NiifGroup" app/src/
-
-# Contar líneas por archivo
-wc -l app/src/lib/xbrl/*.ts
 ```
-
----
-
-## Contacto y Recursos
-
-- **Repositorio**: https://github.com/Ing-Eduardo-E/xbrl-generator
-- **Branch principal**: `master`
-- **Branch desarrollo**: `desarrollo`
-- **Worktree actual**: `focused-dubinsky`
+2e45c02 refactor(r414): agregar mapeos faltantes de Hoja7 (Efectivo, Provisiones, Beneficios)
+90e0a7b refactor(r414): extraer mapeos R414 a carpeta independiente - Fase 2
+7b7e143 refactor(xbrl): implementar Fase 1 - estructura base y utilidades compartidas
+904b8e8 docs: agregar plan de refactorización y documentación de continuidad
+d510ff2 docs: actualizar CLAUDE.md con stack tecnológico y arquitectura actual
+```
 
 ---
 
 ## Notas Importantes
 
-1. **R414 está en PRODUCCIÓN** - No hacer cambios sin tests de regresión
-2. **Usar feature flags** si es posible para migración gradual
-3. **Validar con XBRL Express** antes de cada merge a desarrollo
-4. **Mantener backwards compatibility** durante la migración
+1. **El código original NO ha sido modificado** - `officialTemplateService.ts` sigue intacto
+2. **R414 sigue funcionando en producción** - Los nuevos archivos son adicionales
+3. **Los mapeos extraídos son 100% compatibles** - Mismos valores que el original
+4. **Próximo paso crítico**: Crear `R414TemplateService` y hacer que `officialTemplateService.ts` delegue a él
 
 ---
 
-*Este documento fue creado para permitir continuidad del trabajo en caso de pérdida de contexto.*
+## Contexto Técnico
+
+### Stack
+- Next.js 15 con App Router
+- React 19 + TypeScript
+- tRPC 11 para API
+- ExcelJS + xlsx para manipulación Excel
+- JSZip para generar paquetes
+
+### Flujo de Datos
+1. Usuario sube Excel con balance consolidado
+2. Backend procesa y almacena en `working_accounts`
+3. Usuario define distribución por servicio (%)
+4. Backend distribuye cuentas a `service_balances`
+5. Al generar: se carga plantilla XBRL, se llenan datos, se genera ZIP
+
+### Cómo se usa R414TemplateService (una vez creado)
+```typescript
+// En officialTemplateService.ts:
+export async function generateOfficialTemplatePackageWithData(options) {
+  if (options.niifGroup === 'r414') {
+    const service = new R414TemplateService();
+    return service.generateTemplatePackage(options);
+  }
+  // ... resto de código para otros grupos
+}
+```
+
+---
+
+*Actualizado: 2025-12-06 - Fases 1 y 2 completadas, Fase 3 en progreso*
