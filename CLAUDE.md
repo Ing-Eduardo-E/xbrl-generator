@@ -6,86 +6,82 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 XBRL Taxonomy Generator for Colombian public service companies. This web application automates XBRL taxonomy generation from consolidated financial statements, reducing preparation time from 8 hours to 2-3 hours. The system processes Excel balance sheets, distributes accounts across services (Acueducto, Alcantarillado, Aseo), validates accounting equations, and generates XBRL-compatible files for SSPD reporting.
 
-**Status**: MVP prototype with core distribution functionality implemented. XBRL file generation is pending implementation.
+**Status**: v2.4 - Fully functional with official SSPD template support. IFE (quarterly reporting) implementation in progress.
 
 ## Technology Stack
 
-- **Frontend**: React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui
-- **Backend**: Express + tRPC
-- **Database**: MySQL with Drizzle ORM
-- **Excel Processing**: xlsx library for reading/writing Excel files
-- **Build Tools**: Vite + esbuild
+- **Framework**: Next.js 15 with App Router
+- **Frontend**: React 19 + TypeScript + Tailwind CSS 3.4 + shadcn/ui
+- **API**: tRPC 11 (type-safe API)
+- **Database**: PostgreSQL with Drizzle ORM
+- **Excel Processing**: xlsx + exceljs libraries
+- **File Compression**: jszip for XBRL packages
 - **Package Manager**: pnpm (required)
 
 ## Commands
 
+All commands run from the `app/` directory:
+
 ### Development
 ```bash
-pnpm dev              # Start development server with hot reload (tsx watch)
-pnpm check            # Type check without emitting files (tsc --noEmit)
-```
-
-### Testing
-```bash
-pnpm test             # Run all tests with vitest
+pnpm dev              # Start Next.js dev server (http://localhost:3000)
+pnpm type-check       # Type check without emitting files (tsc --noEmit)
+pnpm lint             # Run ESLint
 ```
 
 ### Building
 ```bash
-pnpm build            # Build frontend (vite) and backend (esbuild) for production
-pnpm start            # Run production server (requires DATABASE_URL)
+pnpm build            # Build for production
+pnpm start            # Run production server
 ```
 
 ### Database
 ```bash
-pnpm db:push          # Generate and run Drizzle migrations
-```
-
-### Code Quality
-```bash
-pnpm format           # Format all files with Prettier
+pnpm db:push          # Push schema to database (dev)
+pnpm db:generate      # Generate migrations
+pnpm db:migrate       # Run migrations
+pnpm db:studio        # Open Drizzle Studio GUI
 ```
 
 ## Architecture
 
 ### Overall Flow
-1. **Upload**: User uploads consolidated balance Excel file
+1. **Upload**: User uploads consolidated balance Excel file + selects NIIF group
 2. **Process**: Backend extracts accounts using PUC codes, marks leaf accounts, calculates totals
 3. **Distribute**: User defines service distribution percentages (must sum to 100%)
 4. **Generate**: System distributes accounts proportionally across services
-5. **Download**: User downloads Excel files with consolidated + distributed balances
+5. **Download**: User downloads official SSPD templates pre-filled with data
 
 ### Database Schema
 
-Three main tables:
+Located in `app/src/db/schema/accounts.ts`:
 
-1. **`cuentas_trabajo`** (working accounts table)
-   - Temporary storage for currently loaded balance
+1. **`working_accounts`** (temporary storage)
    - Truncated on each new file upload
-   - Stores PUC account codes, names, values, and hierarchy metadata
-   - `esHoja` flag identifies leaf accounts (accounts without sub-accounts)
+   - Stores PUC account codes, names, values, hierarchy metadata
+   - `is_leaf` flag identifies leaf accounts (accounts without sub-accounts)
 
-2. **`balances_servicio`** (service balances table)
+2. **`service_balances`** (distributed accounts)
    - Generated after distribution step
    - Contains proportionally distributed accounts per service
    - One row per account per service
 
-3. **`users`** (authentication)
-   - OAuth-based authentication with Manus
-   - Supports user/admin roles
+3. **`balance_sessions`** (session tracking)
+   - Tracks file uploads and processing status
+   - Stores distribution percentages, usuarios por estrato, subsidios as JSON
 
 ### Key Business Logic
 
 **PUC Classification (Colombian Chart of Accounts)**:
 - First digit determines class: 1=Assets, 2=Liabilities, 3=Equity, 4=Income, 5=Expenses, 6=Costs
 - Account hierarchy determined by code length: 1=Class, 2=Group, 4=Account, 6=Sub-account
-- Leaf accounts: accounts with no children in the hierarchy (detected via SQL query)
+- Leaf accounts: accounts with no children in the hierarchy
 
 **Distribution Algorithm**:
 - Only processes accounts after user confirms distribution percentages
 - Multiplies each account value by (percentage / 100) for each service
 - Values rounded to integers (Math.round)
-- Inserts in batches of 1000 to prevent memory issues
+- Inserts in batches to prevent memory issues
 
 **Accounting Validation**:
 - Assets = Liabilities + Equity
@@ -95,99 +91,158 @@ Three main tables:
 ### Code Organization
 
 ```
-client/src/
-  components/ui/       # shadcn/ui components
-  pages/Home.tsx       # Main 3-step wizard interface
-  lib/
-    trpc.ts           # tRPC client setup
-
-server/
-  routers.ts          # tRPC API routes (balance.cargar, balance.distribuir, etc.)
-  db.ts               # Database operations (truncate, insert, calculate totals)
-  excelProcessor.ts   # Excel file parsing (flexible column detection)
-  excelGenerator.ts   # Excel file generation (consolidated + per-service sheets)
-  index.ts            # Express server (static file serving only)
-  *.test.ts          # Vitest test files
-
-server/_core/
-  index.ts            # Main server entry (NOT used in production - see server/index.ts)
-  trpc.ts            # tRPC setup
-  context.ts         # Request context
-  env.ts             # Environment variables
-
-drizzle/
-  schema.ts          # Database schema definitions
-  relations.ts       # Drizzle relations (if any)
-
-shared/
-  types.ts           # Shared types between client/server
-  const.ts           # Shared constants
+app/
+├── src/
+│   ├── app/                           # Next.js App Router
+│   │   ├── api/trpc/[trpc]/route.ts  # tRPC API handler
+│   │   ├── layout.tsx                 # Root layout with providers
+│   │   └── page.tsx                   # Main wizard page
+│   │
+│   ├── components/
+│   │   ├── ui/                        # shadcn/ui components
+│   │   ├── WizardLayout.tsx          # 3-step wizard container
+│   │   ├── UploadStep.tsx            # Step 1: File upload + NIIF selection
+│   │   ├── DistributeStep.tsx        # Step 2: Distribution percentages
+│   │   ├── GenerateStep.tsx          # Step 3: Download results
+│   │   └── UsuariosEstratoForm.tsx   # User count by stratum form
+│   │
+│   ├── lib/
+│   │   ├── db/index.ts               # Drizzle database client
+│   │   ├── services/
+│   │   │   ├── excelParser.ts        # Excel file parsing
+│   │   │   ├── excelGenerator.ts     # Excel file generation
+│   │   │   └── xbrlExcelGenerator.ts # XBRL-compatible Excel
+│   │   ├── trpc/
+│   │   │   ├── client.ts             # tRPC React client
+│   │   │   └── index.ts              # Exports
+│   │   ├── xbrl/
+│   │   │   ├── officialTemplateService.ts  # Official SSPD templates
+│   │   │   ├── taxonomyConfig.ts     # Taxonomy configuration
+│   │   │   ├── xbrlGenerator.ts      # XBRL file generation
+│   │   │   └── index.ts              # Exports
+│   │   └── utils.ts                  # Utility functions (cn, formatCurrency, etc.)
+│   │
+│   ├── db/
+│   │   └── schema/
+│   │       ├── accounts.ts           # Database schema definitions
+│   │       └── index.ts              # Schema exports
+│   │
+│   └── server/
+│       ├── trpc.ts                   # tRPC initialization
+│       └── routers/
+│           ├── index.ts              # App router
+│           └── balance.ts            # Balance procedures
+│
+├── public/
+│   └── templates/                    # Official SSPD templates
+│       ├── grupo1/                   # NIIF Plenas
+│       ├── grupo2/                   # NIIF PYMES
+│       ├── grupo3/                   # Microempresas
+│       ├── r414/                     # Resolución 414
+│       └── ife/                      # IFE Trimestral
+│
+├── drizzle.config.ts                 # Drizzle configuration
+└── package.json
 ```
-
-### Excel Processing
-
-**Input Format** (`excelProcessor.ts`):
-- Expects columns: CÓDIGO (or "codigo"), DENOMINACIÓN (or "nombre"), Total
-- First sheet or sheet named "Consolidado"
-- PUC codes cleaned (removes dots/spaces)
-- Values parsed (removes currency symbols, commas)
-- Flexible column detection handles variations in header names
-
-**Output Format** (`excelGenerator.ts`):
-- First sheet: "Consolidado" with all accounts
-- Subsequent sheets: One per service with distributed accounts
-- Each service sheet includes summary header with validation totals
-- Column widths pre-configured for readability
 
 ### tRPC API Routes
 
-Located in `server/routers.ts`:
+Located in `app/src/server/routers/balance.ts`:
 
-- `balance.cargar`: Upload and process Excel file
-- `balance.getTotales`: Get consolidated balance totals
-- `balance.getCuentasHoja`: Get leaf accounts (debugging)
-- `balance.distribuir`: Distribute accounts across services
-- `balance.getTotalesServicios`: Get totals for all services
-- `balance.getTotalesServicio`: Get totals for specific service
-- `balance.descargarExcel`: Download Excel with all balances
-- `balance.descargarConsolidado`: Download consolidated balance only
+| Procedure | Type | Description |
+|-----------|------|-------------|
+| `ping` | Query | Health check |
+| `uploadBalance` | Mutation | Upload and process Excel file |
+| `getTotals` | Query | Get consolidated balance totals |
+| `distributeBalance` | Mutation | Distribute accounts across services |
+| `getTotalesServicios` | Query | Get totals for all services |
+| `downloadExcel` | Query | Download Excel with distributed balances |
+| `downloadConsolidated` | Query | Download consolidated balance only |
+| `downloadXBRLExcel` | Query | Download XBRL-compatible Excel |
+| `downloadOfficialTemplates` | Mutation | Download official SSPD templates pre-filled |
+| `getSessionInfo` | Query | Get current session info |
+| `getSessionUsuariosSubsidios` | Query | Get usuarios/subsidios from session |
+| `getTaxonomyList` | Query | List available taxonomies |
 
-### State Management
+### Supported Taxonomies
 
-Frontend uses React hooks + tRPC mutations:
-- No global state management library
-- Form state managed locally in `Home.tsx`
-- File upload converts to base64 before API call
-- Download converts base64 response back to Blob
+| Group | Name | Description |
+|-------|------|-------------|
+| grupo1 | NIIF Plenas | Large companies |
+| grupo2 | NIIF PYMES | Small/medium companies |
+| grupo3 | Microempresas | Simplified accounting |
+| r414 | Resolución 414 | Public sector (CGN) |
+| ife | IFE | Quarterly financial report |
+
+### Automated XBRL Sheets
+
+The system pre-fills the following sheets in official templates:
+
+- **[110000] Hoja1** - General information (company metadata)
+- **[210000] Hoja2** - Statement of Financial Position (ESF)
+- **[310000] Hoja3** - Income Statement
+- **[900017a] FC01-1** - Acueducto Expenses
+- **[900017b] FC01-2** - Alcantarillado Expenses
+- **[900017c] FC01-3** - Aseo Expenses
+- **[900017g] FC01-7** - Total Services Expenses
+- **[900019] FC02** - Complementary Income
+- **[900021] FC03-1** - CxC Acueducto (by stratum)
+- **[900022] FC03-2** - CxC Alcantarillado (by stratum)
+- **[900023] FC03-3** - CxC Aseo (by stratum)
+- **[900028b] FC05b** - Liabilities by maturity
+
+## IFE (Quarterly Reporting) - In Progress
+
+IFE is the mandatory quarterly taxonomy from SSPD since 2020. Key differences from annual reports:
+
+- **Periodicity**: Quarterly (1T, 2T, 3T, 4T) vs Annual
+- **CxC**: By maturity ranges vs by service type
+- **Structure**: 8 simplified sheets vs 60+ complete sheets
+
+### Default CxC Distribution by Maturity:
+- Not due: 55%
+- 1-90 days: 25%
+- 91-180 days: 20%
+- 181-360 days: 0%
+- >360 days: 0%
 
 ## Important Notes
 
 ### Stateless Design
 - Database acts as temporary working storage, not permanent records
-- `cuentas_trabajo` truncated on each upload
-- `balances_servicio` truncated on each distribution
-- No user data persistence beyond authentication
+- `working_accounts` truncated on each upload
+- `service_balances` truncated on each distribution
+- Session data stored temporarily for current workflow
 
-### Known Limitations (from README)
+### Known Limitations
 - Fixed distribution percentages (not selective by account type)
 - Values rounded to integers (no decimals)
 - Only processes first sheet or "Consolidado" sheet
-- No XBRL validation (must be done in XBRL Express)
+- Final XBRL validation must be done in XBRL Express
 
-### Production Deployment
-- Requires MySQL database (DATABASE_URL environment variable)
-- Static frontend served by Express in production
-- Database lazy-loaded (app works without DB for local tooling)
-- Uses esbuild for server bundle, Vite for client bundle
+### Environment Variables
 
-### Testing
-- Test files: `server/*.test.ts`
-- Tests cover: balance loading, service distribution, accounting equations, auth logout
-- Run with `pnpm test`
+Create `.env.local` from `.env.example`:
+
+```bash
+# PostgreSQL (Neon recommended for production)
+DATABASE_URL=postgresql://user:password@host:5432/xbrl_generator
+
+# Next.js (optional)
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
 ## Path Aliases
 
-Configured in `vite.config.ts`:
-- `@/` → `client/src/`
-- `@shared/` → `shared/`
-- `@assets/` → `attached_assets/`
+Configured in `tsconfig.json`:
+- `@/*` → `src/*`
+- `@/db/*` → `src/db/*`
+
+## Documentation
+
+See `docs/` folder for detailed documentation:
+- `analisis_taxonomias_sspd.md` - SSPD taxonomy analysis
+- `analisis_comparativo_niif.md` - NIIF groups comparison
+- `arquitectura_simplificada_sin_bd.md` - Architecture design
+- `estructura_puc_colombia.md` - PUC structure reference
+- `flujo_usuario_optimizado.md` - User flow documentation
