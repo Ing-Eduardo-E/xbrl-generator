@@ -6,13 +6,15 @@
  *
  * Taxonomías soportadas:
  * - R414: Resolución 414 CGN (Sector Público) - ACTIVA
- * - Grupo1, Grupo2, Grupo3, IFE: Pendientes de implementación
+ * - IFE: Informe Financiero Especial (Trimestral) - ACTIVA
+ * - Grupo1, Grupo2, Grupo3: Pendientes de implementación
  *
  * @module officialTemplateService
  */
 
 import type { NiifGroup, TaxonomyYear } from './taxonomyConfig';
 import { r414TemplateService } from './r414';
+import { ifeTemplateService } from './ife';
 
 // Importar tipos desde types.ts (no re-exportar para evitar conflictos)
 import type {
@@ -127,13 +129,15 @@ export async function generateOfficialTemplatePackageWithData(
     case 'r414':
       return r414TemplateService.generateTemplatePackage(convertToR414Options(options));
 
+    case 'ife':
+      return ifeTemplateService.generateTemplatePackage(convertToIFEOptions(options));
+
     case 'grupo1':
     case 'grupo2':
     case 'grupo3':
-    case 'ife':
       throw new Error(
         `La taxonomía ${niifGroup} aún no está implementada. ` +
-        `Actualmente solo R414 está disponible.`
+        `Actualmente R414 e IFE están disponibles.`
       );
 
     default:
@@ -145,15 +149,14 @@ export async function generateOfficialTemplatePackageWithData(
  * Verifica si un grupo NIIF tiene plantillas oficiales disponibles.
  */
 export function hasOfficialTemplates(niifGroup: NiifGroup): boolean {
-  // Por ahora solo R414 está completamente implementado
-  return niifGroup === 'r414';
+  return niifGroup === 'r414' || niifGroup === 'ife';
 }
 
 /**
  * Obtiene la lista de grupos con plantillas disponibles.
  */
 export function getAvailableTemplateGroups(): NiifGroup[] {
-  return ['r414'];
+  return ['r414', 'ife'];
 }
 
 // ============================================
@@ -223,6 +226,55 @@ function convertToR414Options(options: TemplateWithDataOptions) {
     distribution,
     usuariosEstrato,
     subsidios: options.subsidios,
+  };
+}
+
+/**
+ * Convierte las opciones del dispatcher al formato esperado por IFETemplateService.
+ */
+function convertToIFEOptions(options: TemplateWithDataOptions) {
+  const accounts = options.consolidatedAccounts?.map(acc => ({
+    code: acc.code,
+    name: acc.name,
+    value: acc.value,
+    isLeaf: acc.isLeaf,
+    level: acc.level,
+    class: acc.class,
+  })) ?? [];
+
+  const serviceBalances = options.serviceBalances?.map(sb => ({
+    service: sb.service,
+    code: sb.code,
+    name: sb.name,
+    value: sb.value,
+    isLeaf: sb.isLeaf,
+  })) ?? [];
+
+  // Calcular distribución desde serviceBalances o usar default
+  const distribution: Record<string, number> = {};
+  if (options.activeServices && options.activeServices.length > 0) {
+    const equalShare = 100 / options.activeServices.length;
+    for (const service of options.activeServices) {
+      distribution[service] = equalShare;
+    }
+  } else {
+    // IFE soporta más servicios que R414
+    distribution.acueducto = 40;
+    distribution.alcantarillado = 35;
+    distribution.aseo = 25;
+  }
+
+  return {
+    niifGroup: options.niifGroup,
+    companyId: options.companyId,
+    companyName: options.companyName,
+    reportDate: options.reportDate,
+    taxonomyYear: options.taxonomyYear,
+    nit: options.nit,
+    roundingDegree: options.roundingDegree as '1' | '2' | '3' | '4' | undefined,
+    accounts,
+    serviceBalances,
+    distribution,
   };
 }
 

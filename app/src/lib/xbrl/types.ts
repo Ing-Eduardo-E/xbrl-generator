@@ -41,14 +41,16 @@ export type ServiceType = 'acueducto' | 'alcantarillado' | 'aseo' | 'energia' | 
 export interface ESFMapping {
   /** Número de fila en la hoja Excel */
   row: number;
-  /** Etiqueta descriptiva del concepto */
-  label: string;
   /** Prefijos PUC a sumar (ej: ['11', '12'] para activos corrientes) */
   pucPrefixes: string[];
   /** Prefijos PUC a excluir de la suma */
   excludePrefixes?: string[];
   /** Si debe usar valor absoluto */
   useAbsoluteValue?: boolean;
+  /** Etiqueta descriptiva del concepto (opcional, para documentación) */
+  label?: string;
+  /** Descripción del mapeo (alias de label) */
+  description?: string;
 }
 
 /**
@@ -62,6 +64,7 @@ export interface ServiceColumnMapping {
   energia?: string;
   gas?: string;
   glp?: string;
+  xmm?: string;
   otras?: string;
   total: string;
 }
