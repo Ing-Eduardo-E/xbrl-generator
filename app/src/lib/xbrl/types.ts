@@ -95,14 +95,21 @@ export interface ServiceBalanceData {
 
 /**
  * Usuarios por estrato para cada servicio.
+ * Incluye tanto estratos residenciales (1-6) como categorías no residenciales.
  */
 export interface UsuariosEstrato {
+  // Estratos residenciales
   estrato1: number;
   estrato2: number;
   estrato3: number;
   estrato4: number;
   estrato5: number;
   estrato6: number;
+  // Categorías no residenciales (opcionales)
+  industrial?: number;
+  comercial?: number;
+  oficial?: number;
+  especial?: number;
 }
 
 /**

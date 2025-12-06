@@ -29,3 +29,10 @@ export {
   // Beneficios a Empleados
   R414_BENEFICIOS_EMPLEADOS_MAPPINGS,
 } from './ppeMappings';
+
+// FC01 - Gastos por Servicio (Hoja16, 17, 18, 22)
+export {
+  R414_FC01_GASTOS_MAPPINGS,
+  R414_FC01_DATA_ROWS,
+  R414_FC01_ZERO_F_ROWS,
+} from './fc01Mappings';

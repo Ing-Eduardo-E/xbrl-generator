@@ -3,7 +3,7 @@
 **Fecha de Creación**: 2025-12-05
 **Última Actualización**: 2025-12-06
 **Branch**: `desarrollo` (sincronizado con `focused-dubinsky`)
-**Estado**: Fase 1 y 2 completadas, Fase 3 en progreso
+**Estado**: Fases 1-4 completadas, Fase 5 pendiente
 
 ---
 
@@ -30,12 +30,31 @@
 - [x] Extraer `R414_BENEFICIOS_EMPLEADOS_MAPPINGS` a `r414/mappings/ppeMappings.ts`
 - [x] Crear `r414/index.ts` con configuración de plantillas
 
-### 🔄 Fase 3: Crear R414TemplateService - EN PROGRESO
-- [ ] Crear `r414/R414TemplateService.ts` que extienda `BaseTemplateService`
-- [ ] Implementar `fillESFSheet()` para R414
-- [ ] Implementar `fillERSheet()` para R414
-- [ ] Implementar `fillHoja7Sheet()` para notas
+### ✅ Fase 3: Crear R414TemplateService - COMPLETADA
+- [x] Crear `r414/R414TemplateService.ts` que extienda `BaseTemplateService`
+- [x] Implementar `fillESFSheet()` para R414
+- [x] Implementar `fillERSheet()` para R414
+- [x] Implementar `fillHoja7Sheet()` para notas (PPE, Intangibles, Efectivo, Provisiones, Beneficios)
+- [x] Actualizar `r414/index.ts` para exportar el servicio
+- [x] Actualizar `xbrl/index.ts` para exportar R414TemplateService
+- [x] Verificar que compila sin errores (`pnpm type-check`)
+
+### ✅ Fase 4: Hojas FC01-FC03 y FC05b - COMPLETADA
+- [x] Crear `r414/mappings/fc01Mappings.ts` con mapeos de gastos
+- [x] Implementar `fillFC01Sheet()` para gastos por servicio individual
+- [x] Implementar `fillFC01TotalSheet()` para Hoja22 (suma de Hoja16, 17, 18)
+- [x] Implementar `fillFC02Sheet()` para complementario de ingresos (Hoja23)
+- [x] Implementar `fillFC03Sheet()` para CXC por estrato (Hoja24, 25, 26)
+- [x] Implementar `fillFC05bSheet()` para pasivos por edades (Hoja32)
+- [x] Actualizar override de `fillExcelData()` para llamar todos los métodos
+- [x] Actualizar `types.ts` para incluir campos no residenciales en UsuariosEstrato
+- [x] Verificar que compila sin errores (`pnpm type-check`)
+
+### ⏳ Fase 5: Integración y Limpieza - PENDIENTE
 - [ ] Modificar `officialTemplateService.ts` para delegar a R414TemplateService
+- [ ] Pruebas de integración con datos reales
+- [ ] Validar con XBRL Express
+- [ ] Eliminar código duplicado de `officialTemplateService.ts`
 
 ---
 
@@ -43,26 +62,28 @@
 
 ```
 app/src/lib/xbrl/
-├── index.ts                    # Exports principales (actualizado)
-├── types.ts                    # ✅ NUEVO - Tipos compartidos
+├── index.ts                    # ✅ ACTUALIZADO - Exports incluyendo R414TemplateService
+├── types.ts                    # ✅ ACTUALIZADO - Incluye UsuariosEstrato con campos no residenciales
 ├── shared/
 │   ├── index.ts               # ✅ NUEVO
 │   ├── baseTemplateService.ts # ✅ NUEVO - Clase abstracta base
 │   ├── excelUtils.ts          # ✅ NUEVO - Utilidades Excel
 │   └── pucUtils.ts            # ✅ NUEVO - Utilidades PUC
 ├── r414/
-│   ├── index.ts               # ✅ NUEVO - Config y exports R414
+│   ├── index.ts               # ✅ ACTUALIZADO - Config y exports R414
+│   ├── R414TemplateService.ts # ✅ COMPLETO - 725 líneas con todos los métodos
 │   └── mappings/
-│       ├── index.ts           # ✅ NUEVO
+│       ├── index.ts           # ✅ ACTUALIZADO - Exports todos los mapeos
 │       ├── esfMappings.ts     # ✅ NUEVO - ESF (Activos, Pasivos, Patrimonio)
 │       ├── erMappings.ts      # ✅ NUEVO - Estado de Resultados
-│       └── ppeMappings.ts     # ✅ NUEVO - PPE, Intangibles, Efectivo, Provisiones
+│       ├── ppeMappings.ts     # ✅ NUEVO - PPE, Intangibles, Efectivo, Provisiones
+│       └── fc01Mappings.ts    # ✅ NUEVO - Mapeos FC01 (Gastos por servicio)
 ├── grupo1/mappings/           # Carpeta creada (vacía)
 ├── grupo2/mappings/           # Carpeta creada (vacía)
 ├── grupo3/mappings/           # Carpeta creada (vacía)
 ├── ife/mappings/              # Carpeta creada (vacía)
 │
-├── officialTemplateService.ts # ORIGINAL - 4,914 líneas (aún sin modificar)
+├── officialTemplateService.ts # ORIGINAL - 4,914 líneas (pendiente de delegación)
 ├── taxonomyConfig.ts          # ORIGINAL
 ├── xbrlGenerator.ts           # ORIGINAL
 └── xbrlExcelGenerator.ts      # ORIGINAL
@@ -70,69 +91,51 @@ app/src/lib/xbrl/
 
 ---
 
+## R414TemplateService - Métodos Implementados
+
+El servicio R414 ahora tiene 725 líneas y contiene todos los métodos necesarios:
+
+### Métodos de Hoja Principal
+- `fillESFSheet()` - Estado de Situación Financiera (Hoja2)
+- `fillERSheet()` - Estado de Resultados (Hoja3)
+- `fillHoja7Sheet()` - Notas (PPE, Intangibles, Efectivo, Provisiones, Beneficios)
+
+### Métodos FC01 (Gastos por Servicio)
+- `fillFC01Sheet()` - Llena una hoja FC01 individual (Hoja16, 17, 18)
+- `fillFC01TotalSheet()` - Suma de Hoja16, 17, 18 → Hoja22
+
+### Métodos FC02/FC03/FC05b
+- `fillFC02Sheet()` - Complementario de Ingresos (Hoja23)
+- `fillFC03Sheet()` - CXC por estrato (Hoja24, 25, 26)
+- `fillFC05bSheet()` - Pasivos por edades (Hoja32)
+
+### Override Principal
+- `fillExcelData()` - Orquesta todas las llamadas anteriores
+
+---
+
 ## Próximos Pasos para Continuar
 
-### Opción A: Crear R414TemplateService (Recomendado)
+### Fase 5: Integración y Limpieza
 
-1. **Crear `r414/R414TemplateService.ts`**:
-```typescript
-import { BaseTemplateService } from '../shared/baseTemplateService';
-import { R414_ESF_MAPPINGS, R414_ER_MAPPINGS, R414_SERVICE_COLUMNS } from './mappings';
-import type { NiifGroup, TemplatePaths, ESFMapping, SheetMapping } from '../types';
-
-export class R414TemplateService extends BaseTemplateService {
-  readonly group: NiifGroup = 'r414';
-
-  readonly templatePaths: TemplatePaths = {
-    xbrlt: 'r414/R414Ind_ID20037_2024-12-31.xbrlt',
-    xml: 'r414/R414Ind_ID20037_2024-12-31.xml',
-    xlsx: 'r414/R414Ind_ID20037_2024-12-31.xlsx',
-    xbrl: 'r414/R414Ind_ID20037_2024-12-31.xbrl',
-    basePrefix: 'R414Ind',
-    outputPrefix: 'R414_Individual',
-  };
-
-  getESFMappings(): ESFMapping[] {
-    return R414_ESF_MAPPINGS;
-  }
-
-  getServiceColumns() {
-    return R414_SERVICE_COLUMNS;
-  }
-
-  getSheetMapping(): SheetMapping {
-    return {
-      '110000': 'Hoja1',
-      '210000': 'Hoja2',
-      '310000': 'Hoja3',
-      // ... etc
-    };
-  }
-
-  fillESFSheet(worksheet, accounts, serviceBalances, distribution) {
-    // Copiar lógica de officialTemplateService.ts líneas 1181-1242
-  }
-
-  fillERSheet(worksheet, accounts, serviceBalances, distribution) {
-    // Copiar lógica de officialTemplateService.ts líneas 1297-1358
-  }
-}
-```
-
-2. **Modificar `officialTemplateService.ts`**:
+1. **Modificar `officialTemplateService.ts`**:
    - En la función `generateOfficialTemplatePackageWithData()`:
    - Agregar: `if (options.niifGroup === 'r414') { return new R414TemplateService().generateTemplatePackage(options); }`
 
-3. **Verificar**:
-   - Ejecutar `pnpm type-check`
+2. **Pruebas de Integración**:
    - Probar la generación de R414 en el navegador
+   - Comparar salida con la generación anterior
    - Validar el archivo generado en XBRL Express
 
-### Opción B: Continuar Extrayendo Mapeos de Otras Taxonomías
+3. **Limpieza**:
+   - Eliminar código duplicado de `officialTemplateService.ts`
+   - Documentar las diferencias
 
-Si prefieres primero extraer todos los mapeos antes de crear los servicios:
+### Opción Alternativa: Continuar con Otras Taxonomías
+
+Si prefieres expandir a otras taxonomías antes de la integración:
 - Analizar `officialTemplateService.ts` para Grupo1/2/3
-- Crear archivos en `grupo1/mappings/`, etc.
+- Crear servicios similares a R414TemplateService
 
 ---
 
