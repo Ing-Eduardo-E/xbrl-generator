@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 XBRL Taxonomy Generator for Colombian public service companies. This web application automates XBRL taxonomy generation from consolidated financial statements, reducing preparation time from 8 hours to 2-3 hours. The system processes Excel balance sheets, distributes accounts across services (Acueducto, Alcantarillado, Aseo), validates accounting equations, and generates XBRL-compatible files for SSPD reporting.
 
-**Status**: v2.4 - Fully functional with official SSPD template support. IFE (quarterly reporting) implementation in progress.
+**Status**: v2.5 - Fully functional with official SSPD template support. R414 in production. IFE (quarterly reporting) almost complete. Code refactoring in progress.
 
 ## Technology Stack
 
@@ -238,9 +238,42 @@ Configured in `tsconfig.json`:
 - `@/*` → `src/*`
 - `@/db/*` → `src/db/*`
 
+## Refactoring In Progress
+
+The codebase is being refactored to separate each taxonomy into independent files.
+
+### Problem
+`officialTemplateService.ts` has **4,914 lines** with all taxonomy logic mixed together.
+
+### Solution
+Create separate folders for each taxonomy:
+```
+app/src/lib/xbrl/
+├── shared/           # Shared utilities
+├── r414/             # R414 taxonomy (in production)
+├── grupo1/           # NIIF Plenas
+├── grupo2/           # NIIF PYMES
+├── grupo3/           # Microempresas
+└── ife/              # Quarterly reports
+```
+
+### Documentation
+- `docs/plan_refactorizacion_taxonomias.md` - Detailed refactoring plan
+- `docs/CONTINUIDAD_REFACTORIZACION.md` - Continuity document for handoff
+
+### Key Files to Refactor
+| File | Lines | Content |
+|------|-------|---------|
+| `officialTemplateService.ts` | 4,914 | All taxonomy mappings mixed |
+| `xbrlExcelGenerator.ts` | 1,430 | Generic PUC mappings |
+| `taxonomyConfig.ts` | 812 | All taxonomy configs |
+| `xbrlGenerator.ts` | 815 | Mixed generation logic |
+
 ## Documentation
 
 See `docs/` folder for detailed documentation:
+- `plan_refactorizacion_taxonomias.md` - Refactoring plan
+- `CONTINUIDAD_REFACTORIZACION.md` - Continuity document
 - `analisis_taxonomias_sspd.md` - SSPD taxonomy analysis
 - `analisis_comparativo_niif.md` - NIIF groups comparison
 - `arquitectura_simplificada_sin_bd.md` - Architecture design

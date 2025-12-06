@@ -2,38 +2,80 @@
 
 Aplicación web para automatizar la generación de taxonomías XBRL desde balances consolidados de empresas de servicios públicos en Colombia.
 
-## 🎯 Objetivo
+**Versión**: 2.5
+**Estado**: R414 en producción, IFE en desarrollo
+
+## Objetivo
 
 Esta herramienta permite a consultores y contadores generar automáticamente los archivos XBRL necesarios para reportar a la Superintendencia de Servicios Públicos Domiciliarios (SSPD), reduciendo el tiempo de trabajo de 8 horas a 2-3 horas por taxonomía.
 
-## ✨ Características
+## Stack Tecnológico
+
+| Capa | Tecnología |
+|------|------------|
+| Framework | Next.js 15 con App Router |
+| Frontend | React 19 + TypeScript + Tailwind CSS 3.4 |
+| UI | shadcn/ui + Radix UI + lucide-react |
+| API | tRPC 11 (type-safe) |
+| Base de Datos | PostgreSQL + Drizzle ORM |
+| Excel | xlsx + exceljs |
+| Compresión | jszip |
+| Package Manager | pnpm |
+
+## Inicio Rápido
+
+```bash
+# Clonar repositorio
+git clone https://github.com/Ing-Eduardo-E/xbrl-generator.git
+cd xbrl-generator/app
+
+# Instalar dependencias
+pnpm install
+
+# Configurar base de datos
+cp .env.example .env.local
+# Editar .env.local con tu DATABASE_URL
+
+# Crear tablas
+pnpm db:push
+
+# Iniciar desarrollo
+pnpm dev
+
+# Abrir http://localhost:3000
+```
+
+## Características
 
 - **Interfaz de 3 pasos**: Cargar, Configurar, Generar
 - **Procesamiento automático**: Lee balances consolidados en Excel y distribuye las cuentas por servicios
 - **Validación contable**: Verifica que se cumplan las ecuaciones contables básicas
 - **Generación de archivos**: Crea el paquete completo compatible con XBRL Express
-- **Sin base de datos**: Aplicación stateless que no almacena datos sensibles
+- **Plantillas oficiales SSPD**: Usa las plantillas oficiales para 100% compatibilidad
 
-## 🚀 Cómo Usar
+## Taxonomías Soportadas
+
+| Grupo | Nombre | Estado |
+|-------|--------|--------|
+| Grupo 1 | NIIF Plenas | Implementado |
+| Grupo 2 | NIIF PYMES | Implementado |
+| Grupo 3 | Microempresas | Implementado |
+| R414 | Resolución 414 (Sector Público) | **En Producción** |
+| IFE | Informe Financiero Trimestral | En Desarrollo |
+
+## Cómo Usar
 
 ### Paso 1: Cargar Balance Consolidado
 
-1. Selecciona el **Grupo NIIF** de tu empresa:
-   - Grupo 1 - NIIF Plenas
-   - Grupo 2 - NIIF PYMES
-   - Grupo 3 - Microempresas
-   - R414 - ESAL
-
-2. Carga el archivo Excel con el balance consolidado. El archivo debe tener:
+1. Selecciona el **Grupo NIIF** de tu empresa
+2. Carga el archivo Excel con el balance consolidado:
    - Una hoja llamada "Consolidado" (o será la primera hoja)
    - Columnas: Código | Nombre de la Cuenta | Valor
-   - Códigos PUC estándar (1000-1999 Activos, 2000-2999 Pasivos, etc.)
-
-**Archivo de ejemplo**: Puedes descargar [ejemplo_balance.xlsx](/ejemplo_balance.xlsx) para probar la aplicación.
+   - Códigos PUC estándar
 
 ### Paso 2: Configurar Distribución
 
-1. Define los servicios que presta tu empresa (Acueducto, Alcantarillado, Aseo, etc.)
+1. Define los servicios (Acueducto, Alcantarillado, Aseo)
 2. Asigna un **porcentaje de distribución** a cada servicio
 3. La suma de los porcentajes debe ser exactamente **100%**
 
@@ -45,88 +87,109 @@ Esta herramienta permite a consultores y contadores generar automáticamente los
 ### Paso 3: Generar y Descargar
 
 1. Haz clic en **"Generar Taxonomía"**
-2. La aplicación procesará el balance y generará los archivos
-3. Se descargará automáticamente un archivo ZIP con:
-   - Plantilla Excel oficial con 11 hojas diligenciadas
+2. Se descargará un archivo ZIP con:
+   - Plantilla Excel oficial PRE-LLENADA
    - Archivo de mapeo XML
    - Plantilla XBRL (.xbrlt)
    - Instancia XBRL (.xbrl)
-   - README con instrucciones
 
-## 📊 Hojas Autocompletadas
+## Hojas Automatizadas (12 hojas)
 
-La aplicación diligencia automáticamente las siguientes hojas:
-
-- ✅ **[210000]** Estado de situación financiera (Balance General)
-- ✅ **[310000]** Estado de resultados
-- ✅ **[900017a]** FC01-1 - Gastos de Acueducto
-- ✅ **[900017b]** FC01-2 - Gastos de Alcantarillado
-- ✅ **[900017c]** FC01-3 - Gastos de Aseo
-- ✅ **[900017g]** FC01-7 - Gastos Total servicios
+| Código | Hoja | Descripción |
+|--------|------|-------------|
+| 110000 | Hoja1 | Información general |
+| 210000 | Hoja2 | Estado de Situación Financiera |
+| 310000 | Hoja3 | Estado de Resultados |
+| 900017a | FC01-1 | Gastos Acueducto |
+| 900017b | FC01-2 | Gastos Alcantarillado |
+| 900017c | FC01-3 | Gastos Aseo |
+| 900017g | FC01-7 | Gastos Total servicios |
+| 900019 | FC02 | Complementario de ingresos |
+| 900021 | FC03-1 | CXC Acueducto (por estrato) |
+| 900022 | FC03-2 | CXC Alcantarillado (por estrato) |
+| 900023 | FC03-3 | CXC Aseo (por estrato) |
+| 900028b | FC05b | Pasivos por edades de vencimiento |
 
 Esto representa aproximadamente el **85% del trabajo manual**.
 
-## 📝 Próximos Pasos Después de Generar
+## Próximos Pasos Después de Generar
 
 1. Abre los archivos generados en **XBRL Express**
-2. Completa las hojas restantes (34 hojas) que requieren información manual:
-   - Notas explicativas
-   - Políticas contables
-   - Revelaciones específicas
-   - Estados complementarios
+2. Completa las hojas restantes que requieren información manual
 3. Ejecuta la **validación** en XBRL Express
-4. Corrige cualquier error reportado
-5. Genera el archivo `.xbrl` final
-6. **Certifica** en la plataforma SUI
+4. Genera el archivo `.xbrl` final
+5. **Certifica** en la plataforma SUI
 
-## 🔒 Privacidad y Seguridad
+## Comandos
 
-- **No se almacenan datos**: La aplicación es completamente stateless
-- **Procesamiento local**: Todo el procesamiento ocurre en tu navegador
-- **Sin registro**: No requiere crear cuenta ni iniciar sesión
-- **Archivos temporales**: Se eliminan automáticamente después de la descarga
+```bash
+# Desarrollo
+pnpm dev              # Servidor en http://localhost:3000
 
-## 🛠️ Tecnologías Utilizadas
+# Base de Datos
+pnpm db:push          # Aplicar schema
+pnpm db:studio        # Abrir Drizzle Studio
 
-- **Frontend**: React 19 + TypeScript + Tailwind CSS
-- **Procesamiento**: xlsx (lectura de Excel), JSZip (generación de archivos)
-- **UI Components**: shadcn/ui
-- **Build**: Vite
+# Producción
+pnpm build            # Build
+pnpm start            # Iniciar servidor
+```
 
-## 📋 Requisitos del Balance de Entrada
+## Estructura del Proyecto
 
-Para que la aplicación funcione correctamente, tu archivo Excel debe:
+```
+app/
+├── src/
+│   ├── app/                    # Next.js App Router
+│   ├── components/             # Componentes React
+│   ├── lib/
+│   │   ├── services/           # Excel parser/generator
+│   │   ├── xbrl/               # Generación XBRL
+│   │   └── trpc/               # Cliente tRPC
+│   ├── db/schema/              # Schema Drizzle
+│   └── server/routers/         # API tRPC
+├── public/templates/           # Plantillas oficiales SSPD
+└── docs/                       # Documentación
+```
 
-1. Tener una estructura clara con columnas: Código, Nombre, Valor
-2. Usar códigos PUC estándar:
-   - 1000-1999: Activos
-   - 2000-2999: Pasivos
-   - 3000-3999: Patrimonio
-   - 4000-4999: Ingresos
-   - 5000-6999: Gastos
-3. Cumplir con las ecuaciones contables:
+## Documentación
+
+| Archivo | Descripción |
+|---------|-------------|
+| `CLAUDE.md` | Guía para Claude Code |
+| `todo.md` | Estado de tareas |
+| `docs/plan_refactorizacion_taxonomias.md` | Plan de refactorización |
+| `docs/CONTINUIDAD_REFACTORIZACION.md` | Documento de continuidad |
+| `docs/analisis_taxonomias_sspd.md` | Análisis de taxonomías |
+
+## Refactorización en Progreso
+
+El código está siendo refactorizado para separar cada taxonomía en archivos independientes.
+Ver `docs/plan_refactorizacion_taxonomias.md` para detalles.
+
+## Requisitos del Balance de Entrada
+
+1. Estructura clara con columnas: Código, Nombre, Valor
+2. Códigos PUC estándar:
+   - 1xxx: Activos
+   - 2xxx: Pasivos
+   - 3xxx: Patrimonio
+   - 4xxx: Ingresos
+   - 5xxx-6xxx: Gastos
+3. Ecuaciones contables balanceadas:
    - Activo = Pasivo + Patrimonio
-   - Utilidad = Ingresos - Gastos
 
-## ⚠️ Limitaciones Conocidas
+## Limitaciones Conocidas
 
-- Los porcentajes de distribución son fijos para todas las cuentas (no hay distribución selectiva por tipo de cuenta)
-- Los valores se redondean a enteros (sin decimales)
-- Solo procesa la hoja "Consolidado" o la primera hoja del archivo
-- No valida la coherencia de las notas y revelaciones (eso debe hacerse en XBRL Express)
+- Los porcentajes de distribución son fijos para todas las cuentas
+- Los valores se redondean a enteros
+- Solo procesa la hoja "Consolidado" o la primera hoja
+- Validación final debe hacerse en XBRL Express
 
-## 🤝 Soporte
-
-Si encuentras algún problema:
-
-1. Verifica que tu archivo Excel tenga la estructura correcta
-2. Asegúrate de que las ecuaciones contables estén balanceadas
-3. Revisa que los códigos PUC sean válidos
-
-## 📄 Licencia
+## Licencia
 
 Prototipo MVP desarrollado para automatizar la generación de taxonomías XBRL para empresas de servicios públicos en Colombia.
 
 ---
 
-**Desarrollado con ❤️ para simplificar el trabajo de consultores y contadores**
+**Desarrollado para simplificar el trabajo de consultores y contadores**
