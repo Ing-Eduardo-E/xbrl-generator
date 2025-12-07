@@ -110,3 +110,6 @@ temp/
 backup_*/
 *_backup/
 *.backup
+
+# Archivos IFE de prueba generados
+/IFE Trimestral/
