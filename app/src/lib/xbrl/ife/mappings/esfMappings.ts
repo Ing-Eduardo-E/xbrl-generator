@@ -36,20 +36,28 @@ export const IFE_ESF_SERVICE_COLUMNS: ServiceColumnMapping = {
 
 /**
  * Mapeos de Activos Corrientes.
+ *
+ * PUC Clase 11 - Disponible:
+ * - 1105: Caja
+ * - 1110: Bancos
+ * - 1115: Remesas en tránsito
+ * - 1120: Cuentas de ahorro
+ * - 1125: Fondos
+ * - 1195: Efectivo restringido (uso restringido)
  */
 export const IFE_ESF_ACTIVOS_CORRIENTES: ESFMapping[] = [
-  // Efectivo y equivalentes al efectivo
+  // Efectivo y equivalentes al efectivo (todo el disponible excepto restringido)
   {
     row: 15,
     pucPrefixes: ['11'],
-    excludePrefixes: ['1110'], // Excluir efectivo restringido
+    excludePrefixes: ['1195'], // Excluir efectivo de uso restringido
     description: 'Efectivo y equivalentes al efectivo',
   },
-  // Efectivo restringido corriente
+  // Efectivo de uso restringido corriente
   {
     row: 16,
-    pucPrefixes: ['1110'],
-    description: 'Efectivo restringido corriente',
+    pucPrefixes: ['1195'],
+    description: 'Efectivo de uso restringido corriente',
   },
   // CxC servicios públicos corrientes (no vencidas)
   {

@@ -408,15 +408,31 @@ export class IFETemplateService extends BaseTemplateService {
         this.writeCell(worksheet, 'E34', compliance);
       }
 
-      // Negocio en marcha
-      this.writeCell(worksheet, 'E35', ife.goingConcernUncertainty || 'NA');
+      // Negocio en marcha - Formato SSPD: "1. Si" o "2. No"
+      const goingConcernValue = this.formatYesNo(ife.goingConcernUncertainty);
+      this.writeCell(worksheet, 'E35', goingConcernValue);
       this.writeCell(worksheet, 'E36', ife.goingConcernExplanation || 'NA');
 
-      // Continuidad de servicios
-      this.writeCell(worksheet, 'E38', ife.servicesContinuityUncertainty || 'NA');
-      this.writeCell(worksheet, 'E39', ife.servicesTermination || 'No');
+      // Continuidad de servicios - Formato SSPD: "1. Si" o "2. No"
+      const servicesContinuityValue = this.formatYesNo(ife.servicesContinuityUncertainty);
+      const servicesTerminationValue = this.formatYesNo(ife.servicesTermination);
+      this.writeCell(worksheet, 'E38', servicesContinuityValue);
+      this.writeCell(worksheet, 'E39', servicesTerminationValue);
       this.writeCell(worksheet, 'E40', ife.servicesTerminationDetail || 'NA');
     }
+  }
+
+  /**
+   * Formatea valores booleanos/string al formato SSPD "1. Si" / "2. No".
+   */
+  private formatYesNo(value: string | boolean | undefined): string {
+    if (value === undefined || value === null || value === '' || value === 'NA') {
+      return '2. No';
+    }
+    if (value === true || value === 'true' || value === '1' || value === 'Si' || value === 'si' || value === '1. Si') {
+      return '1. Si';
+    }
+    return '2. No';
   }
 
   /**
@@ -426,6 +442,104 @@ export class IFETemplateService extends BaseTemplateService {
     // IFE usa formato: IFE_Trimestral_ID{companyId}_{date}
     const date = options.reportDate.replace(/-/g, '');
     return `IFE_Trimestral_ID${options.companyId}_${date}`;
+  }
+
+  /**
+   * Override para personalizar el archivo .xbrlt con nombres de archivo correctos para IFE.
+   *
+   * El problema es que la plantilla original tiene referencias como:
+   * config="IFE_SegundoTrimestre_ID20037_2025-06-30.xml"
+   *
+   * Pero los archivos en el ZIP se llaman:
+   * IFE_Trimestral_ID{companyId}_{date}.xml
+   *
+   * Este override corrige las referencias internas para que coincidan.
+   */
+  protected override customizeXbrlt(content: string, options: TemplateWithDataOptions): string {
+    let result = content;
+
+    // Generar el nuevo prefijo de archivo
+    const outputPrefix = this.generateOutputPrefix(options);
+
+    // Reemplazar la referencia al archivo .xml en el config
+    // Patrón original: IFE_SegundoTrimestre_ID20037_2025-06-30.xml
+    // Patrón nuevo: IFE_Trimestral_ID{companyId}_{date}.xml
+    result = result.replace(
+      /IFE_SegundoTrimestre_ID\d+_\d{4}-\d{2}-\d{2}\.xml/g,
+      `${outputPrefix}.xml`
+    );
+
+    // Reemplazar referencias al archivo .xlsx también
+    result = result.replace(
+      /IFE_SegundoTrimestre_ID\d+_\d{4}-\d{2}-\d{2}\.xlsx/g,
+      `${outputPrefix}.xlsx`
+    );
+
+    // Reemplazar fecha de reporte
+    const year = options.reportDate.split('-')[0];
+    result = result.replace(/2025-06-30/g, options.reportDate);
+    result = result.replace(/2025/g, year);
+
+    // Reemplazar ID de empresa
+    result = result.replace(/ID20037/g, `ID${options.companyId}`);
+    result = result.replace(
+      /<xbrli:identifier scheme="_">_<\/xbrli:identifier>/g,
+      `<xbrli:identifier scheme="http://www.sui.gov.co">${options.companyId}</xbrli:identifier>`
+    );
+
+    return result;
+  }
+
+  /**
+   * Override para personalizar el archivo .xml de mapeo con nombres correctos para IFE.
+   */
+  protected override customizeXml(content: string, options: TemplateWithDataOptions): string {
+    let result = content;
+
+    // Generar el nuevo prefijo de archivo
+    const outputPrefix = this.generateOutputPrefix(options);
+
+    // Reemplazar referencias a archivos
+    result = result.replace(
+      /IFE_SegundoTrimestre_ID\d+_\d{4}-\d{2}-\d{2}/g,
+      outputPrefix
+    );
+
+    // Reemplazar fecha y ID
+    const year = options.reportDate.split('-')[0];
+    result = result.replace(/2025-06-30/g, options.reportDate);
+    result = result.replace(/2025/g, year);
+    result = result.replace(/ID20037/g, `ID${options.companyId}`);
+
+    return result;
+  }
+
+  /**
+   * Override para personalizar el archivo .xbrl con nombres correctos para IFE.
+   */
+  protected override customizeXbrl(content: string, options: TemplateWithDataOptions): string {
+    let result = content;
+
+    // Generar el nuevo prefijo de archivo
+    const outputPrefix = this.generateOutputPrefix(options);
+
+    // Reemplazar referencias a archivos
+    result = result.replace(
+      /IFE_SegundoTrimestre_ID\d+_\d{4}-\d{2}-\d{2}/g,
+      outputPrefix
+    );
+
+    // Reemplazar fecha y ID
+    const year = options.reportDate.split('-')[0];
+    result = result.replace(/2025-06-30/g, options.reportDate);
+    result = result.replace(/2025/g, year);
+    result = result.replace(/ID20037/g, `ID${options.companyId}`);
+    result = result.replace(
+      /<xbrli:identifier scheme="_">_<\/xbrli:identifier>/g,
+      `<xbrli:identifier scheme="http://www.sui.gov.co">${options.companyId}</xbrli:identifier>`
+    );
+
+    return result;
   }
 }
 

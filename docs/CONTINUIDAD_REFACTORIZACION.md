@@ -1,9 +1,9 @@
 # Documento de Continuidad - Refactorizacion de Taxonomias
 
 **Fecha de Creacion**: 2025-12-05
-**Ultima Actualizacion**: 2025-12-06
+**Ultima Actualizacion**: 2025-12-07
 **Branch**: `desarrollo`
-**Estado**: ✅ R414 COMPLETADA | 🔄 IFE EN PROGRESO (wizard completo con 4 pasos, pendiente pruebas funcionales)
+**Estado**: ✅ R414 COMPLETADA | 🔄 IFE EN PROGRESO (pruebas funcionales en curso)
 
 ---
 
@@ -78,6 +78,9 @@ El archivo `officialTemplateService.ts` ahora es un dispatcher que delega a los 
 - [x] fillCxCSheet() - Hoja5 (CxC por vencimiento)
 - [x] fillCxPSheet() - Hoja6 (CxP por vencimiento)
 - [x] fillDetalleIngresosGastosSheet() - Hoja7
+- [x] customizeXbrlt() - Override para corregir referencias de archivos IFE
+- [x] customizeXml() - Override para corregir referencias de archivos IFE
+- [x] customizeXbrl() - Override para corregir referencias de archivos IFE
 
 #### Integracion en Dispatcher
 - [x] Importar ifeTemplateService en officialTemplateService.ts
@@ -144,6 +147,8 @@ El archivo `officialTemplateService.ts` ahora es un dispatcher que delega a los 
 - [x] Columnas de servicios configuradas (8 servicios: Acueducto, Alcantarillado, Aseo, Energia, Gas, GLP, XMM, Otras)
 
 #### Pruebas
+- [x] **⚠️ BLOQUEADO: Error ExcelJS Shared Formulas** -> Solucionado con manual fix (ver `docs/FIX_EXCEL_TEMPLATE.md`)
+- [x] **⚠️ CORREGIDO: Error referencias archivos en .xbrlt** -> Override de customizeXbrlt/Xml/Xbrl en IFETemplateService (2025-12-07)
 - [ ] Probar flujo completo: Upload → Distribute → Generate para IFE
 - [ ] Validar ZIP generado en XBRL Express
 - [ ] Comparar con plantilla esperada
@@ -180,7 +185,7 @@ app/src/lib/xbrl/
 └── ife/
     ├── index.ts                  # Exports IFE
     ├── config.ts                 # Rutas y mapeo de hojas
-    ├── IFETemplateService.ts     # ~350 lineas
+    ├── IFETemplateService.ts     # ~530 lineas (incluye overrides customize*)
     └── mappings/
         ├── index.ts
         ├── esfMappings.ts        # ~340 lineas
@@ -195,7 +200,7 @@ app/src/lib/xbrl/
 |---------|-------|---------|
 | officialTemplateService.ts | 4,914 lineas | ~300 lineas |
 | Modulo R414 completo | - | ~1,830 lineas |
-| Modulo IFE completo | - | ~820 lineas |
+| Modulo IFE completo | - | ~1,000 lineas |
 | Reduccion codigo monolitico | - | 93.9% |
 
 ---
@@ -265,3 +270,66 @@ TAXONOMIA TRIMESTRAL (IFE) - 4 pasos:
 | `GenerateStep.tsx` | Prop `ifeCompanyData`, pre-llenado de formulario |
 | `IFECompanyInfoForm.tsx` | **NUEVO** - Formulario completo de info empresa IFE |
 | `ui/textarea.tsx` | **NUEVO** - Componente shadcn/ui para áreas de texto |
+
+---
+
+## Errores Resueltos
+
+### Error 1: ExcelJS Shared Formulas (2025-12-06)
+
+**Problema**: Al generar el reporte IFE, el servidor fallaba con:
+```
+Shared Formula master must exist above and or left of clone for cell L26
+```
+
+**Causa**: Incompatibilidad entre ExcelJS y fórmulas compartidas (Shared Formulas) de Excel en la plantilla oficial.
+
+**Solución**: Fix manual en la plantilla Excel (ver `docs/FIX_EXCEL_TEMPLATE.md`).
+
+### Error 2: Referencias de Archivos en .xbrlt (2025-12-07)
+
+**Problema**: XBRL Express no podía abrir el paquete IFE con error:
+```
+IOException: IFE_SegundoTrimestre_ID20037_2025-06-30.xml (El sistema no puede encontrar el archivo especificado)
+```
+
+**Causa**: El archivo `.xbrlt` contenía referencias internas con el nombre original de la plantilla:
+```xml
+config="IFE_SegundoTrimestre_ID20037_2025-06-30.xml"
+```
+Pero los archivos en el ZIP se generaban con nombre diferente:
+```
+IFE_Trimestral_ID{companyId}_{date}.xml
+```
+
+**Solución**: Override de los métodos `customizeXbrlt()`, `customizeXml()` y `customizeXbrl()` en `IFETemplateService.ts` para reemplazar:
+- `IFE_SegundoTrimestre_ID\d+_\d{4}-\d{2}-\d{2}` → `IFE_Trimestral_ID{companyId}_{date}`
+
+**Archivo modificado**: `app/src/lib/xbrl/ife/IFETemplateService.ts` (líneas 431-527)
+
+### Error 3: Formato de Enumeración SSPD (2025-12-07)
+
+**Problema**: XBRL Express rechazaba el valor de la celda E39 con error:
+```
+Value "No" contravenes the enumeration facet "2. No, 1. Si" of the type at sspd-typ-IFE-2021.xsd#32
+```
+
+**Causa**: Los campos booleanos (Si/No) en IFE deben usar el formato exacto de la enumeración SSPD: `"1. Si"` o `"2. No"`, no valores simples como `"No"`.
+
+**Solución**: Agregar método `formatYesNo()` en `IFETemplateService.ts` que convierte cualquier valor booleano/string al formato SSPD correcto.
+
+**Archivo modificado**: `app/src/lib/xbrl/ife/IFETemplateService.ts` (líneas 425-436)
+
+### Error 4: Mapeo Incorrecto de Efectivo PUC (2025-12-07)
+
+**Problema**: En la Hoja3 (ESF), el valor de efectivo aparecía en la fila de "Efectivo restringido" en lugar de "Efectivo y equivalentes".
+
+**Causa**: El mapeo usaba `1110` (Bancos) como efectivo restringido, cuando en realidad:
+- `1110` = Bancos (parte del efectivo normal)
+- `1195` = Efectivo de uso restringido
+
+**Solución**: Corregir los prefijos PUC en `esfMappings.ts`:
+- Fila 15 (Efectivo): `['11']` excluyendo `['1195']`
+- Fila 16 (Restringido): `['1195']`
+
+**Archivo modificado**: `app/src/lib/xbrl/ife/mappings/esfMappings.ts` (líneas 48-61)
