@@ -217,6 +217,15 @@ export abstract class BaseTemplateService implements TaxonomyProcessor {
 
   /**
    * Suma valores de cuentas que coinciden con los prefijos dados.
+   * 
+   * IMPORTANTE: En lugar de confiar en el flag isLeaf (que puede estar mal calculado
+   * si el archivo Excel tiene cuentas pre-agregadas), verificamos dinámicamente
+   * si existe una cuenta más específica en los datos. Solo sumamos el valor de
+   * una cuenta si NO existe otra cuenta que sea más específica (código más largo
+   * que empiece igual).
+   * 
+   * Esto evita el doble conteo cuando tenemos tanto la cuenta padre (ej: 13)
+   * como la cuenta hijo (ej: 1305) en los datos.
    */
   protected sumAccountsByPrefix(
     accounts: AccountData[],
@@ -227,20 +236,28 @@ export abstract class BaseTemplateService implements TaxonomyProcessor {
     let total = 0;
 
     for (const account of accounts) {
-      // Solo procesar cuentas hoja
-      if (!account.isLeaf) continue;
-
-      // Verificar si coincide con algún prefijo
+      // Verificar si coincide con algún prefijo buscado
       const matchesPrefix = prefixes.some((prefix) =>
         account.code.startsWith(prefix)
       );
+      if (!matchesPrefix) continue;
 
       // Verificar si debe excluirse
       const isExcluded = excludePrefixes.some((prefix) =>
         account.code.startsWith(prefix)
       );
+      if (isExcluded) continue;
 
-      if (matchesPrefix && !isExcluded) {
+      // Verificación dinámica: ¿Existe una cuenta más específica en los datos?
+      // Si existe, no sumamos esta cuenta (su valor ya está incluido en la más específica)
+      const hasMoreSpecificAccount = accounts.some(
+        (other) =>
+          other.code !== account.code &&
+          other.code.startsWith(account.code) &&
+          other.code.length > account.code.length
+      );
+
+      if (!hasMoreSpecificAccount) {
         total += useAbsoluteValue ? Math.abs(account.value) : account.value;
       }
     }
@@ -250,6 +267,16 @@ export abstract class BaseTemplateService implements TaxonomyProcessor {
 
   /**
    * Suma valores de cuentas de servicio que coinciden con los prefijos.
+   * 
+   * IMPORTANTE: En lugar de confiar en el flag isLeaf (que puede estar mal calculado
+   * si el archivo Excel tiene cuentas pre-agregadas), verificamos dinámicamente
+   * si existe una cuenta más específica en los datos del mismo servicio.
+   * 
+   * Solo sumamos el valor de una cuenta si NO existe otra cuenta del mismo
+   * servicio que sea más específica (código más largo que empiece igual).
+   * 
+   * Esto evita el doble conteo cuando tenemos tanto la cuenta padre (ej: 13)
+   * como la cuenta hijo (ej: 1305) en los datos distribuidos.
    */
   protected sumServiceAccountsByPrefix(
     serviceBalances: ServiceBalanceData[],
@@ -258,21 +285,34 @@ export abstract class BaseTemplateService implements TaxonomyProcessor {
     excludePrefixes: string[] = [],
     useAbsoluteValue = false
   ): number {
+    // Filtrar solo las cuentas del servicio especificado
+    const serviceData = serviceBalances.filter((b) => b.service === service);
+    
     let total = 0;
 
-    for (const balance of serviceBalances) {
-      if (balance.service !== service) continue;
-      if (!balance.isLeaf) continue;
-
+    for (const balance of serviceData) {
+      // Verificar si coincide con algún prefijo buscado
       const matchesPrefix = prefixes.some((prefix) =>
         balance.code.startsWith(prefix)
       );
+      if (!matchesPrefix) continue;
 
+      // Verificar si debe excluirse
       const isExcluded = excludePrefixes.some((prefix) =>
         balance.code.startsWith(prefix)
       );
+      if (isExcluded) continue;
 
-      if (matchesPrefix && !isExcluded) {
+      // Verificación dinámica: ¿Existe una cuenta más específica en los datos del servicio?
+      // Si existe, no sumamos esta cuenta (su valor ya está incluido en la más específica)
+      const hasMoreSpecificAccount = serviceData.some(
+        (other) =>
+          other.code !== balance.code &&
+          other.code.startsWith(balance.code) &&
+          other.code.length > balance.code.length
+      );
+
+      if (!hasMoreSpecificAccount) {
         total += useAbsoluteValue ? Math.abs(balance.value) : balance.value;
       }
     }
