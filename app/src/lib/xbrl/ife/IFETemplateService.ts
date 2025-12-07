@@ -60,6 +60,7 @@ export class IFETemplateService extends BaseTemplateService {
 
   /**
    * Llena la Hoja3 (ESF - Estado de Situación Financiera por servicios).
+   * Columnas I-P son servicios individuales, columna Q es el total.
    */
   fillESFSheet(
     worksheet: ExcelJS.Worksheet,
@@ -73,10 +74,12 @@ export class IFETemplateService extends BaseTemplateService {
     const columns = this.getServiceColumns();
 
     for (const mapping of IFE_ESF_MAPPINGS) {
+      let rowTotal = 0;
+
       // Escribir valores por servicio
       for (const service of activeServices) {
         const serviceColumn = columns[service as keyof ServiceColumnMapping];
-        if (!serviceColumn) continue;
+        if (!serviceColumn || serviceColumn === 'Q') continue; // Saltar columna total
 
         const serviceValue = this.sumServiceAccountsByPrefix(
           serviceBalances,
@@ -93,12 +96,21 @@ export class IFETemplateService extends BaseTemplateService {
             serviceValue
           );
         }
+
+        // Acumular para el total
+        rowTotal += serviceValue;
+      }
+
+      // Escribir total en columna Q
+      if (rowTotal !== 0) {
+        this.writeCell(worksheet, `Q${mapping.row}`, rowTotal);
       }
     }
   }
 
   /**
    * Llena la Hoja4 (ER - Estado de Resultados por servicios).
+   * Columnas E-L son servicios individuales, columna M es el total.
    */
   fillERSheet(
     worksheet: ExcelJS.Worksheet,
@@ -112,10 +124,12 @@ export class IFETemplateService extends BaseTemplateService {
     const erColumns = IFE_ER_SERVICE_COLUMNS;
 
     for (const mapping of IFE_ER_MAPPINGS) {
+      let rowTotal = 0;
+
       // Escribir valores por servicio
       for (const service of activeServices) {
         const serviceColumn = erColumns[service as keyof ServiceColumnMapping];
-        if (!serviceColumn) continue;
+        if (!serviceColumn || serviceColumn === 'M') continue; // Saltar columna total
 
         const serviceValue = this.sumServiceAccountsByPrefix(
           serviceBalances,
@@ -131,6 +145,14 @@ export class IFETemplateService extends BaseTemplateService {
           `${serviceColumn}${mapping.row}`,
           serviceValue
         );
+
+        // Acumular para el total
+        rowTotal += serviceValue;
+      }
+
+      // Escribir total en columna M
+      if (rowTotal !== 0) {
+        this.writeCell(worksheet, `M${mapping.row}`, rowTotal);
       }
     }
   }
@@ -196,6 +218,7 @@ export class IFETemplateService extends BaseTemplateService {
 
   /**
    * Llena la Hoja7 (Detalle de ingresos y gastos por servicio).
+   * Columnas F-M son servicios individuales, columna N es el total.
    */
   fillDetalleIngresosGastosSheet(
     worksheet: ExcelJS.Worksheet,
@@ -233,6 +256,8 @@ export class IFETemplateService extends BaseTemplateService {
     ];
 
     for (const mapping of mappings) {
+      let rowTotal = 0;
+
       for (const service of activeServices) {
         const serviceColumn = columns[service];
         if (!serviceColumn) continue;
@@ -246,6 +271,12 @@ export class IFETemplateService extends BaseTemplateService {
         );
 
         this.writeCell(worksheet, `${serviceColumn}${mapping.row}`, value);
+        rowTotal += value;
+      }
+
+      // Escribir total en columna N
+      if (rowTotal !== 0) {
+        this.writeCell(worksheet, `N${mapping.row}`, rowTotal);
       }
     }
   }

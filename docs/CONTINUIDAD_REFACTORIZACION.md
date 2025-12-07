@@ -333,3 +333,16 @@ Value "No" contravenes the enumeration facet "2. No, 1. Si" of the type at sspd-
 - Fila 16 (Restringido): `['1195']`
 
 **Archivo modificado**: `app/src/lib/xbrl/ife/mappings/esfMappings.ts` (líneas 48-61)
+
+### Error 5: Columnas de Totales Faltantes (2025-12-07)
+
+**Problema**: Las hojas ESF (Hoja3), ER (Hoja4) y Detalle (Hoja7) no tenían valores en las columnas de totales.
+
+**Causa**: Los métodos `fillESFSheet()`, `fillERSheet()` y `fillDetalleIngresosGastosSheet()` solo llenaban las columnas de servicios individuales, pero no calculaban ni escribían la suma total.
+
+**Solución**: Modificar los tres métodos para acumular los valores de cada fila y escribir el total en la columna correspondiente:
+- **Hoja3 (ESF)**: Columna Q = suma de I-P
+- **Hoja4 (ER)**: Columna M = suma de E-L
+- **Hoja7 (Detalle)**: Columna N = suma de F-M
+
+**Archivo modificado**: `app/src/lib/xbrl/ife/IFETemplateService.ts` (métodos fillESFSheet, fillERSheet, fillDetalleIngresosGastosSheet)
