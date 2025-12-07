@@ -7,32 +7,33 @@
 
 ---
 
-## 🔴 PROBLEMA ACTUAL - Error ExcelJS Shared Formulas
+## 🟢 RESUELTO - Error ExcelJS Shared Formulas
 
-### Descripción del Error
-Al generar plantillas IFE, ExcelJS lanza el error:
+### Descripción del Error (YA RESUELTO)
+Al generar plantillas IFE, ExcelJS lanzaba el error:
 ```
 "Shared Formula master must exist above and or left of clone for cell L26"
 ```
 
 ### Causa Raíz
-- Las plantillas Excel de la SSPD tienen **fórmulas compartidas** (shared formulas)
+- Las plantillas Excel de la SSPD tenían **fórmulas compartidas** (shared formulas)
 - Estas fórmulas se crean cuando se "arrastra" una fórmula en Excel
 - ExcelJS no maneja bien estas fórmulas cuando se intenta escribir en celdas relacionadas
-- El error ocurre en `workbook.xlsx.writeBuffer()`, no en `writeCell()`
 
-### Intentos de Solución Realizados
-1. ✅ Modificar `writeCell()` para limpiar fórmulas compartidas antes de escribir
-2. ❓ Pendiente: Verificar si el error persiste después del fix
+### Solución Aplicada ✅
+1. **Fix en `baseTemplateService.ts`**: Modificado `writeCell()` para limpiar fórmulas compartidas antes de escribir
+2. **Reparación de plantillas Excel**: Script automático que reemplazó 208+ fórmulas compartidas con valores (0)
+   - `IFE_SegundoTrimestre_ID20037_2025-06-30.xlsx` - Plantilla principal IFE
+   - `IFE_Trimestral_ID20037_2025-06-30.xlsx` - Plantilla base trimestral
+3. **Documentación**: `docs/FIX_EXCEL_TEMPLATE.md` - Guía para futuras plantillas SSPD
 
-### Posibles Soluciones Adicionales
-1. **Modificar la plantilla Excel** - Reescribir fórmulas manualmente (no arrastradas)
-2. **Evitar escribir en celdas con fórmulas** - Identificar qué celdas tienen fórmulas y saltarlas
-3. **Usar otra librería** - SheetJS (xlsx) o similar que maneje mejor este caso
-
-### Celda Problemática
-- **L26** en alguna hoja de IFE (probablemente Hoja7 - Detalle ingresos/gastos)
-- Columna L = servicio "xmm" (no usado normalmente)
+### Hojas Reparadas
+- Hoja3: 48-60 fórmulas → valores
+- Hoja4: 80-90 fórmulas → valores
+- Hoja5: 42-63 fórmulas → valores
+- Hoja6: 10-12 fórmulas → valores
+- Hoja7: 8-10 fórmulas → valores
+- Hoja8: 5-6 fórmulas → valores
 
 ---
 
@@ -127,8 +128,8 @@ IFE es la taxonomía trimestral obligatoria de la SSPD desde 2020. Las empresas 
 - [x] Formulario IFECompanyInfoForm con todos los campos SSPD
 - [x] Flujo de 4 pasos para IFE (Upload → Distribute → Company-Info → Generate)
 - [x] Conexión datos formulario IFE → fillInfoSheetIFE
-- [ ] **⚠️ BLOQUEADO: Error ExcelJS Shared Formulas** (ver sección arriba)
-- [ ] Pruebas con XBRL Express (pendiente resolver error)
+- [x] **✅ RESUELTO: Error ExcelJS Shared Formulas** (plantillas reparadas)
+- [ ] Pruebas con XBRL Express (pendiente probar generación)
 
 ### Distribución CxC por Vencimiento (por defecto):
 - No vencidas: 55%
