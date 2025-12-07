@@ -64,7 +64,7 @@ export const IFE_ESF_SERVICE_COLUMNS: ServiceColumnMapping = {
 
 // =====================================================
 // ACTIVOS CORRIENTES (Filas 15-31)
-// Autosumas: 14 (Activos corrientes resumen), 17, 18, 23, 26, 32
+// Autosumas: 14, 17, 18, 23, 26, 32
 // =====================================================
 export const IFE_ESF_ACTIVOS_CORRIENTES: ESFMapping[] = [
   // Fila 15: Efectivo y equivalentes al efectivo
@@ -83,16 +83,20 @@ export const IFE_ESF_ACTIVOS_CORRIENTES: ESFMapping[] = [
     description: 'Efectivo de uso restringido corrientes',
   },
 
-  // --- CxC por prestación de servicios públicos corrientes ---
+  // --- SECCIÓN CxC CORRIENTES (Filas 17-26) ---
+  // Fila 17: AUTOSUMA - CxC y otras CxC corrientes [Resumen]
+  // Fila 18: AUTOSUMA - CxC prestación servicios públicos corrientes [Resumen]
+  
   // Fila 19: CxC servicios públicos (sin subsidios ni aprovechamiento)
-  // PUC 1305 - Clientes
+  // PUC 1305 - Clientes de servicios públicos
   {
     row: 19,
     pucPrefixes: ['1305'],
     description: 'CxC servicios públicos corrientes (sin subsidios)',
   },
+
   // Fila 20: CxC por subsidios corrientes
-  // Subcuentas específicas de subsidios - normalmente vacío
+  // Subcuenta específica 130505xx para subsidios - normalmente vacío
   // No mapear por defecto
 
   // Fila 21: CxC al Ministerio de Minas por subsidios
@@ -106,7 +110,7 @@ export const IFE_ESF_ACTIVOS_CORRIENTES: ESFMapping[] = [
   // Fila 23: AUTOSUMA - Total CxC servicios públicos corrientes
 
   // Fila 24: CxC por venta de bienes corrientes
-  // PUC 1310 - Cuentas corrientes comerciales
+  // PUC 1310 - Cuentas corrientes comerciales (venta bienes)
   {
     row: 24,
     pucPrefixes: ['1310'],
@@ -117,8 +121,8 @@ export const IFE_ESF_ACTIVOS_CORRIENTES: ESFMapping[] = [
   // PUC 13XX (excepto 1305, 1310 y provisiones 1399)
   {
     row: 25,
-    pucPrefixes: ['1315', '1320', '1325', '1328', '1330', '1335', '1340', '1345', '1350', '1355', '1360', '1365', '1370', '1380', '1390'],
-    excludePrefixes: ['1399'],
+    pucPrefixes: ['13'],
+    excludePrefixes: ['1305', '1310', '1399'],
     description: 'Otras cuentas por cobrar corrientes',
   },
 
@@ -142,14 +146,17 @@ export const IFE_ESF_ACTIVOS_CORRIENTES: ESFMapping[] = [
 
   // Fila 29: Anticipo de impuestos
   // PUC 1355 - Anticipo de impuestos y contribuciones
-  {
-    row: 29,
-    pucPrefixes: ['1355'],
-    description: 'Anticipo de impuestos',
-  },
+  // NOTA: Ya está incluido en fila 25 como parte de clase 13
+  // NO MAPEAR AQUÍ para evitar duplicar
+  // Si desea separarlo, descomentar y excluir 1355 de fila 25
+  // {
+  //   row: 29,
+  //   pucPrefixes: ['1355'],
+  //   description: 'Anticipo de impuestos',
+  // },
 
   // Fila 30: Otros activos financieros corrientes
-  // PUC 18 - Otros activos (parte corriente)
+  // PUC 18 - Otros activos
   {
     row: 30,
     pucPrefixes: ['18'],
@@ -169,9 +176,11 @@ export const IFE_ESF_ACTIVOS_CORRIENTES: ESFMapping[] = [
 
 // =====================================================
 // ACTIVOS NO CORRIENTES (Filas 34-50)
-// Autosumas: 33 (resumen), 38, 39, 44, 47, 51
+// Autosumas: 33, 38, 39, 44, 47, 51, 52
 // =====================================================
 export const IFE_ESF_ACTIVOS_NO_CORRIENTES: ESFMapping[] = [
+  // Fila 33: AUTOSUMA - Activos no corrientes [resumen]
+  
   // Fila 34: Propiedades, planta y equipo
   // PUC 15 - Propiedades, Planta y Equipo (NETO)
   {
@@ -181,8 +190,7 @@ export const IFE_ESF_ACTIVOS_NO_CORRIENTES: ESFMapping[] = [
   },
 
   // Fila 35: Propiedades de inversión
-  // Normalmente vacío para servicios públicos
-  // No mapear por defecto
+  // Normalmente vacío para servicios públicos - no mapear
 
   // Fila 36: Activos intangibles (distintos de plusvalía)
   // PUC 16 - Intangibles (NETO)
@@ -193,21 +201,34 @@ export const IFE_ESF_ACTIVOS_NO_CORRIENTES: ESFMapping[] = [
   },
 
   // Fila 37: Inversiones no corrientes
-  // Subcuentas específicas de inversiones LP
-  // No mapear por defecto (evitar duplicar con fila 28)
+  // PUC 12 inversiones LP - normalmente ya clasificado en corriente
+  // No mapear para evitar duplicar con fila 28
 
-  // --- CxC no corrientes ---
-  // Filas 40-43: CxC no corrientes (detalle)
-  // Normalmente vacías para empresas de servicios públicos
-  // Fila 40: CxC servicios públicos no corrientes
-  // Fila 41: CxC subsidios no corrientes
+  // --- SECCIÓN CxC NO CORRIENTES (Filas 38-47) ---
+  // Fila 38: AUTOSUMA - CxC y otras CxC no corrientes [Resumen]
+  // Fila 39: AUTOSUMA - CxC prestación servicios públicos no corrientes [Resumen]
+  
+  // Fila 40: CxC servicios públicos no corrientes (sin subsidios)
+  // Normalmente vacío para servicios públicos - no mapear
+  
+  // Fila 41: CxC por subsidios no corrientes
+  // Normalmente vacío - no mapear
+  
   // Fila 42: CxC Ministerio de Minas no corrientes
-  // Fila 43: CxC aprovechamiento no corrientes
+  // Normalmente vacío - no mapear
+  
+  // Fila 43: CxC por aprovechamiento no corrientes
+  // Normalmente vacío - no mapear
+  
   // Fila 44: AUTOSUMA - Total CxC servicios públicos no corrientes
 
   // Fila 45: CxC venta de bienes no corrientes
+  // Normalmente vacío - no mapear
+
   // Fila 46: Otras CxC no corrientes
-  // Fila 47: AUTOSUMA - Total CxC y otras cuentas por cobrar no corrientes
+  // Normalmente vacío - no mapear
+  
+  // Fila 47: AUTOSUMA - Total CxC y otras CxC no corrientes
 
   // Fila 48: Inventarios no corrientes
   // Raro en servicios públicos - no mapear
@@ -229,9 +250,13 @@ export const IFE_ESF_ACTIVOS_NO_CORRIENTES: ESFMapping[] = [
 
 // =====================================================
 // PASIVOS CORRIENTES (Filas 56-63)
-// Autosumas: 53, 54, 55 (resúmenes), 64
+// Autosumas: 53, 54, 55, 64
 // =====================================================
 export const IFE_ESF_PASIVOS_CORRIENTES: ESFMapping[] = [
+  // Fila 53: AUTOSUMA - Patrimonio y pasivos [resumen]
+  // Fila 54: AUTOSUMA - Pasivos [resumen]
+  // Fila 55: AUTOSUMA - Pasivos corrientes [resumen]
+
   // Fila 56: Provisiones Corrientes
   // PUC 26 - Pasivos estimados y provisiones
   {
@@ -251,15 +276,13 @@ export const IFE_ESF_PASIVOS_CORRIENTES: ESFMapping[] = [
   },
 
   // Fila 58: Cuentas por pagar para la adquisición de bienes corrientes
-  // Subcuenta específica - normalmente incluido en 57
-  // No mapear por defecto (evitar duplicar)
+  // Ya incluido en fila 57 - no mapear para evitar duplicar
 
   // Fila 59: Cuentas por pagar para la adquisición de servicios corrientes
-  // Subcuenta específica - normalmente incluido en 57
-  // No mapear por defecto (evitar duplicar)
+  // Ya incluido en fila 57 - no mapear para evitar duplicar
 
   // Fila 60: Obligaciones financieras corrientes
-  // PUC 21 - Obligaciones financieras (corto plazo)
+  // PUC 21 - Obligaciones financieras
   {
     row: 60,
     pucPrefixes: ['21'],
@@ -276,7 +299,7 @@ export const IFE_ESF_PASIVOS_CORRIENTES: ESFMapping[] = [
     useAbsoluteValue: true,
   },
 
-  // Fila 62: Pasivo por impuestos corrientes, corriente
+  // Fila 62: Pasivo por impuestos corrientes
   // PUC 24 - Impuestos, gravámenes y tasas
   {
     row: 62,
@@ -299,12 +322,16 @@ export const IFE_ESF_PASIVOS_CORRIENTES: ESFMapping[] = [
 
 // =====================================================
 // PASIVOS NO CORRIENTES (Filas 66-73)
-// Autosumas: 65 (resumen), 74, 75
+// Autosumas: 65, 74, 75
 // =====================================================
 export const IFE_ESF_PASIVOS_NO_CORRIENTES: ESFMapping[] = [
+  // Fila 65: AUTOSUMA - Pasivos no corrientes [resumen]
+  
   // En el PUC colombiano estándar no hay separación corriente/no corriente
   // por código. La clasificación se hace por análisis de vencimientos.
   // Para empresas de servicios públicos, normalmente todo es corriente.
+  // Las filas 66-73 se dejan sin mapear para que el usuario complete
+  // manualmente si tiene pasivos de largo plazo.
 
   // Fila 66: Provisiones no Corrientes
   // Fila 67: CxP no corrientes
@@ -312,10 +339,9 @@ export const IFE_ESF_PASIVOS_NO_CORRIENTES: ESFMapping[] = [
   // Fila 69: CxP adquisición servicios no corrientes
   // Fila 70: Obligaciones financieras no corrientes
   // Fila 71: Obligaciones laborales no corrientes
-  // Fila 72: Pasivo por impuestos corrientes, no corriente
+  // Fila 72: Pasivo por impuestos no corriente
   // Fila 73: Otros pasivos no corrientes
-
-  // NO MAPEAR - dejar que el usuario complete manualmente si tiene LP
+  
   // Fila 74: AUTOSUMA - Total de pasivos no corrientes
   // Fila 75: AUTOSUMA - Total pasivos
 ];
