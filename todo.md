@@ -1,13 +1,42 @@
 # TODO - Generador de Taxonomías XBRL
 
-## Estado Actual del Proyecto (v2.5)
+## Estado Actual del Proyecto (v2.6)
 
-**Última Actualización**: 2025-12-05
+**Última Actualización**: 2025-12-06
 **Stack**: Next.js 15 + React 19 + TypeScript + Tailwind CSS 3.4 + shadcn/ui + tRPC 11 + Drizzle ORM + PostgreSQL
 
 ---
 
-## 🔴 REFACTORIZACIÓN EN PROGRESO
+## 🔴 PROBLEMA ACTUAL - Error ExcelJS Shared Formulas
+
+### Descripción del Error
+Al generar plantillas IFE, ExcelJS lanza el error:
+```
+"Shared Formula master must exist above and or left of clone for cell L26"
+```
+
+### Causa Raíz
+- Las plantillas Excel de la SSPD tienen **fórmulas compartidas** (shared formulas)
+- Estas fórmulas se crean cuando se "arrastra" una fórmula en Excel
+- ExcelJS no maneja bien estas fórmulas cuando se intenta escribir en celdas relacionadas
+- El error ocurre en `workbook.xlsx.writeBuffer()`, no en `writeCell()`
+
+### Intentos de Solución Realizados
+1. ✅ Modificar `writeCell()` para limpiar fórmulas compartidas antes de escribir
+2. ❓ Pendiente: Verificar si el error persiste después del fix
+
+### Posibles Soluciones Adicionales
+1. **Modificar la plantilla Excel** - Reescribir fórmulas manualmente (no arrastradas)
+2. **Evitar escribir en celdas con fórmulas** - Identificar qué celdas tienen fórmulas y saltarlas
+3. **Usar otra librería** - SheetJS (xlsx) o similar que maneje mejor este caso
+
+### Celda Problemática
+- **L26** en alguna hoja de IFE (probablemente Hoja7 - Detalle ingresos/gastos)
+- Columna L = servicio "xmm" (no usado normalmente)
+
+---
+
+## 🟡 REFACTORIZACIÓN COMPLETADA
 
 ### Objetivo
 Separar el código por taxonomía para que cada una (R414, Grupo1, Grupo2, Grupo3, IFE) tenga sus propios archivos independientes.
@@ -69,7 +98,7 @@ app/src/lib/xbrl/
 
 ---
 
-## 🟡 IFE - Informe Financiero Especial Trimestral (CASI COMPLETO)
+## 🟡 IFE - Informe Financiero Especial Trimestral (EN PRUEBAS)
 
 ### Descripción
 IFE es la taxonomía trimestral obligatoria de la SSPD desde 2020. Las empresas deben reportar
@@ -80,7 +109,7 @@ IFE es la taxonomía trimestral obligatoria de la SSPD desde 2020. Las empresas 
 - **CxC**: Por rangos de vencimiento vs por tipo de servicio
 - **Estructura**: 8 hojas simplificadas vs 60+ hojas completas
 
-### Implementación:
+### Implementación Completada:
 - [x] Tipos TypeScript para trimestres (`IFETrimestre`)
 - [x] Configuración de entry points por trimestre
 - [x] Funciones para generar URLs IFE dinámicas
@@ -88,14 +117,18 @@ IFE es la taxonomía trimestral obligatoria de la SSPD desde 2020. Las empresas 
 - [x] Plantillas IFE copiadas a `public/templates/ife/`
 - [x] Configuración de TEMPLATE_PATHS y SHEET_MAPPING para IFE
 - [x] UI: Selector de IFE en UploadStep
-- [x] UI: Selector de trimestre en UploadStep/GenerateStep cuando es IFE
-- [x] Backend: Router balance acepta 'ife' como grupo
+- [x] UI: Selector de año y trimestre en UploadStep (captura única)
+- [x] Backend: Router balance acepta 'ife' como grupo + metadata
 - [x] Backend: customizeXbrlt maneja fechas trimestrales IFE
-- [x] Implementar llenado de Hoja1 IFE (información general)
+- [x] Implementar llenado de Hoja1 IFE (información general) - 25+ campos
 - [x] Implementar llenado de Hoja3 IFE (ESF por servicio)
 - [x] Implementar llenado de Hoja4 IFE (ER por servicio)
 - [x] Implementar llenado de Hoja5 IFE (CxC por rangos vencimiento)
-- [ ] **Pruebas con XBRL Express** (pendiente)
+- [x] Formulario IFECompanyInfoForm con todos los campos SSPD
+- [x] Flujo de 4 pasos para IFE (Upload → Distribute → Company-Info → Generate)
+- [x] Conexión datos formulario IFE → fillInfoSheetIFE
+- [ ] **⚠️ BLOQUEADO: Error ExcelJS Shared Formulas** (ver sección arriba)
+- [ ] Pruebas con XBRL Express (pendiente resolver error)
 
 ### Distribución CxC por Vencimiento (por defecto):
 - No vencidas: 55%
