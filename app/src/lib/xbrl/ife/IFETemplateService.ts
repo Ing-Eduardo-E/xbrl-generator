@@ -314,22 +314,109 @@ export class IFETemplateService extends BaseTemplateService {
   }
 
   /**
-   * Llena la hoja de información general específica de IFE.
-   * IFE tiene estructura diferente a R414.
+   * Llena la hoja de información general específica de IFE (Hoja1).
+   * IFE tiene estructura diferente a R414 con más campos.
+   * 
+   * Mapeo de celdas según XML oficial:
+   * - E13: NIT
+   * - E14: ID RUPS
+   * - E15: Nombre entidad
+   * - E16: Fecha cierre
+   * - E18: Dirección
+   * - E19: Ciudad
+   * - E20: Teléfono fijo
+   * - E21: Teléfono celular
+   * - E22: Email
+   * - E24: Empleados inicio trimestre
+   * - E25: Empleados fin trimestre
+   * - E26: Promedio empleados
+   * - E28: Tipo doc rep. legal
+   * - E29: Número doc rep. legal
+   * - E30: Nombres rep. legal
+   * - E31: Apellidos rep. legal
+   * - E33: Grupo clasificación
+   * - E34: Declaración cumplimiento
+   * - E35: Incertidumbre negocio en marcha
+   * - E36: Explicación no negocio en marcha
+   * - E38: Incertidumbre continuidad servicios
+   * - E39: Finalización servicios
+   * - E40: Detalle finalización servicios
    */
   protected fillInfoSheetIFE(
     worksheet: ExcelJS.Worksheet,
     options: TemplateWithDataOptions
   ): void {
-    // En IFE, la información está en columna E
-    // Fila 13: NIT
+    const ife = options.ifeData;
+
+    // Información básica de la empresa
     this.writeCell(worksheet, 'E13', options.nit || '');
-    // Fila 14: ID RUPS
     this.writeCell(worksheet, 'E14', options.companyId);
-    // Fila 15: Nombre de la entidad
     this.writeCell(worksheet, 'E15', options.companyName);
-    // Fila 16: Fecha de cierre
     this.writeCell(worksheet, 'E16', options.reportDate);
+
+    // Si hay datos específicos de IFE, llenar campos adicionales
+    if (ife) {
+      // Dirección y contacto
+      this.writeCell(worksheet, 'E18', ife.address || '');
+      this.writeCell(worksheet, 'E19', ife.city || '');
+      this.writeCell(worksheet, 'E20', ife.phone || '');
+      this.writeCell(worksheet, 'E21', ife.cellphone || ife.phone || '');
+      this.writeCell(worksheet, 'E22', ife.email || '');
+
+      // Empleados
+      if (ife.employeesStart !== undefined) {
+        this.writeCell(worksheet, 'E24', ife.employeesStart);
+      }
+      if (ife.employeesEnd !== undefined) {
+        this.writeCell(worksheet, 'E25', ife.employeesEnd);
+      }
+      if (ife.employeesAverage !== undefined) {
+        this.writeCell(worksheet, 'E26', ife.employeesAverage);
+      }
+
+      // Representante legal
+      if (ife.representativeDocType) {
+        // Mapear tipo de documento al formato SSPD
+        const docTypeMap: Record<string, string> = {
+          '01': '01 - CÉDULA DE CIUDADANÍA',
+          '02': '02 - CÉDULA DE EXTRANJERÍA',
+          '03': '03 - PASAPORTE',
+        };
+        this.writeCell(worksheet, 'E28', docTypeMap[ife.representativeDocType] || ife.representativeDocType);
+      }
+      this.writeCell(worksheet, 'E29', ife.representativeDocNumber || '');
+      this.writeCell(worksheet, 'E30', ife.representativeFirstName || '');
+      this.writeCell(worksheet, 'E31', ife.representativeLastName || '');
+
+      // Marco normativo
+      if (ife.normativeGroup) {
+        // Mapear grupo al formato SSPD
+        const groupMap: Record<string, string> = {
+          'R414': 'R. 414',
+          'NIIF1': 'Grupo 1 - NIIF Plenas',
+          'NIIF2': 'Grupo 2 - NIIF PYMES',
+          'NIIF3': 'Grupo 3 - Microempresas',
+        };
+        this.writeCell(worksheet, 'E33', groupMap[ife.normativeGroup] || ife.normativeGroup);
+      }
+
+      // Declaración de cumplimiento
+      if (ife.complianceDeclaration !== undefined) {
+        const compliance = ife.complianceDeclaration === 'true' || ife.complianceDeclaration === '1'
+          ? '1. Si cumple'
+          : '2. No cumple';
+        this.writeCell(worksheet, 'E34', compliance);
+      }
+
+      // Negocio en marcha
+      this.writeCell(worksheet, 'E35', ife.goingConcernUncertainty || 'NA');
+      this.writeCell(worksheet, 'E36', ife.goingConcernExplanation || 'NA');
+
+      // Continuidad de servicios
+      this.writeCell(worksheet, 'E38', ife.servicesContinuityUncertainty || 'NA');
+      this.writeCell(worksheet, 'E39', ife.servicesTermination || 'No');
+      this.writeCell(worksheet, 'E40', ife.servicesTerminationDetail || 'NA');
+    }
   }
 
   /**

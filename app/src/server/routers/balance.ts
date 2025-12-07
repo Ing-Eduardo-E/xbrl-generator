@@ -33,10 +33,27 @@ export const balanceRouter = router({
         fileName: z.string(),
         fileData: z.string(), // Base64 encoded
         niifGroup: z.enum(['grupo1', 'grupo2', 'grupo3', 'r414', 'ife']),
+        // Campos específicos para IFE (trimestral)
+        ifeYear: z.string().optional(), // Año del reporte IFE (2020-2025)
+        ifeTrimestre: z.enum(['1T', '2T', '3T', '4T']).optional(), // Trimestre
       })
     )
     .mutation(async ({ input }) => {
       try {
+        // Validar campos IFE si es taxonomía IFE
+        if (input.niifGroup === 'ife') {
+          if (!input.ifeYear) {
+            throw new Error('El año es requerido para reportes IFE');
+          }
+          if (!input.ifeTrimestre) {
+            throw new Error('El trimestre es requerido para reportes IFE');
+          }
+          // Validar que 2020 solo permite 2T, 3T, 4T
+          if (input.ifeYear === '2020' && input.ifeTrimestre === '1T') {
+            throw new Error('El IFE comenzó en el 2do trimestre de 2020. El 1T no está disponible para 2020.');
+          }
+        }
+
         // Parse Excel file
         const parsed = await parseExcelFile(input.fileData, input.fileName);
 
@@ -59,12 +76,19 @@ export const balanceRouter = router({
           );
         }
 
+        // Preparar metadatos IFE si aplica
+        const ifeMetadata = input.niifGroup === 'ife' ? JSON.stringify({
+          year: input.ifeYear,
+          trimestre: input.ifeTrimestre,
+        }) : null;
+
         // Create session record
         await db.insert(balanceSessions).values({
           fileName: input.fileName,
           niifGroup: input.niifGroup,
           accountsCount: parsed.accounts.length,
           status: 'uploaded',
+          ifeMetadata, // Guardar año y trimestre para IFE
         });
 
         return {
@@ -447,6 +471,34 @@ export const balanceRouter = router({
           alcantarillado: z.number(),
           aseo: z.number(),
         }).optional(),
+        // ============================================
+        // CAMPOS ESPECÍFICOS PARA IFE
+        // ============================================
+        ifeData: z.object({
+          // Dirección y contacto
+          address: z.string().optional(),
+          city: z.string().optional(),
+          phone: z.string().optional(),
+          cellphone: z.string().optional(),
+          email: z.string().optional(),
+          // Empleados
+          employeesStart: z.number().optional(),
+          employeesEnd: z.number().optional(),
+          employeesAverage: z.number().optional(),
+          // Representante legal
+          representativeDocType: z.string().optional(),
+          representativeDocNumber: z.string().optional(),
+          representativeFirstName: z.string().optional(),
+          representativeLastName: z.string().optional(),
+          // Marco normativo y continuidad
+          normativeGroup: z.string().optional(),
+          complianceDeclaration: z.string().optional(),
+          goingConcernUncertainty: z.string().optional(),
+          goingConcernExplanation: z.string().optional(),
+          servicesContinuityUncertainty: z.string().optional(),
+          servicesTermination: z.string().optional(),
+          servicesTerminationDetail: z.string().optional(),
+        }).optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -529,6 +581,8 @@ export const balanceRouter = router({
           activeServices: activeServices.length > 0 ? activeServices : undefined,
           usuariosEstrato,
           subsidios,
+          // Datos específicos de IFE
+          ifeData: input.ifeData,
         });
 
         return {

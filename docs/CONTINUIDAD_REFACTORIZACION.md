@@ -2,8 +2,8 @@
 
 **Fecha de Creacion**: 2025-12-05
 **Ultima Actualizacion**: 2025-12-06
-**Branch**: `focused-dubinsky`
-**Estado**: ✅ R414 COMPLETADA | ✅ IFE IMPLEMENTADA (pendiente pruebas)
+**Branch**: `desarrollo`
+**Estado**: ✅ R414 COMPLETADA | 🔄 IFE EN PROGRESO (wizard completo con 4 pasos, pendiente pruebas funcionales)
 
 ---
 
@@ -12,7 +12,7 @@
 La refactorizacion de taxonomias esta avanzando con exito:
 
 - **R414**: Completada y validada en produccion
-- **IFE**: Estructura creada, pendiente pruebas funcionales
+- **IFE**: Estructura backend creada, wizard frontend actualizado, pendiente pruebas funcionales
 
 El archivo `officialTemplateService.ts` ahora es un dispatcher que delega a los servicios especificos de cada taxonomia.
 
@@ -85,6 +85,38 @@ El archivo `officialTemplateService.ts` ahora es un dispatcher que delega a los 
 - [x] Actualizar hasOfficialTemplates() y getAvailableTemplateGroups()
 - [x] TypeScript compila sin errores
 
+#### Wizard Frontend para IFE
+- [x] **page.tsx**: Estado `niifGroup` para pasar entre pasos del wizard
+- [x] **page.tsx**: Estado `ifeCompanyData` para datos de empresa IFE
+- [x] **page.tsx**: Wizard dinámico con 4 pasos para IFE (upload, distribute, company-info, generate)
+- [x] **UploadStep.tsx**: Selector de año IFE (2020-2025)
+- [x] **UploadStep.tsx**: Selector de trimestre filtrado por año (2020 solo 2T-4T)
+- [x] **UploadStep.tsx**: Notas informativas para IFE
+- [x] **UploadStep.tsx**: `onSuccess` ahora pasa `niifGroup` al siguiente paso
+- [x] **DistributeStep.tsx**: Recibe prop `niifGroup`
+- [x] **DistributeStep.tsx**: Oculta formulario usuarios por estrato para IFE
+- [x] **DistributeStep.tsx**: Oculta formulario subsidios para IFE
+- [x] **DistributeStep.tsx**: Muestra nota informativa explicando diferencias IFE
+- [x] Validacion ajustada: IFE no requiere usuarios por estrato
+
+#### Formulario de Informacion de Empresa IFE (NUEVO)
+- [x] **IFECompanyInfoForm.tsx**: Componente completo para información de empresa
+- [x] Información básica: NIT, RUPS, nombre, dirección, ciudad, teléfono, email
+- [x] Información de empleados: inicio, fin y promedio del periodo
+- [x] Representante legal: tipo documento, número, nombres, apellidos
+- [x] Marco normativo: grupo normativo, declaración de cumplimiento
+- [x] Continuidad: incertidumbre negocio en marcha, finalización de servicios
+- [x] Ajustes: ajustes a trimestres anteriores con explicación
+- [x] Validación de campos requeridos y condicionales
+- [x] Cálculo automático de promedio de empleados
+
+#### WizardLayout Dinámico
+- [x] **WizardLayout.tsx**: Acepta `steps` como prop opcional
+- [x] **WizardLayout.tsx**: Export de `ifeSteps` para wizard de 4 pasos
+- [x] **WizardLayout.tsx**: `WizardStep` type incluye 'company-info'
+- [x] **GenerateStep.tsx**: Acepta `ifeCompanyData` opcional
+- [x] **GenerateStep.tsx**: Pre-llena formulario con datos de IFE si disponibles
+
 #### Pendiente: Pruebas Funcionales IFE
 - [ ] Subir balance de prueba IFE en la aplicacion
 - [ ] Verificar que se genera el ZIP correctamente
@@ -94,6 +126,27 @@ El archivo `officialTemplateService.ts` ahora es un dispatcher que delega a los 
 ---
 
 ## Pendiente
+
+### IFE - Tareas Pendientes
+
+#### Backend / Router
+- [x] Actualizar router `balance.ts` para manejar opciones especificas de IFE (año, trimestre)
+- [x] Agregar campo `ifeMetadata` en schema `balanceSessions`
+- [x] Validacion de año/trimestre en backend (2020 solo 2T-4T)
+- [x] `UploadStep.tsx` envia año/trimestre al backend
+- [ ] Agregar campos adicionales de informacion de empresa para IFE (futuro)
+- [ ] Ajustar `downloadOfficialTemplates` para pasar año/trimestre a IFETemplateService
+
+#### Plantilla Oficial IFE
+- [x] Verificar que existe plantilla en `public/templates/ife/`
+- [x] Archivos: `.xbrl`, `.xbrlt`, `.xlsx`, `.xml` presentes
+- [x] Configuracion en `ife/config.ts` con mapeo de hojas
+- [x] Columnas de servicios configuradas (8 servicios: Acueducto, Alcantarillado, Aseo, Energia, Gas, GLP, XMM, Otras)
+
+#### Pruebas
+- [ ] Probar flujo completo: Upload → Distribute → Generate para IFE
+- [ ] Validar ZIP generado en XBRL Express
+- [ ] Comparar con plantilla esperada
 
 ### Otras Taxonomias (Futuro)
 
@@ -173,6 +226,10 @@ cd app && pnpm dev
 | CxC | Por estrato | Por vencimiento |
 | Servicios | 3 (Acueducto, Alcantarillado, Aseo) | 8 (incluye Energia, Gas, GLP, XMM) |
 | Complejidad | Alta | Media |
+| Usuarios por estrato | SI requiere | NO requiere |
+| Subsidios | SI requiere | NO requiere |
+| Informacion empresa | Basica | Extendida |
+| Disponible desde | 2017 | 2T 2020 |
 
 ### Dependencia Circular Resuelta
 
@@ -181,3 +238,30 @@ El archivo config.ts en cada modulo (r414/, ife/) fue creado para romper depende
 ### Conversion de Tipos
 
 El dispatcher en officialTemplateService.ts convierte los tipos del router al formato esperado por cada TemplateService mediante funciones convertToR414Options() y convertToIFEOptions().
+
+### Flujo del Wizard por Taxonomia
+
+```
+TAXONOMIAS ANUALES (R414, Grupo1, Grupo2, Grupo3) - 3 pasos:
+1. Upload → [Seleccionar grupo NIIF + archivo]
+2. Distribute → [Usuarios estrato + Subsidios + Porcentajes]
+3. Generate → [Datos empresa + Descargar XBRL]
+
+TAXONOMIA TRIMESTRAL (IFE) - 4 pasos:
+1. Upload → [Seleccionar IFE + Año + Trimestre + archivo]
+2. Distribute → [Solo porcentajes de distribución]
+3. Company-Info → [Info empresa extendida: empleados, representante, marco normativo]
+4. Generate → [Descargar XBRL con datos pre-llenados]
+```
+
+### Archivos Frontend Modificados para IFE
+
+| Archivo | Cambios |
+|---------|---------|
+| `page.tsx` | Estado `niifGroup` y `ifeCompanyData`, wizard dinámico 4 pasos |
+| `WizardLayout.tsx` | Props dinámicas `steps`, export `ifeSteps`, type `company-info` |
+| `UploadStep.tsx` | Selectores año/trimestre, filtro 2020 |
+| `DistributeStep.tsx` | Prop `niifGroup`, condicionales `isIFE` |
+| `GenerateStep.tsx` | Prop `ifeCompanyData`, pre-llenado de formulario |
+| `IFECompanyInfoForm.tsx` | **NUEVO** - Formulario completo de info empresa IFE |
+| `ui/textarea.tsx` | **NUEVO** - Componente shadcn/ui para áreas de texto |

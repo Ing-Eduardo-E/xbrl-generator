@@ -3,30 +3,40 @@
 import { cn } from '@/lib/utils';
 import { CheckCircle2, Circle } from 'lucide-react';
 
-export type WizardStep = 'upload' | 'distribute' | 'generate';
+export type WizardStep = 'upload' | 'distribute' | 'company-info' | 'generate';
+
+export interface StepConfig {
+  id: WizardStep;
+  number: number;
+  title: string;
+  subtitle: string;
+  description: string;
+}
 
 interface WizardLayoutProps {
   currentStep: WizardStep;
   children: React.ReactNode;
+  steps?: StepConfig[];
 }
 
-const steps = [
+// Pasos por defecto (taxonomías anuales: R414, Grupo1, Grupo2, Grupo3)
+const defaultSteps: StepConfig[] = [
   {
-    id: 'upload' as WizardStep,
+    id: 'upload',
     number: 1,
     title: 'Cargar',
     subtitle: 'Balance General',
     description: 'Sube el archivo Excel',
   },
   {
-    id: 'distribute' as WizardStep,
+    id: 'distribute',
     number: 2,
     title: 'Distribuir',
     subtitle: 'Por Servicio',
     description: 'Define porcentajes',
   },
   {
-    id: 'generate' as WizardStep,
+    id: 'generate',
     number: 3,
     title: 'Generar',
     subtitle: 'XBRL',
@@ -34,7 +44,39 @@ const steps = [
   },
 ];
 
-export function WizardLayout({ currentStep, children }: WizardLayoutProps) {
+// Pasos para IFE (incluye información de empresa)
+export const ifeSteps: StepConfig[] = [
+  {
+    id: 'upload',
+    number: 1,
+    title: 'Cargar',
+    subtitle: 'Balance Trimestral',
+    description: 'Sube el archivo Excel',
+  },
+  {
+    id: 'distribute',
+    number: 2,
+    title: 'Distribuir',
+    subtitle: 'Por Servicio',
+    description: 'Define porcentajes',
+  },
+  {
+    id: 'company-info',
+    number: 3,
+    title: 'Empresa',
+    subtitle: 'Info Adicional',
+    description: 'Datos de la entidad',
+  },
+  {
+    id: 'generate',
+    number: 4,
+    title: 'Generar',
+    subtitle: 'IFE XBRL',
+    description: 'Descarga archivos',
+  },
+];
+
+export function WizardLayout({ currentStep, children, steps = defaultSteps }: WizardLayoutProps) {
   const currentStepIndex = steps.findIndex((s) => s.id === currentStep);
 
   return (

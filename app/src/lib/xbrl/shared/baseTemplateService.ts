@@ -282,15 +282,55 @@ export abstract class BaseTemplateService implements TaxonomyProcessor {
 
   /**
    * Escribe un valor en una celda de Excel.
+   * Maneja casos especiales como fórmulas compartidas (shared formulas).
+   * 
+   * NOTA: ExcelJS tiene problemas con "shared formulas" (fórmulas creadas
+   * arrastrando en Excel). Si una celda tiene una fórmula compartida y se
+   * intenta modificar, puede causar el error:
+   * "Shared Formula master must exist above and or left of clone"
+   * 
+   * Para evitar esto, limpiamos completamente el valor de la celda antes
+   * de escribir, lo que elimina cualquier referencia a fórmulas compartidas.
    */
   protected writeCell(
     worksheet: ExcelJS.Worksheet,
     cell: string,
     value: number | string | null
   ): void {
-    const excelCell = worksheet.getCell(cell);
-    if (value !== null && value !== undefined) {
-      excelCell.value = value;
+    try {
+      const excelCell = worksheet.getCell(cell);
+      
+      // Limpiar completamente la celda para eliminar cualquier fórmula compartida
+      // Esto evita el error "Shared Formula master must exist..."
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cellModel = excelCell as any;
+      if (cellModel.model) {
+        // Eliminar referencias a fórmulas compartidas
+        delete cellModel.model.sharedFormula;
+        delete cellModel.model.formula;
+      }
+      
+      // Primero asignar null para limpiar cualquier valor/fórmula anterior
+      excelCell.value = null;
+      
+      // Luego asignar el nuevo valor
+      if (value !== null && value !== undefined) {
+        excelCell.value = value;
+      }
+    } catch (error) {
+      // Si falla la escritura, intentar un enfoque más agresivo
+      console.warn(`Warning: Could not write to cell ${cell}:`, error);
+      try {
+        const excelCell = worksheet.getCell(cell);
+        // Forzar el valor directamente
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (excelCell as any)._value = { 
+          model: { value: value ?? null, type: typeof value === 'number' ? 2 : 3 } 
+        };
+      } catch {
+        // Silenciar error si la celda no se puede escribir
+        console.error(`Failed to write to cell ${cell}`);
+      }
     }
   }
 

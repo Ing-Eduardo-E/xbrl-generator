@@ -20,22 +20,60 @@ import { toast } from 'sonner';
 type NIIFGroup = 'grupo1' | 'grupo2' | 'grupo3' | 'r414' | 'ife';
 type IFETrimestre = '1T' | '2T' | '3T' | '4T';
 
+// Años disponibles para IFE (desde 2T 2020)
+const IFE_YEARS = ['2020', '2021', '2022', '2023', '2024', '2025'];
+
+// Obtener trimestres disponibles según el año
+function getAvailableTrimestres(year: string): IFETrimestre[] {
+  if (year === '2020') {
+    // IFE comenzó en 2T 2020
+    return ['2T', '3T', '4T'];
+  }
+  return ['1T', '2T', '3T', '4T'];
+}
+
 interface UploadStepProps {
-  onSuccess: () => void;
+  onSuccess: (niifGroup: NIIFGroup, ifeMetadata?: { year: string; trimestre: IFETrimestre }) => void;
+}
+
+// Función para calcular la fecha de reporte según año y trimestre
+function calculateReportDate(year: string, trimestre: IFETrimestre): string {
+  const lastDayOfQuarter: Record<IFETrimestre, string> = {
+    '1T': `${year}-03-31`,
+    '2T': `${year}-06-30`,
+    '3T': `${year}-09-30`,
+    '4T': `${year}-12-31`,
+  };
+  return lastDayOfQuarter[trimestre];
 }
 
 export function UploadStep({ onSuccess }: UploadStepProps) {
   const [file, setFile] = useState<File | null>(null);
   const [niifGroup, setNiifGroup] = useState<NIIFGroup>('grupo1');
+  const [ifeYear, setIfeYear] = useState<string>('2025');
   const [ifeTrimestre, setIfeTrimestre] = useState<IFETrimestre>('2T');
   const [isDragging, setIsDragging] = useState(false);
+
+  // Ajustar trimestre si el año cambia y el trimestre no está disponible
+  const handleYearChange = (year: string) => {
+    setIfeYear(year);
+    const availableTrimestres = getAvailableTrimestres(year);
+    if (!availableTrimestres.includes(ifeTrimestre)) {
+      setIfeTrimestre(availableTrimestres[0]);
+    }
+  };
 
   const uploadMutation = trpc.balance.uploadBalance.useMutation({
     onSuccess: (data) => {
       toast.success('Balance cargado exitosamente', {
         description: `Archivo: ${data.fileName}`,
       });
-      onSuccess();
+      // Pasar metadata IFE si aplica
+      if (niifGroup === 'ife') {
+        onSuccess(niifGroup, { year: ifeYear, trimestre: ifeTrimestre });
+      } else {
+        onSuccess(niifGroup);
+      }
     },
     onError: (error) => {
       toast.error('Error al cargar el balance', {
@@ -109,6 +147,11 @@ export function UploadStep({ onSuccess }: UploadStepProps) {
         fileName: file.name,
         fileData,
         niifGroup,
+        // Incluir año y trimestre solo para IFE
+        ...(niifGroup === 'ife' && {
+          ifeYear,
+          ifeTrimestre,
+        }),
       });
     };
     reader.readAsDataURL(file);
@@ -162,24 +205,48 @@ export function UploadStep({ onSuccess }: UploadStepProps) {
         </p>
       </div>
 
-      {/* IFE Trimestre Selection - solo visible cuando se selecciona IFE */}
+      {/* IFE Year and Trimestre Selection - solo visible cuando se selecciona IFE */}
       {niifGroup === 'ife' && (
-        <div className="space-y-3">
-          <Label htmlFor="ife-trimestre" className="text-base font-medium flex items-center gap-2">
-            <CalendarDays className="w-4 h-4" />
-            Trimestre a reportar
-          </Label>
-          <Select value={ifeTrimestre} onValueChange={(v) => setIfeTrimestre(v as IFETrimestre)}>
-            <SelectTrigger id="ife-trimestre" className="w-full max-w-md">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1T">1er Trimestre (Enero - Marzo)</SelectItem>
-              <SelectItem value="2T">2do Trimestre (Abril - Junio)</SelectItem>
-              <SelectItem value="3T">3er Trimestre (Julio - Septiembre)</SelectItem>
-              <SelectItem value="4T">4to Trimestre (Octubre - Diciembre)</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="space-y-4">
+          {/* Selector de Año */}
+          <div className="space-y-2">
+            <Label htmlFor="ife-year" className="text-base font-medium flex items-center gap-2">
+              <CalendarDays className="w-4 h-4" />
+              Año del reporte
+            </Label>
+            <Select value={ifeYear} onValueChange={handleYearChange}>
+              <SelectTrigger id="ife-year" className="w-full max-w-md">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {IFE_YEARS.map((year) => (
+                  <SelectItem key={year} value={year}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Selector de Trimestre */}
+          <div className="space-y-2">
+            <Label htmlFor="ife-trimestre" className="text-base font-medium">
+              Trimestre a reportar
+            </Label>
+            <Select value={ifeTrimestre} onValueChange={(v) => setIfeTrimestre(v as IFETrimestre)}>
+              <SelectTrigger id="ife-trimestre" className="w-full max-w-md">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {getAvailableTrimestres(ifeYear).map((trimestre) => (
+                  <SelectItem key={trimestre} value={trimestre}>
+                    {trimestre === '1T' && '1er Trimestre (Enero - Marzo)'}
+                    {trimestre === '2T' && '2do Trimestre (Abril - Junio)'}
+                    {trimestre === '3T' && '3er Trimestre (Julio - Septiembre)'}
+                    {trimestre === '4T' && '4to Trimestre (Octubre - Diciembre)'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
             <p className="text-sm text-amber-800 dark:text-amber-200">
               <strong>Nota:</strong> El IFE usa el mismo balance consolidado pero con estructura diferente.

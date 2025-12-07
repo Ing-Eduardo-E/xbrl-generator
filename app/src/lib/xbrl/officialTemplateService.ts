@@ -66,6 +66,35 @@ export interface TemplateCustomization {
 }
 
 /**
+ * Datos específicos para IFE (Informe Financiero Especial)
+ */
+export interface IFESpecificData {
+  // Dirección y contacto
+  address?: string;
+  city?: string;
+  phone?: string;
+  cellphone?: string;
+  email?: string;
+  // Empleados
+  employeesStart?: number;
+  employeesEnd?: number;
+  employeesAverage?: number;
+  // Representante legal
+  representativeDocType?: string;
+  representativeDocNumber?: string;
+  representativeFirstName?: string;
+  representativeLastName?: string;
+  // Marco normativo y continuidad
+  normativeGroup?: string;
+  complianceDeclaration?: string;
+  goingConcernUncertainty?: string;
+  goingConcernExplanation?: string;
+  servicesContinuityUncertainty?: string;
+  servicesTermination?: string;
+  servicesTerminationDetail?: string;
+}
+
+/**
  * Opciones extendidas con datos financieros
  */
 export interface TemplateWithDataOptions extends TemplateCustomization {
@@ -96,6 +125,8 @@ export interface TemplateWithDataOptions extends TemplateCustomization {
   };
   /** Subsidios recibidos por servicio */
   subsidios?: SubsidiosPorServicio;
+  /** Datos específicos para IFE */
+  ifeData?: IFESpecificData;
 }
 
 // ============================================
@@ -275,6 +306,8 @@ function convertToIFEOptions(options: TemplateWithDataOptions) {
     accounts,
     serviceBalances,
     distribution,
+    // Datos específicos de IFE
+    ifeData: options.ifeData,
   };
 }
 

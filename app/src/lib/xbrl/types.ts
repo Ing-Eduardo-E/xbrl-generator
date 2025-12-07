@@ -151,6 +151,36 @@ export interface TemplateCustomization {
 }
 
 /**
+ * Datos específicos para IFE (Informe Financiero Especial).
+ * Incluye información adicional requerida por la taxonomía IFE.
+ */
+export interface IFESpecificData {
+  // Dirección y contacto
+  address?: string;
+  city?: string;
+  phone?: string;
+  cellphone?: string;
+  email?: string;
+  // Empleados
+  employeesStart?: number;
+  employeesEnd?: number;
+  employeesAverage?: number;
+  // Representante legal
+  representativeDocType?: string;
+  representativeDocNumber?: string;
+  representativeFirstName?: string;
+  representativeLastName?: string;
+  // Marco normativo y continuidad
+  normativeGroup?: string;
+  complianceDeclaration?: string;
+  goingConcernUncertainty?: string;
+  goingConcernExplanation?: string;
+  servicesContinuityUncertainty?: string;
+  servicesTermination?: string;
+  servicesTerminationDetail?: string;
+}
+
+/**
  * Opciones extendidas con datos financieros para llenar plantillas.
  */
 export interface TemplateWithDataOptions extends TemplateCustomization {
@@ -164,6 +194,8 @@ export interface TemplateWithDataOptions extends TemplateCustomization {
   usuariosEstrato?: Record<string, UsuariosEstrato>;
   /** Subsidios por servicio (opcional) */
   subsidios?: SubsidiosPorServicio;
+  /** Datos específicos para IFE (opcional) */
+  ifeData?: IFESpecificData;
 }
 
 /**

@@ -36,11 +36,12 @@ export const serviceBalances = pgTable('service_balances', {
 export const balanceSessions = pgTable('balance_sessions', {
   id: serial('id').primaryKey(),
   fileName: text('file_name').notNull(),
-  niifGroup: text('niif_group').notNull(), // grupo1, grupo2, grupo3, r414
+  niifGroup: text('niif_group').notNull(), // grupo1, grupo2, grupo3, r414, ife
   accountsCount: integer('accounts_count').notNull(),
   distribution: text('distribution'), // JSON con porcentajes
   usuariosEstrato: text('usuarios_estrato'), // JSON con usuarios por estrato y servicio
   subsidios: text('subsidios'), // JSON con subsidios por servicio
+  ifeMetadata: text('ife_metadata'), // JSON con año y trimestre para IFE
   status: text('status').notNull().default('pending'), // pending, distributed, completed
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),

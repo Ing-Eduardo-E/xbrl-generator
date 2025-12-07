@@ -12,12 +12,15 @@ import { cn, formatCurrency, validateDistribution } from '@/lib/utils';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 
+type NIIFGroup = 'grupo1' | 'grupo2' | 'grupo3' | 'r414' | 'ife';
+
 interface DistributeStepProps {
   onSuccess: () => void;
   onBack: () => void;
+  niifGroup: NIIFGroup;
 }
 
-export function DistributeStep({ onSuccess, onBack }: DistributeStepProps) {
+export function DistributeStep({ onSuccess, onBack, niifGroup }: DistributeStepProps) {
   const [acueducto, setAcueducto] = useState<number>(40);
   const [alcantarillado, setAlcantarillado] = useState<number>(35);
   const [aseo, setAseo] = useState<number>(25);
@@ -45,6 +48,9 @@ export function DistributeStep({ onSuccess, onBack }: DistributeStepProps) {
 
   const validation = validateDistribution(acueducto, alcantarillado, aseo);
 
+  // IFE no requiere usuarios por estrato ni subsidios
+  const isIFE = niifGroup === 'ife';
+
   const handleDistribute = async () => {
     if (!validation.isValid) {
       toast.error('Distribución inválida', {
@@ -53,8 +59,8 @@ export function DistributeStep({ onSuccess, onBack }: DistributeStepProps) {
       return;
     }
 
-    // Validar que usuarios por estrato estén definidos
-    if (!usuariosEstrato) {
+    // Validar que usuarios por estrato estén definidos (solo para taxonomías que lo requieren)
+    if (!isIFE && !usuariosEstrato) {
       toast.error('Debes ingresar el número de usuarios por estrato y servicio.');
       return;
     }
@@ -319,51 +325,73 @@ export function DistributeStep({ onSuccess, onBack }: DistributeStepProps) {
         </div>
       </Card>
 
-      {/* Usuarios por Estrato y Servicio */}
-      <UsuariosEstratoForm
-        initialValue={usuariosEstrato ?? undefined}
-        onSubmit={setUsuariosEstrato}
-      />
+      {/* Usuarios por Estrato y Servicio - Solo para taxonomías que lo requieren (no IFE) */}
+      {!isIFE && (
+        <UsuariosEstratoForm
+          initialValue={usuariosEstrato ?? undefined}
+          onSubmit={setUsuariosEstrato}
+        />
+      )}
 
-      {/* Subsidios por Servicio */}
-      <Card className="p-6 mt-8">
-        <h3 className="text-lg font-semibold mb-4">Subsidios Recibidos por Servicio</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <Label htmlFor="subsidio-acueducto">Acueducto</Label>
-            <Input
-              id="subsidio-acueducto"
-              type="number"
-              min="0"
-              value={subsidioAcueducto}
-              onChange={(e) => setSubsidioAcueducto(Number(e.target.value) || 0)}
-              className="mt-2"
-            />
+      {/* Subsidios por Servicio - Solo para taxonomías que lo requieren (no IFE) */}
+      {!isIFE && (
+        <Card className="p-6 mt-8">
+          <h3 className="text-lg font-semibold mb-4">Subsidios Recibidos por Servicio</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <Label htmlFor="subsidio-acueducto">Acueducto</Label>
+              <Input
+                id="subsidio-acueducto"
+                type="number"
+                min="0"
+                value={subsidioAcueducto}
+                onChange={(e) => setSubsidioAcueducto(Number(e.target.value) || 0)}
+                className="mt-2"
+              />
+            </div>
+            <div>
+              <Label htmlFor="subsidio-alcantarillado">Alcantarillado</Label>
+              <Input
+                id="subsidio-alcantarillado"
+                type="number"
+                min="0"
+                value={subsidioAlcantarillado}
+                onChange={(e) => setSubsidioAlcantarillado(Number(e.target.value) || 0)}
+                className="mt-2"
+              />
+            </div>
+            <div>
+              <Label htmlFor="subsidio-aseo">Aseo</Label>
+              <Input
+                id="subsidio-aseo"
+                type="number"
+                min="0"
+                value={subsidioAseo}
+                onChange={(e) => setSubsidioAseo(Number(e.target.value) || 0)}
+                className="mt-2"
+              />
+            </div>
           </div>
-          <div>
-            <Label htmlFor="subsidio-alcantarillado">Alcantarillado</Label>
-            <Input
-              id="subsidio-alcantarillado"
-              type="number"
-              min="0"
-              value={subsidioAlcantarillado}
-              onChange={(e) => setSubsidioAlcantarillado(Number(e.target.value) || 0)}
-              className="mt-2"
-            />
+        </Card>
+      )}
+
+      {/* Nota informativa para IFE */}
+      {isIFE && (
+        <Card className="p-6 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+          <div className="flex gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <div className="space-y-2 text-sm">
+              <p className="font-medium text-blue-900 dark:text-blue-100">
+                Informe Financiero Especial (IFE) - Trimestral
+              </p>
+              <p className="text-blue-800 dark:text-blue-200">
+                El IFE no requiere usuarios por estrato ni subsidios. Las cuentas por cobrar
+                se distribuirán automáticamente por rangos de vencimiento según la normativa SSPD.
+              </p>
+            </div>
           </div>
-          <div>
-            <Label htmlFor="subsidio-aseo">Aseo</Label>
-            <Input
-              id="subsidio-aseo"
-              type="number"
-              min="0"
-              value={subsidioAseo}
-              onChange={(e) => setSubsidioAseo(Number(e.target.value) || 0)}
-              className="mt-2"
-            />
-          </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       {/* Action Buttons */}
       <div className="flex justify-between pt-4">
