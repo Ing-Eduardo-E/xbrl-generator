@@ -485,67 +485,116 @@ export class IFETemplateService extends BaseTemplateService {
   }
 
   /**
-   * Llena la Hoja7 (Detalle de ingresos y gastos por servicio).
-   * Columnas F-M son servicios individuales, columna N es el total.
+   * Llena la Hoja7 (FC08t - 900050t - Información de ingresos y gastos de la entidad).
+   * 
+   * Los datos se toman de la Hoja4 (Estado de Resultados) con las siguientes fórmulas:
+   * 
+   * Fila 14 (Ingresos actividades ordinarias):
+   *   - Columna F (Acueducto) = Hoja4!E15
+   *   - Columna G (Alcantarillado) = Hoja4!F15
+   *   - Columna H (Aseo) = Hoja4!G15
+   * 
+   * Fila 15 (Todos los demás ingresos):
+   *   - Columna F = Hoja4!E18 + Hoja4!E21
+   *   - Columna G = Hoja4!F18 + Hoja4!F21
+   *   - Columna H = Hoja4!G18 + Hoja4!G21
+   * 
+   * Fila 16: Total ingresos (AUTOSUMA fila 14+15)
+   * 
+   * Fila 18 (Costos y gastos totales):
+   *   - Columna F = Hoja4!E15 + Hoja4!E17 + Hoja4!E19 + Hoja4!E22
+   *   - Columna G = Hoja4!F15 + Hoja4!F17 + Hoja4!F19 + Hoja4!F22
+   *   - Columna H = Hoja4!G15 + Hoja4!G17 + Hoja4!G19 + Hoja4!G22
+   * 
+   * Columna N: Total = SUM(F:M) para cada fila
    */
   fillDetalleIngresosGastosSheet(
     worksheet: ExcelJS.Worksheet,
     serviceBalances: ServiceBalanceData[],
     distribution: Record<string, number>
   ): void {
-    const activeServices = Object.keys(distribution).filter(
-      (s) => distribution[s] > 0
-    );
-
-    // Columnas por servicio en Hoja7
-    const columns: Record<string, string> = {
-      acueducto: 'F',
-      alcantarillado: 'G',
-      aseo: 'H',
-      energia: 'I',
-      gas: 'J',
-      glp: 'K',
-      xmm: 'L',
-      otras: 'M',
-    };
-
-    // Mapeos para Hoja7
-    const mappings = [
-      { row: 14, prefixes: ['41'], description: 'Ingresos actividades ordinarias' },
-      { row: 15, prefixes: ['42'], description: 'Todos los demás ingresos' },
-      // row 16 es total ingresos (autosuma)
-      { row: 18, prefixes: ['5', '6'], description: 'Costos y gastos totales' },
-      { row: 19, prefixes: ['5115', '5120'], description: 'Impuestos, tasas y contribuciones' },
-      { row: 20, prefixes: ['5305'], description: 'Gastos financieros' },
-      { row: 21, prefixes: ['5199'], description: 'Gasto por deterioro' },
-      { row: 22, prefixes: ['5160', '5165'], description: 'Gasto por depreciación' },
-      { row: 23, prefixes: ['5170'], description: 'Gasto por amortización' },
-      { row: 24, prefixes: ['5195'], description: 'Gasto por provisiones' },
+    // Columnas por servicio en Hoja7 (mapeo a columnas de Hoja4)
+    // Hoja7: F=Acueducto, G=Alcantarillado, H=Aseo, I=Energia, J=Gas, K=GLP, L=XM, M=Otras
+    // Hoja4: E=Acueducto, F=Alcantarillado, G=Aseo, H=Energia, I=Gas, J=GLP, K=XM, L=Otras
+    const serviceMapping = [
+      { hoja7Col: 'F', hoja4Col: 'E', service: 'acueducto' },
+      { hoja7Col: 'G', hoja4Col: 'F', service: 'alcantarillado' },
+      { hoja7Col: 'H', hoja4Col: 'G', service: 'aseo' },
+      { hoja7Col: 'I', hoja4Col: 'H', service: 'energia' },
+      { hoja7Col: 'J', hoja4Col: 'I', service: 'gas' },
+      { hoja7Col: 'K', hoja4Col: 'J', service: 'glp' },
+      { hoja7Col: 'L', hoja4Col: 'K', service: 'xmm' },
+      { hoja7Col: 'M', hoja4Col: 'L', service: 'otras' },
     ];
 
-    for (const mapping of mappings) {
-      let rowTotal = 0;
-
-      for (const service of activeServices) {
-        const serviceColumn = columns[service];
-        if (!serviceColumn) continue;
-
-        const value = this.sumServiceAccountsByPrefix(
-          serviceBalances,
-          service,
-          mapping.prefixes,
-          [],
-          true
-        );
-
-        this.writeCell(worksheet, `${serviceColumn}${mapping.row}`, value);
-        rowTotal += value;
+    // Filas de datos en Hoja7
+    const dataRows = [14, 15, 18, 19, 20, 21, 22, 23, 24];
+    
+    // Limpiar celdas de datos (F-M para filas de datos)
+    const serviceCols = ['F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
+    for (const row of dataRows) {
+      for (const col of serviceCols) {
+        this.writeCell(worksheet, `${col}${row}`, 0);
       }
+    }
 
-      // Escribir total en columna N
-      if (rowTotal !== 0) {
-        this.writeCell(worksheet, `N${mapping.row}`, rowTotal);
-      }
+    // Fila 14: Ingresos de actividades ordinarias = Hoja4 fila 15
+    for (const map of serviceMapping) {
+      worksheet.getCell(`${map.hoja7Col}14`).value = { formula: `Hoja4!${map.hoja4Col}15` };
+    }
+
+    // Fila 15: Todos los demás ingresos = Hoja4 fila 18 + fila 21
+    for (const map of serviceMapping) {
+      worksheet.getCell(`${map.hoja7Col}15`).value = { formula: `Hoja4!${map.hoja4Col}18+Hoja4!${map.hoja4Col}21` };
+    }
+
+    // Fila 16: Total ingresos (autosuma fila 14+15)
+    for (const col of serviceCols) {
+      worksheet.getCell(`${col}16`).value = { formula: `${col}14+${col}15` };
+    }
+
+    // Fila 18: Costos y gastos totales = Hoja4 filas 15+17+19+22
+    for (const map of serviceMapping) {
+      worksheet.getCell(`${map.hoja7Col}18`).value = { 
+        formula: `Hoja4!${map.hoja4Col}15+Hoja4!${map.hoja4Col}17+Hoja4!${map.hoja4Col}19+Hoja4!${map.hoja4Col}22` 
+      };
+    }
+
+    // Filas 19-24: Referencias a filas específicas de Hoja4
+    // Fila 19: Impuestos, tasas y contribuciones = Hoja4 fila 23
+    for (const map of serviceMapping) {
+      worksheet.getCell(`${map.hoja7Col}19`).value = { formula: `Hoja4!${map.hoja4Col}23` };
+    }
+
+    // Fila 20: Gastos financieros = Hoja4 fila 24
+    for (const map of serviceMapping) {
+      worksheet.getCell(`${map.hoja7Col}20`).value = { formula: `Hoja4!${map.hoja4Col}24` };
+    }
+
+    // Fila 21: Gasto por deterioro = Hoja4 fila 25
+    for (const map of serviceMapping) {
+      worksheet.getCell(`${map.hoja7Col}21`).value = { formula: `Hoja4!${map.hoja4Col}25` };
+    }
+
+    // Fila 22: Gasto por depreciación = Hoja4 fila 26
+    for (const map of serviceMapping) {
+      worksheet.getCell(`${map.hoja7Col}22`).value = { formula: `Hoja4!${map.hoja4Col}26` };
+    }
+
+    // Fila 23: Gasto por amortización = Hoja4 fila 27
+    for (const map of serviceMapping) {
+      worksheet.getCell(`${map.hoja7Col}23`).value = { formula: `Hoja4!${map.hoja4Col}27` };
+    }
+
+    // Fila 24: Gasto por provisiones = Hoja4 fila 28
+    for (const map of serviceMapping) {
+      worksheet.getCell(`${map.hoja7Col}24`).value = { formula: `Hoja4!${map.hoja4Col}28` };
+    }
+
+    // Columna N: Total = SUM(F:M) para cada fila
+    const allDataRows = [14, 15, 16, 18, 19, 20, 21, 22, 23, 24];
+    for (const row of allDataRows) {
+      worksheet.getCell(`N${row}`).value = { formula: `SUM(F${row}:M${row})` };
     }
   }
 
