@@ -385,24 +385,103 @@ export class IFETemplateService extends BaseTemplateService {
   }
 
   /**
-   * Llena la Hoja6 (CxP por rangos de vencimiento).
+   * Llena la Hoja6 (FC05t - 900028t - Cuentas comerciales por pagar por rangos de vencimiento).
+   * 
+   * Estructura:
+   * - Fila 15: Cuentas comerciales por pagar (cuenta 22)
+   * - Fila 16: Otras cuentas por pagar (cuenta 23, 24, 28)
+   * - Fila 17: Total CxP (AUTOSUMA fila 15+16)
+   * - Fila 18: Obligaciones financieras (cuenta 21)
+   * - Fila 19: Obligaciones laborales (cuenta 25)
+   * - Fila 20: Total general (AUTOSUMA)
+   * 
+   * Columnas:
+   * - D: No vencidas (40%)
+   * - E: Vencidas 1-90 días (50%)
+   * - F: Vencidas 91-180 días (10%)
+   * - G: Vencidas 181-360 días (0%)
+   * - H: Vencidas >360 días (0%)
+   * - I: Total vencidas =SUM(E:H)
+   * - J: Total general =D+I
+   * 
+   * Distribución por defecto: 40% no vencidas, 50% 1-90 días, 10% 91-180 días
    */
   fillCxPSheet(
     worksheet: ExcelJS.Worksheet,
     accounts: AccountData[]
   ): void {
-    // CxP tiene estructura similar a CxC
-    const cxpTotal = this.sumAccountsByPrefix(
-      accounts,
-      ['22', '23'],
-      [],
-      true // Valor absoluto para pasivos
-    );
+    // Rangos de vencimiento con distribución por defecto (igual que CxC)
+    // 40% no vencidas, 50% 1-90 días, 10% 91-180 días
+    const agingRanges = [
+      { column: 'D', percentage: 0.40 }, // No vencidas
+      { column: 'E', percentage: 0.50 }, // 1-90 días
+      { column: 'F', percentage: 0.10 }, // 91-180 días
+      { column: 'G', percentage: 0.00 }, // 181-360 días
+      { column: 'H', percentage: 0.00 }, // >360 días
+    ];
 
-    // Por defecto, todo en "No vencidas"
-    const dataRow = 15;
-    this.writeCell(worksheet, `D${dataRow}`, cxpTotal);
-    this.writeCell(worksheet, `I${dataRow}`, cxpTotal);
+    // Columnas de rangos de vencimiento (D-H)
+    const rangeColumns = ['D', 'E', 'F', 'G', 'H'];
+
+    // Mapeo de filas a cuentas PUC
+    const rowMappings = [
+      { row: 15, prefixes: ['22'], excludes: [], label: 'Cuentas comerciales por pagar' },
+      { row: 16, prefixes: ['23', '24', '28'], excludes: [], label: 'Otras cuentas por pagar' },
+      // Fila 17 es autosuma de 15+16
+      { row: 18, prefixes: ['21'], excludes: [], label: 'Obligaciones financieras' },
+      { row: 19, prefixes: ['25'], excludes: [], label: 'Obligaciones laborales' },
+      // Fila 20 es autosuma total
+    ];
+
+    // Filas de datos (15, 16, 18, 19) - excluyendo autosum rows
+    const dataRows = [15, 16, 18, 19];
+    
+    // Filas de autosuma
+    const autosumaRows = [17, 20];
+
+    // Limpiar todas las celdas de datos (D-H para filas de datos)
+    for (const row of dataRows) {
+      for (const col of rangeColumns) {
+        this.writeCell(worksheet, `${col}${row}`, 0);
+      }
+    }
+
+    // Llenar datos por cada concepto
+    for (const mapping of rowMappings) {
+      // Obtener total de la cuenta (valor absoluto para pasivos)
+      const total = this.sumAccountsByPrefix(
+        accounts,
+        mapping.prefixes,
+        mapping.excludes,
+        true // Valor absoluto para pasivos
+      );
+
+      // Distribuir por rangos de vencimiento
+      for (const range of agingRanges) {
+        const value = Math.round(total * range.percentage);
+        this.writeCell(worksheet, `${range.column}${mapping.row}`, value);
+      }
+
+      // Columna I: Fórmula suma de vencidas (E:H)
+      worksheet.getCell(`I${mapping.row}`).value = { formula: `SUM(E${mapping.row}:H${mapping.row})` };
+      
+      // Columna J: Fórmula total (No vencidas + Total vencidas = D + I)
+      worksheet.getCell(`J${mapping.row}`).value = { formula: `D${mapping.row}+I${mapping.row}` };
+    }
+
+    // Fila 17: Autosuma de filas 15+16 (Total CxP y otras cuentas por pagar)
+    for (const col of rangeColumns) {
+      worksheet.getCell(`${col}17`).value = { formula: `SUM(${col}15:${col}16)` };
+    }
+    worksheet.getCell('I17').value = { formula: 'SUM(E17:H17)' };
+    worksheet.getCell('J17').value = { formula: 'D17+I17' };
+
+    // Fila 20: Autosuma total (filas 17, 18, 19)
+    for (const col of rangeColumns) {
+      worksheet.getCell(`${col}20`).value = { formula: `${col}17+${col}18+${col}19` };
+    }
+    worksheet.getCell('I20').value = { formula: 'SUM(E20:H20)' };
+    worksheet.getCell('J20').value = { formula: 'D20+I20' };
   }
 
   /**
