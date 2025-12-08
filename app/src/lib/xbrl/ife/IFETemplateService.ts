@@ -63,10 +63,11 @@ export class IFETemplateService extends BaseTemplateService {
    * Columnas I-P son servicios individuales, columna Q es el total.
    * 
    * IMPORTANTE: 
-   * - Solo escribimos valores en las columnas de servicios (I-P)
-   * - La columna Q tiene fórmulas de suma en Excel que calculan automáticamente
-   * - Limpiamos las celdas de servicios no activos para evitar valores fantasma
-   * - Limpiamos filas de datos que no están mapeadas para evitar valores fantasma
+   * - El template tiene valores de EJEMPLO hardcodeados que debemos limpiar
+   * - Columnas I-P: servicios individuales - limpiar todas las filas de datos
+   * - Columna Q: tiene VALORES en filas de datos y FÓRMULAS en subtotales
+   * - Debemos limpiar Q en filas de datos, pero NO tocar las filas con fórmulas
+   * - Filas con FÓRMULAS (NO TOCAR): 51, 52, 64, 74, 75, 84, 85
    */
   fillESFSheet(
     worksheet: ExcelJS.Worksheet,
@@ -79,36 +80,51 @@ export class IFETemplateService extends BaseTemplateService {
     );
     const columns = this.getServiceColumns();
     
-    // Todas las columnas de servicios (excluyendo Q que es total)
+    // Todas las columnas de servicios (I-P) + columna total (Q)
     const allServiceColumns = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
     
-    // Filas de DATOS que debemos limpiar (no son autosumas)
-    // Rango: 15-31 (activos corrientes), 34-50 (activos no corrientes),
-    //        56-63 (pasivos corrientes), 66-73 (pasivos no corrientes),
-    //        77-83 (patrimonio)
+    // Filas de DATOS que debemos limpiar (incluye columnas I-P y Q)
+    // NOTA: El template tiene valores hardcodeados del ejemplo original
+    // Las filas 51, 52, 64, 74, 75, 84, 85 tienen FÓRMULAS - NO limpiar Q en esas
     const dataRows = [
-      // Activos corrientes
-      15, 16, 19, 20, 21, 22, 24, 25, 27, 28, 29, 30, 31,
-      // Activos no corrientes
-      34, 35, 36, 37, 40, 41, 42, 43, 45, 46, 48, 49, 50,
-      // Pasivos corrientes
+      // Activos corrientes (filas 15-31)
+      15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+      // Subtotal activos corrientes: fila 32 tiene valor, no fórmula - limpiar
+      32,
+      // Activos no corrientes (filas 34-50)
+      34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+      // Fila 51 tiene FÓRMULA - no incluir
+      // Fila 52 tiene FÓRMULA - no incluir
+      // Pasivos corrientes (filas 56-63)
       56, 57, 58, 59, 60, 61, 62, 63,
-      // Pasivos no corrientes
+      // Fila 64 tiene FÓRMULA - no incluir
+      // Pasivos no corrientes (filas 66-73)
       66, 67, 68, 69, 70, 71, 72, 73,
-      // Patrimonio
-      77, 78, 79, 80, 81, 82, 83
+      // Fila 74 tiene FÓRMULA - no incluir
+      // Fila 75 tiene FÓRMULA - no incluir
+      // Patrimonio (filas 77-83)
+      77, 78, 79, 80, 81, 82, 83,
+      // Fila 84 tiene FÓRMULA - no incluir
+      // Fila 85 tiene FÓRMULA - no incluir
     ];
     
-    // Limpiar TODAS las filas de datos (mapeadas y no mapeadas)
-    // Esto evita que queden valores fantasma de la plantilla original
+    // Limpiar TODAS las columnas de servicios (I-P) en filas de datos
     for (const row of dataRows) {
       for (const col of allServiceColumns) {
         this.writeCell(worksheet, `${col}${row}`, 0);
       }
     }
+    
+    // Limpiar TAMBIÉN columna Q en filas de datos (valores hardcodeados del ejemplo)
+    // Las fórmulas de Excel en filas 51, 52, 64, 74, 75, 84, 85 se preservan
+    for (const row of dataRows) {
+      this.writeCell(worksheet, `Q${row}`, 0);
+    }
 
     // Ahora llenar solo las filas mapeadas con valores reales
     for (const mapping of IFE_ESF_MAPPINGS) {
+      let rowTotal = 0;
+      
       // Escribir valores por servicio activo
       for (const service of activeServices) {
         const serviceColumn = columns[service as keyof ServiceColumnMapping];
@@ -128,10 +144,15 @@ export class IFETemplateService extends BaseTemplateService {
           `${serviceColumn}${mapping.row}`,
           serviceValue
         );
+        
+        // Acumular para el total
+        rowTotal += serviceValue;
       }
       
-      // NO escribir en columna Q - dejar que Excel calcule con sus fórmulas
-      // La plantilla tiene fórmulas =SUMA(I:P) en la columna Q
+      // ESCRIBIR el total en columna Q
+      // El template tiene valores hardcodeados del ejemplo, no fórmulas de suma
+      // Debemos escribir el total calculado para que los subtotales funcionen
+      this.writeCell(worksheet, `Q${mapping.row}`, rowTotal);
     }
   }
 
@@ -139,7 +160,11 @@ export class IFETemplateService extends BaseTemplateService {
    * Llena la Hoja4 (ER - Estado de Resultados por servicios).
    * Columnas E-L son servicios individuales, columna M es el total.
    * 
-   * IMPORTANTE: No escribimos en columna M - Excel calcula con fórmulas
+   * IMPORTANTE: 
+   * - El template tiene valores de EJEMPLO hardcodeados que debemos limpiar
+   * - Columnas E-L: servicios individuales
+   * - Columna M: tiene VALORES hardcodeados del ejemplo, no fórmulas
+   * - Debemos escribir el total calculado en M para cada fila de datos
    */
   fillERSheet(
     worksheet: ExcelJS.Worksheet,
@@ -155,17 +180,24 @@ export class IFETemplateService extends BaseTemplateService {
     // Columnas de servicios en ER (excluyendo M que es total)
     const allERServiceColumns = ['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
     
-    // Filas de datos en ER (no autosumas)
-    const erDataRows = [14, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28];
+    // Filas de datos en ER - incluir todas las filas con valores del ejemplo
+    const erDataRows = [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28];
     
-    // Limpiar todas las filas de datos
+    // Limpiar todas las filas de datos (columnas de servicios)
     for (const row of erDataRows) {
       for (const col of allERServiceColumns) {
         this.writeCell(worksheet, `${col}${row}`, 0);
       }
     }
+    
+    // Limpiar TAMBIÉN columna M en filas de datos (valores hardcodeados del ejemplo)
+    for (const row of erDataRows) {
+      this.writeCell(worksheet, `M${row}`, 0);
+    }
 
     for (const mapping of IFE_ER_MAPPINGS) {
+      let rowTotal = 0;
+      
       // Escribir valores por servicio
       for (const service of activeServices) {
         const serviceColumn = erColumns[service as keyof ServiceColumnMapping];
@@ -185,9 +217,14 @@ export class IFETemplateService extends BaseTemplateService {
           `${serviceColumn}${mapping.row}`,
           serviceValue
         );
+        
+        // Acumular para el total
+        rowTotal += serviceValue;
       }
       
-      // NO escribir en columna M - dejar que Excel calcule con sus fórmulas
+      // ESCRIBIR el total en columna M
+      // El template tiene valores hardcodeados del ejemplo, no fórmulas
+      this.writeCell(worksheet, `M${mapping.row}`, rowTotal);
     }
   }
 
