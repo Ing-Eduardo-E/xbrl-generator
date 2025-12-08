@@ -89,22 +89,19 @@ export class IFETemplateService extends BaseTemplateService {
           mapping.useAbsoluteValue
         );
 
-        if (serviceValue !== 0) {
-          this.writeCell(
-            worksheet,
-            `${serviceColumn}${mapping.row}`,
-            serviceValue
-          );
-        }
+        // SIEMPRE escribir el valor, incluso si es 0 (consistente con R414)
+        this.writeCell(
+          worksheet,
+          `${serviceColumn}${mapping.row}`,
+          serviceValue
+        );
 
         // Acumular para el total
         rowTotal += serviceValue;
       }
 
-      // Escribir total en columna Q
-      if (rowTotal !== 0) {
-        this.writeCell(worksheet, `Q${mapping.row}`, rowTotal);
-      }
+      // SIEMPRE escribir total en columna Q (consistente con R414)
+      this.writeCell(worksheet, `Q${mapping.row}`, rowTotal);
     }
   }
 

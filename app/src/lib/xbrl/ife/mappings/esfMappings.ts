@@ -11,36 +11,33 @@
  * FILAS DE AUTOSUMA (NO MAPEAR - Excel calcula automáticamente):
  * 12, 13, 14, 17, 18, 23, 26, 32, 33, 38, 39, 44, 47, 51, 52, 53, 54, 55, 64, 65, 74, 75, 76, 84, 85
  *
- * PUC Colombiano - Estructura de Clases:
+ * ============================================================================
+ * IMPORTANTE: Este mapeo usa códigos PUC según Resolución 414 CGN
+ * para empresas de servicios públicos domiciliarios.
+ * 
+ * Estructura PUC CGN Resolución 414:
  * - Clase 1: ACTIVO
- *   - 11: Disponible (Efectivo)
- *   - 12: Inversiones
- *   - 13: Deudores (CxC)
- *   - 14: Inventarios
- *   - 15: Propiedades, Planta y Equipo
- *   - 16: Intangibles
- *   - 17: Diferidos
- *   - 18: Otros Activos
- *   - 19: Valorizaciones
+ *   - 11: Efectivo y equivalentes al efectivo
+ *   - 12: Inversiones e instrumentos derivados
+ *   - 13: Cuentas por cobrar
+ *   - 14: Préstamos por cobrar
+ *   - 15: Inventarios
+ *   - 16: Propiedades, planta y equipo (NETO)
+ *   - 17: Bienes de uso público e históricos y culturales
+ *   - 18: Recursos naturales no renovables
+ *   - 19: Otros activos
  * - Clase 2: PASIVO
- *   - 21: Obligaciones Financieras
- *   - 22: Proveedores
- *   - 23: Cuentas por Pagar
- *   - 24: Impuestos
- *   - 25: Obligaciones Laborales
- *   - 26: Provisiones (Pasivo)
- *   - 27: Diferidos (Pasivo)
- *   - 28: Otros Pasivos
- *   - 29: Bonos y papeles comerciales
+ *   - 21: Emisión y colocación de títulos de deuda
+ *   - 22: Préstamos por pagar
+ *   - 23: Cuentas por pagar
+ *   - 24: Beneficios a empleados
+ *   - 25: Provisiones
+ *   - 26: Otros pasivos
+ *   - 27: Pasivos por impuestos
  * - Clase 3: PATRIMONIO
- *   - 31: Capital Social
- *   - 32: Superávit de Capital
- *   - 33: Reservas
- *   - 34: Revalorización del Patrimonio
- *   - 35: Dividendos
- *   - 36: Resultados del Ejercicio
- *   - 37: Resultados de Ejercicios Anteriores
- *   - 38: Superávit por Valorizaciones
+ *   - 31: Patrimonio de las empresas
+ *   - 32: Resultados
+ * ============================================================================
  *
  * @module ife/mappings/esfMappings
  */
@@ -68,18 +65,18 @@ export const IFE_ESF_SERVICE_COLUMNS: ServiceColumnMapping = {
 // =====================================================
 export const IFE_ESF_ACTIVOS_CORRIENTES: ESFMapping[] = [
   // Fila 15: Efectivo y equivalentes al efectivo
-  // PUC 11 - Disponible (excepto restringido 1195)
+  // CGN 11 - Efectivo y equivalentes (excepto restringido 1132)
   {
     row: 15,
     pucPrefixes: ['11'],
-    excludePrefixes: ['1195'],
+    excludePrefixes: ['1132'],
     description: 'Efectivo y equivalentes al efectivo',
   },
   // Fila 16: Efectivo de uso restringido corrientes
-  // PUC 1195 - Efectivo restringido
+  // CGN 1132 - Efectivo de uso restringido
   {
     row: 16,
-    pucPrefixes: ['1195'],
+    pucPrefixes: ['1132'],
     description: 'Efectivo de uso restringido corrientes',
   },
 
@@ -88,86 +85,89 @@ export const IFE_ESF_ACTIVOS_CORRIENTES: ESFMapping[] = [
   // Fila 18: AUTOSUMA - CxC prestación servicios públicos corrientes [Resumen]
   
   // Fila 19: CxC servicios públicos (sin subsidios ni aprovechamiento)
-  // PUC 1305 - Clientes de servicios públicos
+  // CGN 1318 - Prestación de servicios (131801-131806 son los servicios)
   {
     row: 19,
-    pucPrefixes: ['1305'],
+    pucPrefixes: ['131801', '131802', '131803', '131804', '131805', '131806'],
     description: 'CxC servicios públicos corrientes (sin subsidios)',
   },
 
   // Fila 20: CxC por subsidios corrientes
-  // Subcuenta específica 130505xx para subsidios - normalmente vacío
-  // No mapear por defecto
+  // CGN 131807-131812 - Subsidios por tipo de servicio
+  {
+    row: 20,
+    pucPrefixes: ['131807', '131808', '131809', '131810', '131811', '131812'],
+    description: 'CxC por subsidios corrientes',
+  },
 
   // Fila 21: CxC al Ministerio de Minas por subsidios
   // Subcuenta específica - normalmente vacío
   // No mapear por defecto
 
   // Fila 22: CxC por aprovechamiento corrientes
-  // Subcuenta específica - normalmente vacío
-  // No mapear por defecto
+  // CGN 138424 - Aprovechamiento (reciclaje)
+  {
+    row: 22,
+    pucPrefixes: ['138424'],
+    description: 'CxC por aprovechamiento corrientes',
+  },
 
   // Fila 23: AUTOSUMA - Total CxC servicios públicos corrientes
 
   // Fila 24: CxC por venta de bienes corrientes
-  // PUC 1310 - Cuentas corrientes comerciales (venta bienes)
+  // CGN 1316 - Venta de bienes
   {
     row: 24,
-    pucPrefixes: ['1310'],
+    pucPrefixes: ['1316'],
     description: 'CxC por venta de bienes corrientes',
   },
 
   // Fila 25: Otras cuentas por cobrar corrientes
-  // PUC 13XX (excepto 1305, 1310 y provisiones 1399)
+  // CGN: 1311, 1317, 1319, 1322, 1324, 1333, 1384, 1385, 1387
+  // Excluir: cuentas ya mapeadas arriba y deterioro (1386, 1388)
   {
     row: 25,
-    pucPrefixes: ['13'],
-    excludePrefixes: ['1305', '1310', '1399'],
+    pucPrefixes: ['1311', '1317', '1319', '1322', '1324', '1333', '1384', '1385', '1387'],
+    excludePrefixes: ['138401', '138414', '138424'],
     description: 'Otras cuentas por cobrar corrientes',
   },
 
   // Fila 26: AUTOSUMA - Total CxC y otras cuentas por cobrar corrientes
 
   // Fila 27: Inventarios corrientes
-  // PUC 14 - Inventarios
+  // CGN 15 - Inventarios (excepto deterioro 1580)
   {
     row: 27,
-    pucPrefixes: ['14'],
+    pucPrefixes: ['15'],
+    excludePrefixes: ['1580'],
     description: 'Inventarios corrientes',
   },
 
   // Fila 28: Inversiones corrientes
-  // PUC 12 - Inversiones (corto plazo)
+  // CGN 12 - Inversiones e instrumentos derivados (excepto deterioro 1280)
   {
     row: 28,
     pucPrefixes: ['12'],
+    excludePrefixes: ['1280'],
     description: 'Inversiones corrientes',
   },
 
   // Fila 29: Anticipo de impuestos
-  // PUC 1355 - Anticipo de impuestos y contribuciones
-  // NOTA: Ya está incluido en fila 25 como parte de clase 13
-  // NO MAPEAR AQUÍ para evitar duplicar
-  // Si desea separarlo, descomentar y excluir 1355 de fila 25
-  // {
-  //   row: 29,
-  //   pucPrefixes: ['1355'],
-  //   description: 'Anticipo de impuestos',
-  // },
+  // NO MAPEAR - ya incluido en otras CxC
 
   // Fila 30: Otros activos financieros corrientes
-  // PUC 18 - Otros activos
+  // CGN 19 - Otros activos (parte financiera)
   {
     row: 30,
-    pucPrefixes: ['18'],
+    pucPrefixes: ['19'],
     description: 'Otros activos financieros corrientes',
   },
 
   // Fila 31: Otros activos no financieros corrientes
-  // PUC 17 - Diferidos
+  // CGN 17 - Bienes de uso público, 18 - Recursos naturales
   {
     row: 31,
-    pucPrefixes: ['17'],
+    pucPrefixes: ['17', '18'],
     description: 'Otros activos no financieros corrientes',
   },
 
@@ -182,10 +182,10 @@ export const IFE_ESF_ACTIVOS_NO_CORRIENTES: ESFMapping[] = [
   // Fila 33: AUTOSUMA - Activos no corrientes [resumen]
   
   // Fila 34: Propiedades, planta y equipo
-  // PUC 15 - Propiedades, Planta y Equipo (NETO)
+  // CGN 16 - Propiedades, planta y equipo (NETO incluye depreciación)
   {
     row: 34,
-    pucPrefixes: ['15'],
+    pucPrefixes: ['16'],
     description: 'Propiedades, planta y equipo',
   },
 
@@ -193,40 +193,27 @@ export const IFE_ESF_ACTIVOS_NO_CORRIENTES: ESFMapping[] = [
   // Normalmente vacío para servicios públicos - no mapear
 
   // Fila 36: Activos intangibles (distintos de plusvalía)
-  // PUC 16 - Intangibles (NETO)
+  // CGN: Parte de 19 que sean intangibles, o si existe subcuenta específica
+  // En CGN los intangibles pueden estar en 1970-1975
   {
     row: 36,
-    pucPrefixes: ['16'],
+    pucPrefixes: ['1970', '1971', '1972', '1973', '1974', '1975'],
     description: 'Activos intangibles',
   },
 
   // Fila 37: Inversiones no corrientes
-  // PUC 12 inversiones LP - normalmente ya clasificado en corriente
-  // No mapear para evitar duplicar con fila 28
+  // CGN 1230, 1233, 1227 - Inversiones en asociadas, negocios conjuntos, controladas
+  {
+    row: 37,
+    pucPrefixes: ['1227', '1230', '1233'],
+    description: 'Inversiones no corrientes (método participación)',
+  },
 
   // --- SECCIÓN CxC NO CORRIENTES (Filas 38-47) ---
   // Fila 38: AUTOSUMA - CxC y otras CxC no corrientes [Resumen]
   // Fila 39: AUTOSUMA - CxC prestación servicios públicos no corrientes [Resumen]
   
-  // Fila 40: CxC servicios públicos no corrientes (sin subsidios)
-  // Normalmente vacío para servicios públicos - no mapear
-  
-  // Fila 41: CxC por subsidios no corrientes
-  // Normalmente vacío - no mapear
-  
-  // Fila 42: CxC Ministerio de Minas no corrientes
-  // Normalmente vacío - no mapear
-  
-  // Fila 43: CxC por aprovechamiento no corrientes
-  // Normalmente vacío - no mapear
-  
-  // Fila 44: AUTOSUMA - Total CxC servicios públicos no corrientes
-
-  // Fila 45: CxC venta de bienes no corrientes
-  // Normalmente vacío - no mapear
-
-  // Fila 46: Otras CxC no corrientes
-  // Normalmente vacío - no mapear
+  // Fila 40-46: CxC no corrientes - normalmente vacío para servicios públicos
   
   // Fila 47: AUTOSUMA - Total CxC y otras CxC no corrientes
 
@@ -234,11 +221,11 @@ export const IFE_ESF_ACTIVOS_NO_CORRIENTES: ESFMapping[] = [
   // Raro en servicios públicos - no mapear
 
   // Fila 49: Otros activos financieros no corrientes
-  // PUC 19 - Valorizaciones
+  // CGN 14 - Préstamos por cobrar LP
   {
     row: 49,
-    pucPrefixes: ['19'],
-    description: 'Otros activos financieros no corrientes (valorizaciones)',
+    pucPrefixes: ['14'],
+    description: 'Otros activos financieros no corrientes (préstamos LP)',
   },
 
   // Fila 50: Otros activos no financieros no corrientes
@@ -251,6 +238,7 @@ export const IFE_ESF_ACTIVOS_NO_CORRIENTES: ESFMapping[] = [
 // =====================================================
 // PASIVOS CORRIENTES (Filas 56-63)
 // Autosumas: 53, 54, 55, 64
+// Códigos según PUC CGN Resolución 414
 // =====================================================
 export const IFE_ESF_PASIVOS_CORRIENTES: ESFMapping[] = [
   // Fila 53: AUTOSUMA - Patrimonio y pasivos [resumen]
@@ -258,19 +246,19 @@ export const IFE_ESF_PASIVOS_CORRIENTES: ESFMapping[] = [
   // Fila 55: AUTOSUMA - Pasivos corrientes [resumen]
 
   // Fila 56: Provisiones Corrientes
-  // PUC 26 - Pasivos estimados y provisiones
+  // CGN 25 - Provisiones
   {
     row: 56,
-    pucPrefixes: ['26'],
+    pucPrefixes: ['25'],
     description: 'Provisiones corrientes',
     useAbsoluteValue: true,
   },
 
   // Fila 57: Cuentas por pagar y otras cuentas por pagar corrientes
-  // PUC 22 - Proveedores + 23 - Cuentas por pagar
+  // CGN 23 - Cuentas por pagar
   {
     row: 57,
-    pucPrefixes: ['22', '23'],
+    pucPrefixes: ['23'],
     description: 'Cuentas por pagar corrientes',
     useAbsoluteValue: true,
   },
@@ -282,37 +270,37 @@ export const IFE_ESF_PASIVOS_CORRIENTES: ESFMapping[] = [
   // Ya incluido en fila 57 - no mapear para evitar duplicar
 
   // Fila 60: Obligaciones financieras corrientes
-  // PUC 21 - Obligaciones financieras
+  // CGN 21 - Emisión de títulos + 22 - Préstamos por pagar
   {
     row: 60,
-    pucPrefixes: ['21'],
+    pucPrefixes: ['21', '22'],
     description: 'Obligaciones financieras corrientes',
     useAbsoluteValue: true,
   },
 
   // Fila 61: Obligaciones laborales corrientes
-  // PUC 25 - Obligaciones laborales
+  // CGN 24 - Beneficios a empleados
   {
     row: 61,
-    pucPrefixes: ['25'],
+    pucPrefixes: ['24'],
     description: 'Obligaciones laborales corrientes',
     useAbsoluteValue: true,
   },
 
   // Fila 62: Pasivo por impuestos corrientes
-  // PUC 24 - Impuestos, gravámenes y tasas
+  // CGN 27 - Pasivos por impuestos
   {
     row: 62,
-    pucPrefixes: ['24'],
+    pucPrefixes: ['27'],
     description: 'Pasivo por impuestos corrientes',
     useAbsoluteValue: true,
   },
 
   // Fila 63: Otros pasivos corrientes
-  // PUC 27 - Diferidos + 28 - Otros pasivos + 29 - Bonos
+  // CGN 26 - Otros pasivos
   {
     row: 63,
-    pucPrefixes: ['27', '28', '29'],
+    pucPrefixes: ['26'],
     description: 'Otros pasivos corrientes',
     useAbsoluteValue: true,
   },
@@ -327,8 +315,8 @@ export const IFE_ESF_PASIVOS_CORRIENTES: ESFMapping[] = [
 export const IFE_ESF_PASIVOS_NO_CORRIENTES: ESFMapping[] = [
   // Fila 65: AUTOSUMA - Pasivos no corrientes [resumen]
   
-  // En el PUC colombiano estándar no hay separación corriente/no corriente
-  // por código. La clasificación se hace por análisis de vencimientos.
+  // En el PUC CGN no hay separación corriente/no corriente por código.
+  // La clasificación se hace por análisis de vencimientos.
   // Para empresas de servicios públicos, normalmente todo es corriente.
   // Las filas 66-73 se dejan sin mapear para que el usuario complete
   // manualmente si tiene pasivos de largo plazo.
@@ -349,65 +337,72 @@ export const IFE_ESF_PASIVOS_NO_CORRIENTES: ESFMapping[] = [
 // =====================================================
 // PATRIMONIO (Filas 77-83)
 // Autosumas: 76 (resumen), 84, 85
+// Códigos según PUC CGN Resolución 414
 // =====================================================
 export const IFE_ESF_PATRIMONIO: ESFMapping[] = [
   // Fila 77: Capital
-  // PUC 31 - Capital social
+  // CGN 3105 - Capital fiscal/social
   {
     row: 77,
-    pucPrefixes: ['31'],
+    pucPrefixes: ['3105'],
     description: 'Capital',
     useAbsoluteValue: true,
   },
 
   // Fila 78: Inversión suplementaria al capital asignado
-  // PUC 32 - Superávit de capital
+  // CGN 3109 - Capital fiscal - Loss adicional
   {
     row: 78,
-    pucPrefixes: ['32'],
+    pucPrefixes: ['3109'],
     description: 'Inversión suplementaria al capital asignado',
     useAbsoluteValue: true,
   },
 
   // Fila 79: Otras participaciones en el patrimonio
-  // PUC 35 - Dividendos (o participaciones)
+  // CGN 3125 - Patrimonio institucional incorporado
   {
     row: 79,
-    pucPrefixes: ['35'],
+    pucPrefixes: ['3125', '3110'],
     description: 'Otras participaciones en el patrimonio',
     useAbsoluteValue: true,
   },
 
   // Fila 80: Superávit por revaluación
-  // PUC 34 - Revalorización del patrimonio + 38 - Superávit por valorizaciones
+  // CGN 3115 - Ganancias o pérdidas por aplicación método participación
+  // + 3120 - Ganancias o pérdidas por instrumentos financieros
   {
     row: 80,
-    pucPrefixes: ['34', '38'],
+    pucPrefixes: ['3115', '3120'],
     description: 'Superávit por revaluación',
     useAbsoluteValue: true,
   },
 
   // Fila 81: Otras Reservas
-  // PUC 33 - Reservas
+  // CGN 3130 - Reservas
   {
     row: 81,
-    pucPrefixes: ['33'],
+    pucPrefixes: ['3130'],
     description: 'Otras Reservas',
     useAbsoluteValue: true,
   },
 
   // Fila 82: Ganancias acumuladas
-  // PUC 36 - Resultados del ejercicio + 37 - Resultados de ejercicios anteriores
+  // CGN 32 - Resultados (3205 acumulados + 3210 del ejercicio)
   {
     row: 82,
-    pucPrefixes: ['36', '37'],
+    pucPrefixes: ['32'],
     description: 'Ganancias acumuladas',
     useAbsoluteValue: true,
   },
 
   // Fila 83: Efectos por adopción NIF
-  // Subcuenta específica si existe - normalmente vacío
-  // No mapear por defecto
+  // CGN 3145 - Impacto por transición NICSP
+  {
+    row: 83,
+    pucPrefixes: ['3145'],
+    description: 'Efectos por adopción NIF',
+    useAbsoluteValue: true,
+  },
 
   // Fila 84: AUTOSUMA - Patrimonio total
   // Fila 85: AUTOSUMA - Total de patrimonio y pasivos

@@ -13,6 +13,28 @@
  * - K: XMM
  * - L: Otras actividades
  *
+ * ============================================================================
+ * IMPORTANTE: Este mapeo usa códigos PUC según Resolución 414 CGN
+ * 
+ * Estructura PUC CGN para Resultados:
+ * - Clase 4: INGRESOS
+ *   - 41: Ingresos fiscales
+ *   - 42: Venta de bienes
+ *   - 43: Venta de servicios (principal para servicios públicos)
+ *   - 44: Transferencias y subvenciones
+ *   - 48: Otros ingresos
+ * - Clase 5: GASTOS
+ *   - 51: De administración
+ *   - 52: De ventas
+ *   - 53: Deterioro, depreciaciones, amortizaciones
+ *   - 54: Provisiones
+ *   - 56: Actividades y/o servicios complementarios
+ *   - 58: Otros gastos
+ * - Clase 6: COSTOS
+ *   - 62: Costo de venta de bienes
+ *   - 63: Costo de venta de servicios (principal para servicios públicos)
+ * ============================================================================
+ *
  * @module ife/mappings/erMappings
  */
 
@@ -31,99 +53,111 @@ export const IFE_ER_SERVICE_COLUMNS: ServiceColumnMapping = {
   glp: 'J',
   xmm: 'K',
   otras: 'L',
-  total: 'M', // No hay columna total explícita
+  total: 'M', // Columna de totales
 };
 
 /**
  * Mapeos del Estado de Resultados.
  * Filas 14-28 para período actual.
+ * Códigos según PUC CGN Resolución 414.
  */
 export const IFE_ER_MAPPINGS: ESFMapping[] = [
-  // Ingresos de actividades ordinarias (Clase 4)
+  // Fila 14: Ingresos de actividades ordinarias
+  // CGN 43 - Venta de servicios (principal para SPD)
+  // + 42 - Venta de bienes + 41 - Ingresos fiscales
   {
     row: 14,
-    pucPrefixes: ['41'],
+    pucPrefixes: ['41', '42', '43'],
     description: 'Ingresos de actividades ordinarias',
     useAbsoluteValue: true,
   },
-  // Costo de ventas (Clase 6)
+  
+  // Fila 15: Costo de ventas
+  // CGN 62 - Costo venta bienes + 63 - Costo venta servicios
   {
     row: 15,
-    pucPrefixes: ['6'],
+    pucPrefixes: ['62', '63'],
     description: 'Costo de ventas',
     useAbsoluteValue: true,
   },
-  // Ganancia bruta (autosuma: 14 - 15)
-  // row: 16 - no mapear, es autosuma
+  // Fila 16: Ganancia bruta (autosuma: 14 - 15) - NO MAPEAR
 
-  // Gastos de administración, operación y ventas (Clase 5)
+  // Fila 17: Gastos de administración, operación y ventas
+  // CGN 51 - Administración + 52 - Ventas + 56 - Complementarios
   {
     row: 17,
-    pucPrefixes: ['51', '52'],
+    pucPrefixes: ['51', '52', '56'],
     description: 'Gastos de administración y ventas',
     useAbsoluteValue: true,
   },
-  // Otros ingresos (42)
+  
+  // Fila 18: Otros ingresos
+  // CGN 44 - Transferencias + 48 - Otros ingresos
   {
     row: 18,
-    pucPrefixes: ['42'],
+    pucPrefixes: ['44', '48'],
     description: 'Otros ingresos',
     useAbsoluteValue: true,
   },
-  // Otros gastos (53 excluyendo financieros)
+  
+  // Fila 19: Otros gastos
+  // CGN 53 - Deterioro/depreciación + 58 - Otros gastos
+  // Excluir costos financieros si están en subcuenta específica
   {
     row: 19,
-    pucPrefixes: ['53'],
-    excludePrefixes: ['5305'], // Excluir gastos financieros
+    pucPrefixes: ['53', '58'],
     description: 'Otros gastos',
     useAbsoluteValue: true,
   },
-  // Ganancia (pérdida) por actividades de operación (autosuma)
-  // row: 20 - no mapear
+  // Fila 20: Ganancia por actividades de operación (autosuma) - NO MAPEAR
 
-  // Ingresos financieros
+  // Fila 21: Ingresos financieros
+  // CGN 4802 - Financieros o subcuentas específicas de 48
   {
     row: 21,
-    pucPrefixes: ['4210', '4215'],
+    pucPrefixes: ['4802', '4803'],
     description: 'Ingresos financieros',
     useAbsoluteValue: true,
   },
-  // Costos financieros
+  
+  // Fila 22: Costos financieros
+  // CGN 5802, 5803 - Costos financieros
   {
     row: 22,
-    pucPrefixes: ['5305'],
+    pucPrefixes: ['5802', '5803'],
     description: 'Costos financieros',
     useAbsoluteValue: true,
   },
-  // Otras ganancias (pérdidas)
+  
+  // Fila 23: Otras ganancias (pérdidas)
+  // CGN 4808 - Ganancias método participación, otros de 48
   {
     row: 23,
-    pucPrefixes: ['4295', '5395'],
+    pucPrefixes: ['4808', '5808'],
     description: 'Otras ganancias (pérdidas)',
     useAbsoluteValue: true,
   },
-  // Ganancia (pérdida) antes de impuestos (autosuma)
-  // row: 24 - no mapear
+  // Fila 24: Ganancia antes de impuestos (autosuma) - NO MAPEAR
 
-  // Gasto por impuesto
+  // Fila 25: Gasto por impuesto
+  // CGN 54 - Provisión para impuesto de renta
   {
     row: 25,
     pucPrefixes: ['54'],
     description: 'Gasto (ingreso) por impuesto',
     useAbsoluteValue: true,
   },
-  // Ganancia de operaciones continuadas (autosuma)
-  // row: 26 - no mapear
+  // Fila 26: Ganancia de operaciones continuadas (autosuma) - NO MAPEAR
 
-  // Ganancia de operaciones discontinuadas
+  // Fila 27: Ganancia de operaciones discontinuadas
+  // CGN 59 - Cierre de ingresos/gastos/costos
   {
     row: 27,
-    pucPrefixes: ['4299', '5399'],
+    pucPrefixes: ['59'],
     description: 'Ganancia (pérdida) operaciones discontinuadas',
     useAbsoluteValue: true,
   },
-  // Ganancia (pérdida) total (autosuma)
-  // row: 28 - no mapear
+  // Fila 28: Ganancia (pérdida) total (autosuma) - NO MAPEAR
 ];
 
 /**
