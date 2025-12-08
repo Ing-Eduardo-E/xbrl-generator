@@ -285,8 +285,10 @@ export class IFETemplateService extends BaseTemplateService {
    * Estructura:
    * - Filas 17-23: Servicios (Acueducto, Alcantarillado, Aseo, Energía, Gas, GLP, XM)
    * - Fila 24: Deterioro de CxC (cuenta 1399 - valor negativo)
-   * - Fila 25: Total (AUTOSUMA)
+   * - Fila 25: Total (AUTOSUMA vertical)
    * - Columnas F-J: Rangos de vencimiento (No vencidas, 1-90, 91-180, 181-360, >360 días)
+   * - Columna K: Total vencidas =SUM(G:J)
+   * - Columna L: Total general =F+K (No vencidas + Total vencidas)
    * 
    * Distribución por defecto: 40% no vencidas, 50% 1-90 días, 10% 91-180 días
    */
@@ -316,15 +318,15 @@ export class IFETemplateService extends BaseTemplateService {
       { column: 'J', percentage: 0.00 }, // >360 días
     ];
 
-    // Columnas de datos (F-J)
-    const dataColumns = ['F', 'G', 'H', 'I', 'J'];
+    // Columnas de datos de rangos (F-J)
+    const rangeColumns = ['F', 'G', 'H', 'I', 'J'];
     
     // Filas de servicios (17-23) + deterioro (24)
     const allDataRows = [17, 18, 19, 20, 21, 22, 23, 24];
 
-    // Limpiar todas las celdas de datos
+    // Limpiar todas las celdas de datos (F-J)
     for (const row of allDataRows) {
-      for (const col of dataColumns) {
+      for (const col of rangeColumns) {
         this.writeCell(worksheet, `${col}${row}`, 0);
       }
     }
@@ -349,6 +351,12 @@ export class IFETemplateService extends BaseTemplateService {
         const value = Math.round(serviceCxC * range.percentage);
         this.writeCell(worksheet, `${range.column}${row}`, value);
       }
+
+      // Columna K: Fórmula suma de vencidas (G:J)
+      worksheet.getCell(`K${row}`).value = { formula: `SUM(G${row}:J${row})` };
+      
+      // Columna L: Fórmula total (No vencidas + Total vencidas = F + K)
+      worksheet.getCell(`L${row}`).value = { formula: `F${row}+K${row}` };
     }
 
     // Fila 24: Deterioro de CxC (cuenta 1399 - debe ser negativo)
@@ -362,12 +370,18 @@ export class IFETemplateService extends BaseTemplateService {
       const value = Math.round(deterioroValue * range.percentage);
       this.writeCell(worksheet, `${range.column}24`, value);
     }
+    
+    // Fórmulas para deterioro (fila 24)
+    worksheet.getCell('K24').value = { formula: 'SUM(G24:J24)' };
+    worksheet.getCell('L24').value = { formula: 'F24+K24' };
 
-    // Fila 25: Fórmulas SUM para totales
-    for (const col of dataColumns) {
-      const cell = worksheet.getCell(`${col}25`);
-      cell.value = { formula: `SUM(${col}17:${col}24)` };
+    // Fila 25: Fórmulas SUM verticales para totales
+    for (const col of rangeColumns) {
+      worksheet.getCell(`${col}25`).value = { formula: `SUM(${col}17:${col}24)` };
     }
+    // Totales para columnas K y L
+    worksheet.getCell('K25').value = { formula: 'SUM(K17:K24)' };
+    worksheet.getCell('L25').value = { formula: 'SUM(L17:L24)' };
   }
 
   /**
