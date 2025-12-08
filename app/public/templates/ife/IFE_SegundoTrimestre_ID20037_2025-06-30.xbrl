@@ -413,8 +413,8 @@
       <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
     </xbrli:entity>
     <xbrli:period>
-      <xbrli:startDate>2024-04-01</xbrli:startDate>
-      <xbrli:endDate>2024-06-30</xbrli:endDate>
+      <xbrli:startDate>2025-04-01</xbrli:startDate>
+      <xbrli:endDate>2025-06-30</xbrli:endDate>
     </xbrli:period>
     <xbrli:scenario>
       <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:AcueductoMember</xbrldi:explicitMember>
@@ -425,8 +425,8 @@
       <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
     </xbrli:entity>
     <xbrli:period>
-      <xbrli:startDate>2024-04-01</xbrli:startDate>
-      <xbrli:endDate>2024-06-30</xbrli:endDate>
+      <xbrli:startDate>2025-04-01</xbrli:startDate>
+      <xbrli:endDate>2025-06-30</xbrli:endDate>
     </xbrli:period>
     <xbrli:scenario>
       <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:AlcantarilladoMember</xbrldi:explicitMember>
@@ -437,8 +437,8 @@
       <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
     </xbrli:entity>
     <xbrli:period>
-      <xbrli:startDate>2024-04-01</xbrli:startDate>
-      <xbrli:endDate>2024-06-30</xbrli:endDate>
+      <xbrli:startDate>2025-04-01</xbrli:startDate>
+      <xbrli:endDate>2025-06-30</xbrli:endDate>
     </xbrli:period>
     <xbrli:scenario>
       <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:AseoMember</xbrldi:explicitMember>
@@ -449,8 +449,8 @@
       <xbrli:identifier scheme="http://www.sui.gov.co/rups">20037</xbrli:identifier>
     </xbrli:entity>
     <xbrli:period>
-      <xbrli:startDate>2024-04-01</xbrli:startDate>
-      <xbrli:endDate>2024-06-30</xbrli:endDate>
+      <xbrli:startDate>2025-04-01</xbrli:startDate>
+      <xbrli:endDate>2025-06-30</xbrli:endDate>
     </xbrli:period>
   </xbrli:context>
   <xbrli:context id="id24">

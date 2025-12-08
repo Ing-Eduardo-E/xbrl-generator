@@ -331,6 +331,9 @@ export abstract class BaseTemplateService implements TaxonomyProcessor {
    * 
    * Para evitar esto, limpiamos completamente el valor de la celda antes
    * de escribir, lo que elimina cualquier referencia a fórmulas compartidas.
+   * 
+   * Para valores numéricos, se aplica un formato que muestra los negativos
+   * entre paréntesis, como requiere el XBRL: #,##0;(#,##0)
    */
   protected writeCell(
     worksheet: ExcelJS.Worksheet,
@@ -356,6 +359,12 @@ export abstract class BaseTemplateService implements TaxonomyProcessor {
       // Luego asignar el nuevo valor
       if (value !== null && value !== undefined) {
         excelCell.value = value;
+        
+        // Para valores numéricos, aplicar formato que muestra negativos entre paréntesis
+        // Este formato es requerido por el validador XBRL de la SSPD
+        if (typeof value === 'number') {
+          excelCell.numFmt = '#,##0;(#,##0)';
+        }
       }
     } catch (error) {
       // Si falla la escritura, intentar un enfoque más agresivo

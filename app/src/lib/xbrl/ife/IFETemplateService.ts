@@ -21,6 +21,7 @@ import type {
   AccountData,
   ServiceBalanceData,
   TemplateWithDataOptions,
+  IFETrimestre,
 } from '../types';
 
 // Importar mapeos específicos de IFE
@@ -33,6 +34,59 @@ import {
   IFE_ER_MAPPINGS,
 } from './mappings/erMappings';
 import { IFE_SHEET_MAPPING, IFE_TEMPLATE_PATHS } from './config';
+
+/**
+ * Interfaz para las fechas de un trimestre.
+ */
+interface TrimestreDates {
+  startDate: string;  // YYYY-MM-DD
+  endDate: string;    // YYYY-MM-DD
+  prevEndDate: string; // Fecha fin del trimestre anterior (para instant de inicio)
+}
+
+/**
+ * Calcula las fechas de inicio y fin de un trimestre para un año dado.
+ * @param year - El año (ej: "2024")
+ * @param trimestre - El trimestre ("1T", "2T", "3T", "4T")
+ * @returns Objeto con startDate, endDate y prevEndDate
+ */
+function getTrimestreDates(year: string, trimestre: IFETrimestre): TrimestreDates {
+  const y = parseInt(year, 10);
+  
+  switch (trimestre) {
+    case '1T':
+      return {
+        startDate: `${year}-01-01`,
+        endDate: `${year}-03-31`,
+        prevEndDate: `${y - 1}-12-31`, // 31 dic del año anterior
+      };
+    case '2T':
+      return {
+        startDate: `${year}-04-01`,
+        endDate: `${year}-06-30`,
+        prevEndDate: `${year}-03-31`, // 31 mar del mismo año
+      };
+    case '3T':
+      return {
+        startDate: `${year}-07-01`,
+        endDate: `${year}-09-30`,
+        prevEndDate: `${year}-06-30`, // 30 jun del mismo año
+      };
+    case '4T':
+      return {
+        startDate: `${year}-10-01`,
+        endDate: `${year}-12-31`,
+        prevEndDate: `${year}-09-30`, // 30 sep del mismo año
+      };
+    default:
+      // Por defecto, segundo trimestre
+      return {
+        startDate: `${year}-04-01`,
+        endDate: `${year}-06-30`,
+        prevEndDate: `${year}-03-31`,
+      };
+  }
+}
 
 /**
  * Servicio de plantillas para IFE.
@@ -556,6 +610,9 @@ export class IFETemplateService extends BaseTemplateService {
    * IFE_Trimestral_ID{companyId}_{date}.xml
    *
    * Este override corrige las referencias internas para que coincidan.
+   * 
+   * IMPORTANTE: Las fechas del periodo trimestral se calculan dinámicamente
+   * basándose en el año y trimestre seleccionado por el usuario.
    */
   protected override customizeXbrlt(content: string, options: TemplateWithDataOptions): string {
     let result = content;
@@ -564,8 +621,6 @@ export class IFETemplateService extends BaseTemplateService {
     const outputPrefix = this.generateOutputPrefix(options);
 
     // Reemplazar la referencia al archivo .xml en el config
-    // Patrón original: IFE_SegundoTrimestre_ID20037_2025-06-30.xml
-    // Patrón nuevo: IFE_Trimestral_ID{companyId}_{date}.xml
     result = result.replace(
       /IFE_SegundoTrimestre_ID\d+_\d{4}-\d{2}-\d{2}\.xml/g,
       `${outputPrefix}.xml`
@@ -577,10 +632,33 @@ export class IFETemplateService extends BaseTemplateService {
       `${outputPrefix}.xlsx`
     );
 
-    // Reemplazar fecha de reporte
+    // Calcular fechas del trimestre basadas en el año y trimestre seleccionado
     const year = options.reportDate.split('-')[0];
-    result = result.replace(/2025-06-30/g, options.reportDate);
-    result = result.replace(/2025/g, year);
+    const trimestre = options.trimestre || '2T'; // Por defecto 2T si no se especifica
+    const dates = getTrimestreDates(year, trimestre);
+
+    // Reemplazar fechas del periodo trimestral SOLO dentro de tags específicos
+    // para no afectar namespaces como http://www.superservicios.gov.co/xbrl/ef/core/2025-03-31
+    
+    // startDate: reemplazar solo dentro del tag <startDate>
+    result = result.replace(/<startDate>2025-04-01<\/startDate>/g, `<startDate>${dates.startDate}</startDate>`);
+    result = result.replace(/<startDate>2025-01-01<\/startDate>/g, `<startDate>${dates.startDate}</startDate>`);
+    result = result.replace(/<startDate>2025-07-01<\/startDate>/g, `<startDate>${dates.startDate}</startDate>`);
+    result = result.replace(/<startDate>2025-10-01<\/startDate>/g, `<startDate>${dates.startDate}</startDate>`);
+    
+    // endDate: reemplazar solo dentro del tag <endDate>
+    result = result.replace(/<endDate>2025-06-30<\/endDate>/g, `<endDate>${dates.endDate}</endDate>`);
+    result = result.replace(/<endDate>2025-03-31<\/endDate>/g, `<endDate>${dates.endDate}</endDate>`);
+    result = result.replace(/<endDate>2025-09-30<\/endDate>/g, `<endDate>${dates.endDate}</endDate>`);
+    result = result.replace(/<endDate>2025-12-31<\/endDate>/g, `<endDate>${dates.endDate}</endDate>`);
+    
+    // instant del reporte (fecha de cierre): reemplazar dentro de <instant>
+    result = result.replace(/<instant>2025-06-30<\/instant>/g, `<instant>${dates.endDate}</instant>`);
+    result = result.replace(/<instant>2025-03-31<\/instant>/g, `<instant>${dates.prevEndDate}</instant>`);
+    result = result.replace(/<instant>2025-09-30<\/instant>/g, `<instant>${dates.endDate}</instant>`);
+    result = result.replace(/<instant>2025-12-31<\/instant>/g, `<instant>${dates.endDate}</instant>`);
+    
+    // NOTA: Los namespaces y schemas NO se tocan porque usamos tags específicos
 
     // Reemplazar ID de empresa
     result = result.replace(/ID20037/g, `ID${options.companyId}`);
@@ -594,6 +672,7 @@ export class IFETemplateService extends BaseTemplateService {
 
   /**
    * Override para personalizar el archivo .xml de mapeo con nombres correctos para IFE.
+   * El archivo .xml solo contiene mapeos de celdas Excel, no tiene fechas que cambiar.
    */
   protected override customizeXml(content: string, options: TemplateWithDataOptions): string {
     let result = content;
@@ -607,10 +686,7 @@ export class IFETemplateService extends BaseTemplateService {
       outputPrefix
     );
 
-    // Reemplazar fecha y ID
-    const year = options.reportDate.split('-')[0];
-    result = result.replace(/2025-06-30/g, options.reportDate);
-    result = result.replace(/2025/g, year);
+    // Solo reemplazar ID de empresa - el .xml no tiene fechas
     result = result.replace(/ID20037/g, `ID${options.companyId}`);
 
     return result;
@@ -631,10 +707,37 @@ export class IFETemplateService extends BaseTemplateService {
       outputPrefix
     );
 
-    // Reemplazar fecha y ID
+    // Calcular fechas del trimestre
     const year = options.reportDate.split('-')[0];
-    result = result.replace(/2025-06-30/g, options.reportDate);
-    result = result.replace(/2025/g, year);
+    const trimestre = options.trimestre || '2T';
+    const dates = getTrimestreDates(year, trimestre);
+
+    // Reemplazar fechas SOLO dentro de tags XBRL específicos
+    // para no afectar namespaces como xmlns:co-sspd-ife="...2025-03-31"
+    
+    // xbrli:startDate
+    result = result.replace(/<xbrli:startDate>2025-04-01<\/xbrli:startDate>/g, `<xbrli:startDate>${dates.startDate}</xbrli:startDate>`);
+    result = result.replace(/<xbrli:startDate>2025-01-01<\/xbrli:startDate>/g, `<xbrli:startDate>${dates.startDate}</xbrli:startDate>`);
+    result = result.replace(/<xbrli:startDate>2025-07-01<\/xbrli:startDate>/g, `<xbrli:startDate>${dates.startDate}</xbrli:startDate>`);
+    result = result.replace(/<xbrli:startDate>2025-10-01<\/xbrli:startDate>/g, `<xbrli:startDate>${dates.startDate}</xbrli:startDate>`);
+    
+    // xbrli:endDate
+    result = result.replace(/<xbrli:endDate>2025-06-30<\/xbrli:endDate>/g, `<xbrli:endDate>${dates.endDate}</xbrli:endDate>`);
+    result = result.replace(/<xbrli:endDate>2025-03-31<\/xbrli:endDate>/g, `<xbrli:endDate>${dates.endDate}</xbrli:endDate>`);
+    result = result.replace(/<xbrli:endDate>2025-09-30<\/xbrli:endDate>/g, `<xbrli:endDate>${dates.endDate}</xbrli:endDate>`);
+    result = result.replace(/<xbrli:endDate>2025-12-31<\/xbrli:endDate>/g, `<xbrli:endDate>${dates.endDate}</xbrli:endDate>`);
+    
+    // xbrli:instant - el 2025-03-31 es prevEndDate, el 2025-06-30 es endDate
+    result = result.replace(/<xbrli:instant>2025-06-30<\/xbrli:instant>/g, `<xbrli:instant>${dates.endDate}</xbrli:instant>`);
+    result = result.replace(/<xbrli:instant>2025-03-31<\/xbrli:instant>/g, `<xbrli:instant>${dates.prevEndDate}</xbrli:instant>`);
+    result = result.replace(/<xbrli:instant>2025-09-30<\/xbrli:instant>/g, `<xbrli:instant>${dates.endDate}</xbrli:instant>`);
+    result = result.replace(/<xbrli:instant>2025-12-31<\/xbrli:instant>/g, `<xbrli:instant>${dates.endDate}</xbrli:instant>`);
+    
+    // Fecha de cierre en el contenido del elemento
+    result = result.replace(/>2025-06-30<\/co-sspd-ife:FechaDeCierreDelPeriodoSobreElQueSeInforma>/g, 
+      `>${dates.endDate}</co-sspd-ife:FechaDeCierreDelPeriodoSobreElQueSeInforma>`);
+    
+    // Reemplazar ID de empresa
     result = result.replace(/ID20037/g, `ID${options.companyId}`);
     result = result.replace(
       /<xbrli:identifier scheme="_">_<\/xbrli:identifier>/g,

@@ -313,8 +313,8 @@
           <xbrli:identifier scheme="_">_</xbrli:identifier>
         </entity>
         <period>
-          <startDate>2024-04-01</startDate>
-          <endDate>2024-06-30</endDate>
+          <startDate>2025-04-01</startDate>
+          <endDate>2025-06-30</endDate>
         </period>
         <scenario>
           <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:AcueductoMember</xbrldi:explicitMember>
@@ -325,8 +325,8 @@
           <xbrli:identifier scheme="_">_</xbrli:identifier>
         </entity>
         <period>
-          <startDate>2024-04-01</startDate>
-          <endDate>2024-06-30</endDate>
+          <startDate>2025-04-01</startDate>
+          <endDate>2025-06-30</endDate>
         </period>
         <scenario>
           <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:AlcantarilladoMember</xbrldi:explicitMember>
@@ -337,8 +337,8 @@
           <xbrli:identifier scheme="_">_</xbrli:identifier>
         </entity>
         <period>
-          <startDate>2024-04-01</startDate>
-          <endDate>2024-06-30</endDate>
+          <startDate>2025-04-01</startDate>
+          <endDate>2025-06-30</endDate>
         </period>
         <scenario>
           <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:AseoMember</xbrldi:explicitMember>
@@ -349,8 +349,8 @@
           <xbrli:identifier scheme="_">_</xbrli:identifier>
         </entity>
         <period>
-          <startDate>2024-04-01</startDate>
-          <endDate>2024-06-30</endDate>
+          <startDate>2025-04-01</startDate>
+          <endDate>2025-06-30</endDate>
         </period>
         <scenario>
           <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:EnergiaElectricaMember</xbrldi:explicitMember>
@@ -361,8 +361,8 @@
           <xbrli:identifier scheme="_">_</xbrli:identifier>
         </entity>
         <period>
-          <startDate>2024-04-01</startDate>
-          <endDate>2024-06-30</endDate>
+          <startDate>2025-04-01</startDate>
+          <endDate>2025-06-30</endDate>
         </period>
         <scenario>
           <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:GasNaturalMember</xbrldi:explicitMember>
@@ -373,8 +373,8 @@
           <xbrli:identifier scheme="_">_</xbrli:identifier>
         </entity>
         <period>
-          <startDate>2024-04-01</startDate>
-          <endDate>2024-06-30</endDate>
+          <startDate>2025-04-01</startDate>
+          <endDate>2025-06-30</endDate>
         </period>
         <scenario>
           <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:GasLicuadoDePetroleoMember</xbrldi:explicitMember>
@@ -385,8 +385,8 @@
           <xbrli:identifier scheme="_">_</xbrli:identifier>
         </entity>
         <period>
-          <startDate>2024-04-01</startDate>
-          <endDate>2024-06-30</endDate>
+          <startDate>2025-04-01</startDate>
+          <endDate>2025-06-30</endDate>
         </period>
         <scenario>
           <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:OperadorDelSistemaYAdministradorDelMercadoDeEnergiaXMMember</xbrldi:explicitMember>
@@ -397,8 +397,8 @@
           <xbrli:identifier scheme="_">_</xbrli:identifier>
         </entity>
         <period>
-          <startDate>2024-04-01</startDate>
-          <endDate>2024-06-30</endDate>
+          <startDate>2025-04-01</startDate>
+          <endDate>2025-06-30</endDate>
         </period>
         <scenario>
           <xbrldi:explicitMember dimension="co-sspd-ife:EstadoDeResultadosEje">co-sspd-ife:OtrasActividadesNoVigiladasMember</xbrldi:explicitMember>
@@ -409,8 +409,8 @@
           <xbrli:identifier scheme="_">_</xbrli:identifier>
         </entity>
         <period>
-          <startDate>2024-04-01</startDate>
-          <endDate>2024-06-30</endDate>
+          <startDate>2025-04-01</startDate>
+          <endDate>2025-06-30</endDate>
         </period>
       </context>
       <context id="id49">

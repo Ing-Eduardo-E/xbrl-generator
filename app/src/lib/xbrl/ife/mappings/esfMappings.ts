@@ -388,11 +388,13 @@ export const IFE_ESF_PATRIMONIO: ESFMapping[] = [
 
   // Fila 82: Ganancias acumuladas
   // CGN 32 - Resultados (3205 acumulados + 3210 del ejercicio)
+  // NO usar valor absoluto - las pérdidas acumuladas son negativas
+  // El formato de celda mostrará negativos entre paréntesis
   {
     row: 82,
     pucPrefixes: ['32'],
     description: 'Ganancias acumuladas',
-    useAbsoluteValue: true,
+    useAbsoluteValue: false,
   },
 
   // Fila 83: Efectos por adopción NIF
