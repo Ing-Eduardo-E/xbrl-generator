@@ -212,13 +212,12 @@ export class IFETemplateService extends BaseTemplateService {
 
   /**
    * Llena la Hoja4 (ER - Estado de Resultados por servicios).
-   * Columnas E-L son servicios individuales, columna M es el total.
+   * Columnas E-L son servicios individuales, columna M es el total (fórmula de suma).
    * 
    * IMPORTANTE: 
    * - El template tiene valores de EJEMPLO hardcodeados que debemos limpiar
-   * - Columnas E-L: servicios individuales
-   * - Columna M: tiene VALORES hardcodeados del ejemplo, no fórmulas
-   * - Debemos escribir el total calculado en M para cada fila de datos
+   * - Columnas E-L: servicios individuales (valores)
+   * - Columna M: fórmula de suma =SUM(E:L) para cada fila
    */
   fillERSheet(
     worksheet: ExcelJS.Worksheet,
@@ -234,7 +233,7 @@ export class IFETemplateService extends BaseTemplateService {
     // Columnas de servicios en ER (excluyendo M que es total)
     const allERServiceColumns = ['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
     
-    // Filas de datos en ER - incluir todas las filas con valores del ejemplo
+    // Filas de datos en ER - todas las filas del Estado de Resultados
     const erDataRows = [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28];
     
     // Limpiar todas las filas de datos (columnas de servicios)
@@ -244,14 +243,14 @@ export class IFETemplateService extends BaseTemplateService {
       }
     }
     
-    // Limpiar TAMBIÉN columna M en filas de datos (valores hardcodeados del ejemplo)
+    // Escribir FÓRMULAS de suma en columna M para todas las filas de datos
     for (const row of erDataRows) {
-      this.writeCell(worksheet, `M${row}`, 0);
+      const cell = worksheet.getCell(`M${row}`);
+      cell.value = { formula: `SUM(E${row}:L${row})` };
     }
 
+    // Llenar valores por servicio según los mapeos
     for (const mapping of IFE_ER_MAPPINGS) {
-      let rowTotal = 0;
-      
       // Escribir valores por servicio
       for (const service of activeServices) {
         const serviceColumn = erColumns[service as keyof ServiceColumnMapping];
@@ -271,14 +270,8 @@ export class IFETemplateService extends BaseTemplateService {
           `${serviceColumn}${mapping.row}`,
           serviceValue
         );
-        
-        // Acumular para el total
-        rowTotal += serviceValue;
       }
-      
-      // ESCRIBIR el total en columna M
-      // El template tiene valores hardcodeados del ejemplo, no fórmulas
-      this.writeCell(worksheet, `M${mapping.row}`, rowTotal);
+      // La columna M ya tiene la fórmula de suma, no necesitamos escribir el total
     }
   }
 
@@ -287,37 +280,94 @@ export class IFETemplateService extends BaseTemplateService {
   // ============================================
 
   /**
-   * Llena la Hoja5 (CxC por rangos de vencimiento).
+   * Llena la Hoja5 (FC03t - 900020t - Cuentas comerciales por cobrar por rangos de vencimiento).
+   * 
+   * Estructura:
+   * - Filas 17-23: Servicios (Acueducto, Alcantarillado, Aseo, Energía, Gas, GLP, XM)
+   * - Fila 24: Deterioro de CxC (cuenta 1399 - valor negativo)
+   * - Fila 25: Total (AUTOSUMA)
+   * - Columnas F-J: Rangos de vencimiento (No vencidas, 1-90, 91-180, 181-360, >360 días)
+   * 
+   * Distribución por defecto: 40% no vencidas, 50% 1-90 días, 10% 91-180 días
    */
   fillCxCSheet(
     worksheet: ExcelJS.Worksheet,
     accounts: AccountData[],
     serviceBalances: ServiceBalanceData[]
   ): void {
-    // IFE tiene CxC por rangos de vencimiento, no por estrato como R414
-    // Los rangos son: No vencidas, 1-90 días, 91-180 días, 181-360 días, >360 días
+    // Mapeo de servicios a filas en Hoja5
+    const serviceRows: Record<string, number> = {
+      acueducto: 17,
+      alcantarillado: 18,
+      aseo: 19,
+      energia: 20,
+      gas: 21,
+      glp: 22,
+      xmm: 23,
+    };
 
-    // Por ahora, distribuir el total de CxC con porcentajes por defecto
-    const cxcTotal = this.sumAccountsByPrefix(accounts, ['13'], ['1399']);
-
-    // Distribución por defecto según CLAUDE.md
-    const ranges = [
-      { column: 'F', percentage: 0.55 }, // No vencidas
-      { column: 'G', percentage: 0.25 }, // 1-90 días
-      { column: 'H', percentage: 0.20 }, // 91-180 días
-      { column: 'I', percentage: 0.0 },  // 181-360 días
-      { column: 'J', percentage: 0.0 },  // >360 días
+    // Rangos de vencimiento con distribución por defecto
+    // 40% no vencidas, 50% 1-90 días, 10% 91-180 días
+    const agingRanges = [
+      { column: 'F', percentage: 0.40 }, // No vencidas
+      { column: 'G', percentage: 0.50 }, // 1-90 días
+      { column: 'H', percentage: 0.10 }, // 91-180 días
+      { column: 'I', percentage: 0.00 }, // 181-360 días
+      { column: 'J', percentage: 0.00 }, // >360 días
     ];
 
-    const dataRow = 16; // Fila de datos en Hoja5
+    // Columnas de datos (F-J)
+    const dataColumns = ['F', 'G', 'H', 'I', 'J'];
+    
+    // Filas de servicios (17-23) + deterioro (24)
+    const allDataRows = [17, 18, 19, 20, 21, 22, 23, 24];
 
-    for (const range of ranges) {
-      const value = Math.round(cxcTotal * range.percentage);
-      this.writeCell(worksheet, `${range.column}${dataRow}`, value);
+    // Limpiar todas las celdas de datos
+    for (const row of allDataRows) {
+      for (const col of dataColumns) {
+        this.writeCell(worksheet, `${col}${row}`, 0);
+      }
     }
 
-    // Total
-    this.writeCell(worksheet, `K${dataRow}`, cxcTotal);
+    // Prefijos PUC para CxC por servicios públicos (cuenta 13, excluyendo deterioro 1399)
+    const cxcPrefixes = ['13'];
+    const excludePrefixes = ['1399']; // Deterioro se maneja por separado
+
+    // Llenar datos por servicio
+    for (const [service, row] of Object.entries(serviceRows)) {
+      // Obtener CxC total del servicio
+      const serviceCxC = this.sumServiceAccountsByPrefix(
+        serviceBalances,
+        service,
+        cxcPrefixes,
+        excludePrefixes,
+        false
+      );
+
+      // Distribuir por rangos de vencimiento
+      for (const range of agingRanges) {
+        const value = Math.round(serviceCxC * range.percentage);
+        this.writeCell(worksheet, `${range.column}${row}`, value);
+      }
+    }
+
+    // Fila 24: Deterioro de CxC (cuenta 1399 - debe ser negativo)
+    // Obtener deterioro de todos los servicios
+    const deterioroTotal = this.sumAccountsByPrefix(accounts, ['1399'], [], true);
+    // El deterioro se muestra como valor negativo
+    const deterioroValue = -Math.abs(deterioroTotal);
+    
+    // El deterioro se distribuye en la misma proporción que las CxC
+    for (const range of agingRanges) {
+      const value = Math.round(deterioroValue * range.percentage);
+      this.writeCell(worksheet, `${range.column}24`, value);
+    }
+
+    // Fila 25: Fórmulas SUM para totales
+    for (const col of dataColumns) {
+      const cell = worksheet.getCell(`${col}25`);
+      cell.value = { formula: `SUM(${col}17:${col}24)` };
+    }
   }
 
   /**
