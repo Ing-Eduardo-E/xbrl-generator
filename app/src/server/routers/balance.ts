@@ -196,7 +196,8 @@ export const balanceRouter = router({
         // Truncate service_balances table
         await db.delete(serviceBalances);
 
-        // Prepare distributed accounts
+        // Prepare distributed accounts using "Largest Remainder Method"
+        // This ensures the sum of distributed values equals the original value exactly
         const services = [
           { name: 'acueducto', percentage: input.acueducto },
           { name: 'alcantarillado', percentage: input.alcantarillado },
@@ -205,17 +206,43 @@ export const balanceRouter = router({
 
         const distributedAccounts = [];
 
-        for (const service of services) {
-          for (const account of accounts) {
-            const distributedValue = Math.round(
-              account.value * (service.percentage / 100)
-            );
+        // For each account, distribute using largest remainder method
+        for (const account of accounts) {
+          const originalValue = account.value;
+          
+          // Calculate raw (decimal) values for each service
+          const rawValues = services.map(service => ({
+            service: service.name,
+            rawValue: originalValue * (service.percentage / 100),
+            floorValue: Math.floor(originalValue * (service.percentage / 100)),
+            remainder: (originalValue * (service.percentage / 100)) % 1,
+          }));
 
+          // Calculate the difference between original and sum of floors
+          const sumOfFloors = rawValues.reduce((sum, v) => sum + v.floorValue, 0);
+          let remainder = originalValue - sumOfFloors;
+
+          // Sort by remainder descending to distribute extra units
+          const sortedByRemainder = [...rawValues].sort((a, b) => b.remainder - a.remainder);
+
+          // Create final values, adding 1 to those with largest remainders
+          const finalValues: Record<string, number> = {};
+          for (const item of sortedByRemainder) {
+            if (remainder > 0) {
+              finalValues[item.service] = item.floorValue + 1;
+              remainder--;
+            } else {
+              finalValues[item.service] = item.floorValue;
+            }
+          }
+
+          // Add to distributed accounts
+          for (const service of services) {
             distributedAccounts.push({
               service: service.name,
               code: account.code,
               name: account.name,
-              value: distributedValue,
+              value: finalValues[service.name],
               isLeaf: account.isLeaf,
               level: account.level,
               class: account.class,
