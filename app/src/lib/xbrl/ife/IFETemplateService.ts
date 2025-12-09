@@ -837,9 +837,12 @@ export class IFETemplateService extends BaseTemplateService {
     const trimestreName = trimestreNames[trimestre];
 
     // Reemplazar el punto de entrada de la taxonomía según el trimestre
+    // NOTA: El año del punto de entrada es siempre 2025 (año de la taxonomía vigente),
+    // independientemente del año del reporte. Similar a R414.
+    const taxonomyYear = '2025';
     result = result.replace(
       /IFE_PuntoEntradaSegundoTrimestre-(\d{4})\.xsd/g,
-      `IFE_PuntoEntrada${trimestreName}-${year}.xsd`
+      `IFE_PuntoEntrada${trimestreName}-${taxonomyYear}.xsd`
     );
 
     // Reemplazar fechas del periodo trimestral SOLO dentro de tags específicos
@@ -928,9 +931,12 @@ export class IFETemplateService extends BaseTemplateService {
 
     // Reemplazar el punto de entrada de la taxonomía según el trimestre
     // El template usa SegundoTrimestre, hay que cambiarlo al trimestre seleccionado
+    // NOTA: El año del punto de entrada es siempre 2025 (año de la taxonomía vigente),
+    // independientemente del año del reporte. Similar a R414.
+    const taxonomyYear = '2025';
     result = result.replace(
       /IFE_PuntoEntradaSegundoTrimestre-(\d{4})\.xsd/g,
-      `IFE_PuntoEntrada${trimestreName}-${year}.xsd`
+      `IFE_PuntoEntrada${trimestreName}-${taxonomyYear}.xsd`
     );
 
     // Reemplazar fechas SOLO dentro de tags XBRL específicos
