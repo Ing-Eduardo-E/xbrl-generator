@@ -827,6 +827,21 @@ export class IFETemplateService extends BaseTemplateService {
     const trimestre = options.trimestre || '2T'; // Por defecto 2T si no se especifica
     const dates = getTrimestreDates(year, trimestre);
 
+    // Mapeo de trimestre a nombre del punto de entrada
+    const trimestreNames: Record<IFETrimestre, string> = {
+      '1T': 'PrimerTrimestre',
+      '2T': 'SegundoTrimestre',
+      '3T': 'TercerTrimestre',
+      '4T': 'CuartoTrimestre',
+    };
+    const trimestreName = trimestreNames[trimestre];
+
+    // Reemplazar el punto de entrada de la taxonomía según el trimestre
+    result = result.replace(
+      /IFE_PuntoEntradaSegundoTrimestre-(\d{4})\.xsd/g,
+      `IFE_PuntoEntrada${trimestreName}-${year}.xsd`
+    );
+
     // Reemplazar fechas del periodo trimestral SOLO dentro de tags específicos
     // para no afectar namespaces como http://www.superservicios.gov.co/xbrl/ef/core/2025-03-31
     
@@ -901,6 +916,22 @@ export class IFETemplateService extends BaseTemplateService {
     const year = options.reportDate.split('-')[0];
     const trimestre = options.trimestre || '2T';
     const dates = getTrimestreDates(year, trimestre);
+
+    // Mapeo de trimestre a nombre del punto de entrada
+    const trimestreNames: Record<IFETrimestre, string> = {
+      '1T': 'PrimerTrimestre',
+      '2T': 'SegundoTrimestre',
+      '3T': 'TercerTrimestre',
+      '4T': 'CuartoTrimestre',
+    };
+    const trimestreName = trimestreNames[trimestre];
+
+    // Reemplazar el punto de entrada de la taxonomía según el trimestre
+    // El template usa SegundoTrimestre, hay que cambiarlo al trimestre seleccionado
+    result = result.replace(
+      /IFE_PuntoEntradaSegundoTrimestre-(\d{4})\.xsd/g,
+      `IFE_PuntoEntrada${trimestreName}-${year}.xsd`
+    );
 
     // Reemplazar fechas SOLO dentro de tags XBRL específicos
     // para no afectar namespaces como xmlns:co-sspd-ife="...2025-03-31"
