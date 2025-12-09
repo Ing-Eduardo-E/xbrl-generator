@@ -489,22 +489,20 @@ export class IFETemplateService extends BaseTemplateService {
    * 
    * Los datos se toman de la Hoja4 (Estado de Resultados) con las siguientes fórmulas:
    * 
-   * Fila 14 (Ingresos actividades ordinarias):
-   *   - Columna F (Acueducto) = Hoja4!E15
-   *   - Columna G (Alcantarillado) = Hoja4!F15
-   *   - Columna H (Aseo) = Hoja4!G15
+   * Hoja4 estructura:
+   *   - Fila 14: Ingresos de actividades ordinarias
+   *   - Fila 15: Costo de ventas
+   *   - Fila 17: Gastos de administración, operación y ventas
+   *   - Fila 18: Otros ingresos
+   *   - Fila 19: Otros gastos
+   *   - Fila 21: Ingresos financieros
+   *   - Fila 22: Costos financieros
    * 
-   * Fila 15 (Todos los demás ingresos):
-   *   - Columna F = Hoja4!E18 + Hoja4!E21
-   *   - Columna G = Hoja4!F18 + Hoja4!F21
-   *   - Columna H = Hoja4!G18 + Hoja4!G21
-   * 
-   * Fila 16: Total ingresos (AUTOSUMA fila 14+15)
-   * 
-   * Fila 18 (Costos y gastos totales):
-   *   - Columna F = Hoja4!E15 + Hoja4!E17 + Hoja4!E19 + Hoja4!E22
-   *   - Columna G = Hoja4!F15 + Hoja4!F17 + Hoja4!F19 + Hoja4!F22
-   *   - Columna H = Hoja4!G15 + Hoja4!G17 + Hoja4!G19 + Hoja4!G22
+   * Mapeo Hoja7 ← Hoja4:
+   *   - Fila 14 (Ingresos actividades ordinarias) = Hoja4!fila14
+   *   - Fila 15 (Todos los demás ingresos) = Hoja4!(fila18 + fila21)
+   *   - Fila 16: Total ingresos (autosuma 14+15)
+   *   - Fila 18 (Costos y gastos totales) = Hoja4!(fila15 + fila17 + fila19 + fila22)
    * 
    * Columna N: Total = SUM(F:M) para cada fila
    */
@@ -538,12 +536,12 @@ export class IFETemplateService extends BaseTemplateService {
       }
     }
 
-    // Fila 14: Ingresos de actividades ordinarias = Hoja4 fila 15
+    // Fila 14: Ingresos de actividades ordinarias = Hoja4 fila 14 (Ingresos ordinarios)
     for (const map of serviceMapping) {
-      worksheet.getCell(`${map.hoja7Col}14`).value = { formula: `Hoja4!${map.hoja4Col}15` };
+      worksheet.getCell(`${map.hoja7Col}14`).value = { formula: `Hoja4!${map.hoja4Col}14` };
     }
 
-    // Fila 15: Todos los demás ingresos = Hoja4 fila 18 + fila 21
+    // Fila 15: Todos los demás ingresos = Hoja4 fila 18 (Otros ingresos) + fila 21 (Ingresos financieros)
     for (const map of serviceMapping) {
       worksheet.getCell(`${map.hoja7Col}15`).value = { formula: `Hoja4!${map.hoja4Col}18+Hoja4!${map.hoja4Col}21` };
     }
@@ -553,7 +551,7 @@ export class IFETemplateService extends BaseTemplateService {
       worksheet.getCell(`${col}16`).value = { formula: `${col}14+${col}15` };
     }
 
-    // Fila 18: Costos y gastos totales = Hoja4 filas 15+17+19+22
+    // Fila 18: Costos y gastos totales = Hoja4 fila 15 (Costo ventas) + 17 (Gastos admin) + 19 (Otros gastos) + 22 (Costos financieros)
     for (const map of serviceMapping) {
       worksheet.getCell(`${map.hoja7Col}18`).value = { 
         formula: `Hoja4!${map.hoja4Col}15+Hoja4!${map.hoja4Col}17+Hoja4!${map.hoja4Col}19+Hoja4!${map.hoja4Col}22` 
