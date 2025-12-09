@@ -1665,6 +1665,70 @@ export class R414TemplateService extends BaseTemplateService {
     console.log('[R414] Hoja35 FC08 completada.');
   }
 
+  // ============================================
+  // HOJA37: FC15 - Información sobre el cálculo del IUS [900040]
+  // ============================================
+
+  /**
+   * Llena la Hoja37 [900040] FC15 - Información sobre el cálculo del IUS.
+   * 
+   * El IUS (Índice Único Sectorial) es un indicador regulatorio de la CRA.
+   * Esta hoja contiene:
+   * - Caracterización de la empresa (segmento, calificación crediticia)
+   * - Variables para el cálculo del IUS (recaudo, ingresos, costos, etc.)
+   * 
+   * Estructura de columnas:
+   * - E: Acueducto
+   * - F: Alcantarillado
+   * - G: Total Empresa
+   * - H: Información adicional
+   * 
+   * @param worksheet Hoja37 del workbook
+   * @param sheet3 Hoja3 (Estado de Resultados) para obtener los ingresos
+   */
+  protected fillFC15Sheet(
+    worksheet: ExcelJS.Worksheet,
+    sheet3: ExcelJS.Worksheet
+  ): void {
+    console.log('[R414] Llenando Hoja37 [900040] FC15 - Información sobre el cálculo del IUS...');
+
+    // =====================================================
+    // CARACTERIZACIÓN (filas 15-16)
+    // =====================================================
+    
+    // H15: Segmento según resolución CRA 901
+    // Opciones: 1-Grandes, 2-Pequeños, 3-Rurales, 4-Esquema Diferencial
+    // Por defecto: "2 - Pequeños Prestadores"
+    this.writeCell(worksheet, 'H15', '2 - Pequeños Prestadores');
+    
+    // H16: ¿Tiene calificación crediticia con grado de inversión AAA?
+    // Opciones: 1. Si, 2. No
+    // Por defecto: "2. No"
+    this.writeCell(worksheet, 'H16', '2. No');
+
+    // =====================================================
+    // VARIABLES - Fila 18: RI (Recaudo / Ingresos facturados)
+    // =====================================================
+    
+    // Obtener ingresos de actividades ordinarias del Estado de Resultados (Hoja3 fila 14)
+    const ingresosAcueducto = (sheet3.getCell('E14').value as number) || 0;
+    const ingresosAlcantarillado = (sheet3.getCell('F14').value as number) || 0;
+    
+    // E18: Ingresos Acueducto (RI: Recaudo en el periodo de evaluación)
+    if (ingresosAcueducto !== 0) {
+      this.writeCell(worksheet, 'E18', ingresosAcueducto);
+      console.log(`  E18 (RI Acueducto): ${ingresosAcueducto.toLocaleString('es-CO')}`);
+    }
+    
+    // F18: Ingresos Alcantarillado
+    if (ingresosAlcantarillado !== 0) {
+      this.writeCell(worksheet, 'F18', ingresosAlcantarillado);
+      console.log(`  F18 (RI Alcantarillado): ${ingresosAlcantarillado.toLocaleString('es-CO')}`);
+    }
+
+    console.log('[R414] Hoja37 FC15 completada.');
+  }
+
   /**
    * Override del método fillExcelData para incluir Hoja7 y otras hojas específicas.
    */
@@ -1807,6 +1871,14 @@ export class R414TemplateService extends BaseTemplateService {
     const sheet35 = wb.getWorksheet('Hoja35');
     if (sheet35 && sheet3) {
       this.fillFC08Sheet(sheet35, sheet3);
+    }
+
+    // =====================================================
+    // HOJA FC15: Información sobre el cálculo del IUS (Hoja37)
+    // =====================================================
+    const sheet37 = wb.getWorksheet('Hoja37');
+    if (sheet37 && sheet3) {
+      this.fillFC15Sheet(sheet37, sheet3);
     }
   }
 }
