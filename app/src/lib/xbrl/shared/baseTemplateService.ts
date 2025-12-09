@@ -385,41 +385,73 @@ export abstract class BaseTemplateService implements TaxonomyProcessor {
 
   /**
    * Llena la hoja de información general.
+   * 
+   * Mapeo de celdas según taxonomía R414:
+   * - E12: Nombre de la entidad
+   * - E13: ID RUPS
+   * - E14: NIT
+   * - E15: Descripción naturaleza estados financieros (enum: "2. Separado, 1. Individual")
+   * - E16: Naturaleza del negocio
+   * - E17: Fecha inicio operaciones
+   * - E18: Fecha del periodo sobre el que se informa
+   * - E19: Grado de redondeo
    */
   protected fillInfoSheet(
     worksheet: ExcelJS.Worksheet,
     options: TemplateWithDataOptions
   ): void {
-    // Datos básicos de la empresa (columna E, filas 13-22 típicamente)
+    // Datos básicos de la empresa
+    this.writeCell(worksheet, 'E12', options.companyName);
     this.writeCell(worksheet, 'E13', options.companyId);
-    this.writeCell(worksheet, 'E14', options.companyName);
-    this.writeCell(worksheet, 'E15', options.nit || '');
-    this.writeCell(worksheet, 'E16', options.reportDate);
+    this.writeCell(worksheet, 'E14', options.nit || '');
+    // E15 (Descripción de naturaleza) se deja con el valor del template: "2. Separado, 1. Individual"
+    // E16 (Naturaleza del negocio) se deja con el valor del template
+    // E17 (Fecha inicio) se deja con el valor del template
+    this.writeCell(worksheet, 'E18', options.reportDate);
 
-    // Grado de redondeo
+    // Grado de redondeo (E19)
+    // Valores exactos según taxonomía SSPD (TipoGradoRedondeo)
     if (options.roundingDegree) {
       const roundingLabels: Record<string, string> = {
         '1': '1 - Pesos',
         '2': '2 - Miles de pesos',
         '3': '3 - Millones de pesos',
-        '4': '4 - Pesos redondeados a miles',
+        '4': '4 - Pesos redondeada a miles',  // Sin "s" al final según taxonomía
       };
-      this.writeCell(worksheet, 'E20', roundingLabels[options.roundingDegree] || '1 - Pesos');
+      this.writeCell(worksheet, 'E19', roundingLabels[options.roundingDegree] || '1 - Pesos');
     }
   }
 
   /**
    * Personaliza el archivo .xbrlt.
+   * 
+   * IMPORTANTE: Este método debe actualizar las referencias a los archivos .xml y .xlsx
+   * dentro del .xbrlt para que coincidan con los nombres de archivo generados por
+   * generateOutputPrefix(). Los archivos de salida usan formato de fecha sin guiones
+   * (ej: 20241231), mientras que las plantillas originales usan guiones (ej: 2024-12-31).
    */
   protected customizeXbrlt(content: string, options: TemplateWithDataOptions): string {
     let result = content;
 
-    // Reemplazar fecha
+    // Generar el prefijo de salida que se usará para los archivos
+    const outputPrefix = this.generateOutputPrefix(options);
+
+    // Reemplazar referencias a archivos .xml y .xlsx con los nombres correctos
+    // El patrón busca: {basePrefix}_ID{digits}_{date-with-dashes}.xml
+    // y lo reemplaza con: {outputPrefix}.xml
+    const basePrefix = this.templatePaths.basePrefix;
+    const xmlPattern = new RegExp(`${basePrefix}_ID\\d+_\\d{4}-\\d{2}-\\d{2}\\.xml`, 'g');
+    const xlsxPattern = new RegExp(`${basePrefix}_ID\\d+_\\d{4}-\\d{2}-\\d{2}\\.xlsx`, 'g');
+    
+    result = result.replace(xmlPattern, `${outputPrefix}.xml`);
+    result = result.replace(xlsxPattern, `${outputPrefix}.xlsx`);
+
+    // Reemplazar fecha en otros contextos (no en nombres de archivo)
     const year = options.reportDate.split('-')[0];
     result = result.replace(/2024-12-31/g, options.reportDate);
     result = result.replace(/2024/g, year);
 
-    // Reemplazar ID de empresa
+    // Reemplazar ID de empresa en otros contextos
     result = result.replace(/ID20037/g, `ID${options.companyId}`);
     result = result.replace(/<xbrli:identifier scheme="_">_<\/xbrli:identifier>/g,
       `<xbrli:identifier scheme="http://www.sui.gov.co">${options.companyId}</xbrli:identifier>`);

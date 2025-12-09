@@ -249,6 +249,7 @@ function convertToR414Options(options: TemplateWithDataOptions) {
     companyId: options.companyId,
     companyName: options.companyName,
     reportDate: options.reportDate,
+    startDate: options.startDate,  // Fecha de inicio de operaciones
     taxonomyYear: options.taxonomyYear,
     nit: options.nit,
     roundingDegree: options.roundingDegree as '1' | '2' | '3' | '4' | undefined,

@@ -69,6 +69,76 @@ export class R414TemplateService extends BaseTemplateService {
     return R414_SHEET_MAPPING;
   }
 
+  // ============================================
+  // OVERRIDE: Hoja1 para R414
+  // ============================================
+
+  /**
+   * Override de fillInfoSheet para R414.
+   * 
+   * Campos específicos para R414 [110000] Información general:
+   * - E11: Información a revelar sobre información general (bloque de texto)
+   * - E12: Nombre de la empresa
+   * - E13: ID RUPS
+   * - E14: NIT
+   * - E15: Descripción naturaleza estados financieros (1. Individual)
+   * - E16: Información a revelar sobre la naturaleza del negocio
+   * - E17: Fecha de inicio de operaciones (del paso 2)
+   * - E18: Fecha del periodo sobre el que se informa
+   * - E19: Grado de redondeo
+   * - E21: ¿Estados financieros presentan información reexpresada? (2. No)
+   */
+  protected override fillInfoSheet(
+    worksheet: ExcelJS.Worksheet,
+    options: TemplateWithDataOptions
+  ): void {
+    // E11: Información a revelar sobre información general [bloque de texto]
+    const infoGeneral = `Los presentes estados financieros de ${options.companyName} corresponden al periodo terminado el ${options.reportDate}. La empresa es un prestador de servicios públicos domiciliarios de acueducto, alcantarillado y/o aseo, constituida conforme a las leyes colombianas, que opera bajo la regulación de la Ley 142 de 1994 y la supervisión de la Superintendencia de Servicios Públicos Domiciliarios (SSPD). Los estados financieros han sido preparados de conformidad con las Normas de Información Financiera aplicables en Colombia y la Resolución 414 de 2014 de la Contaduría General de la Nación.`;
+    this.writeCell(worksheet, 'E11', infoGeneral);
+
+    // E12: Nombre de la empresa
+    this.writeCell(worksheet, 'E12', options.companyName);
+    
+    // E13: ID RUPS
+    this.writeCell(worksheet, 'E13', options.companyId);
+    
+    // E14: NIT
+    this.writeCell(worksheet, 'E14', options.nit || '');
+    
+    // E15: Descripción de la naturaleza de los estados financieros
+    // Siempre "1. Individual" para R414
+    this.writeCell(worksheet, 'E15', '1. Individual');
+    
+    // E16: Información a revelar sobre la naturaleza del negocio
+    const naturalezaNegocio = `La empresa tiene por objeto social la prestación de servicios públicos domiciliarios de acueducto, alcantarillado y/o aseo, incluyendo sus actividades complementarias de captación, tratamiento, distribución de agua potable, recolección, transporte y disposición final de aguas residuales, y la gestión integral de residuos sólidos, de conformidad con la Ley 142 de 1994 y demás normas aplicables.`;
+    this.writeCell(worksheet, 'E16', naturalezaNegocio);
+    
+    // E17: Fecha de inicio de operaciones
+    // Usa el campo startDate del formulario (fecha de inicio de operaciones)
+    // Si no está disponible, usa una fecha por defecto
+    const fechaInicioOperaciones = options.startDate || '2000-01-01';
+    this.writeCell(worksheet, 'E17', fechaInicioOperaciones);
+    
+    // E18: Fecha del periodo sobre el que se informa
+    this.writeCell(worksheet, 'E18', options.reportDate);
+
+    // E19: Grado de redondeo - Valores exactos según taxonomía R414
+    if (options.roundingDegree) {
+      const r414RoundingLabels: Record<string, string> = {
+        '1': '1 - Pesos',
+        '2': '2 - Miles de pesos',
+        '3': '3 - Millones de pesos',
+        '4': '4 - Pesos redondeada a miles',
+      };
+      const roundingValue = r414RoundingLabels[options.roundingDegree] || '1 - Pesos';
+      this.writeCell(worksheet, 'E19', roundingValue);
+    }
+
+    // E21: ¿Estos estados financieros presentan información reexpresada?
+    // Siempre "2. No" para R414
+    this.writeCell(worksheet, 'E21', '2. No');
+  }
+
   /**
    * Llena la Hoja2 (ESF - Estado de Situación Financiera).
    */
@@ -564,43 +634,663 @@ export class R414TemplateService extends BaseTemplateService {
   }
 
   /**
+   * Llena la Hoja26 (FC03-3 - CXC Aseo por estrato).
+   * 
+   * IMPORTANTE: Hoja26 tiene estructura DIFERENTE a Hoja24/25:
+   * - Filas: 15-24 (no 19-28)
+   * - Columnas: E=Corriente, F=No Corriente, G=Total (no G/H/I)
+   * - Rangos vencimiento: H-P (no J-R)
+   * - Suma: Q (no S)
+   */
+  fillFC03AseoSheet(
+    worksheet: ExcelJS.Worksheet,
+    sheet2: ExcelJS.Worksheet,
+    usuariosEstrato?: UsuariosEstrato
+  ): void {
+    // Obtener CXC Corrientes de Hoja2 columna K (K19 + K20)
+    const cxcCorrientes19 = (sheet2.getCell('K19').value as number) || 0;
+    const cxcCorrientes20 = (sheet2.getCell('K20').value as number) || 0;
+    const totalCXCCorrientes = cxcCorrientes19 + cxcCorrientes20;
+
+    // Obtener CXC No Corrientes de Hoja2 columna K (K43 + K44)
+    const cxcNoCorrientes43 = (sheet2.getCell('K43').value as number) || 0;
+    const cxcNoCorrientes44 = (sheet2.getCell('K44').value as number) || 0;
+    const totalCXCNoCorrientes = cxcNoCorrientes43 + cxcNoCorrientes44;
+
+    console.log(`[R414] Hoja26 - CXC Aseo desde Hoja2:`);
+    console.log(`  Corrientes (K19+K20): ${cxcCorrientes19} + ${cxcCorrientes20} = ${totalCXCCorrientes}`);
+    console.log(`  No Corrientes (K43+K44): ${cxcNoCorrientes43} + ${cxcNoCorrientes44} = ${totalCXCNoCorrientes}`);
+
+    // Estratos - FILAS 15-24 para Aseo
+    const estratos: Array<{ fila: number; key: keyof UsuariosEstrato }> = [
+      { fila: 15, key: 'estrato1' },
+      { fila: 16, key: 'estrato2' },
+      { fila: 17, key: 'estrato3' },
+      { fila: 18, key: 'estrato4' },
+      { fila: 19, key: 'estrato5' },
+      { fila: 20, key: 'estrato6' },
+    ];
+
+    const noResidenciales: Array<{ fila: number; key: keyof UsuariosEstrato }> = [
+      { fila: 21, key: 'industrial' },
+      { fila: 22, key: 'comercial' },
+      { fila: 23, key: 'oficial' },
+      { fila: 24, key: 'especial' },
+    ];
+
+    const todosEstratos = [...estratos, ...noResidenciales];
+
+    // Calcular total de usuarios
+    let totalUsuarios = 0;
+    if (usuariosEstrato) {
+      for (const estrato of todosEstratos) {
+        totalUsuarios += Number(usuariosEstrato[estrato.key]) || 0;
+      }
+    }
+
+    console.log(`[R414] Hoja26 - Total usuarios aseo: ${totalUsuarios}`);
+
+    // Rangos de vencimiento para Aseo - COLUMNAS H-P
+    const rangosVencimiento = [
+      { columna: 'H', porcentaje: 0.11 },  // No vencida
+      { columna: 'I', porcentaje: 0.09 },  // 1-30 días
+      { columna: 'J', porcentaje: 0.25 },  // 31-60 días
+      { columna: 'K', porcentaje: 0.15 },  // 61-90 días
+      { columna: 'L', porcentaje: 0.20 },  // 91-120 días
+      { columna: 'M', porcentaje: 0.12 },  // 121-150 días
+      { columna: 'N', porcentaje: 0.08 },  // 151-180 días
+      { columna: 'O', porcentaje: 0.00 },  // 181-360 días
+      { columna: 'P', porcentaje: 0.00 },  // >360 días
+    ];
+
+    // Distribuir CXC por estrato
+    for (const estrato of todosEstratos) {
+      const usuarios = usuariosEstrato
+        ? Number(usuariosEstrato[estrato.key]) || 0
+        : 0;
+      let valorCorriente = 0;
+      let valorNoCorriente = 0;
+
+      if (usuarios > 0 && totalUsuarios > 0) {
+        valorCorriente = Math.round(
+          (totalCXCCorrientes * usuarios) / totalUsuarios
+        );
+        valorNoCorriente = Math.round(
+          (totalCXCNoCorrientes * usuarios) / totalUsuarios
+        );
+      }
+
+      // Columnas E, F, G para Aseo (diferente a Hoja24/25)
+      this.writeCell(worksheet, `E${estrato.fila}`, valorCorriente);
+      this.writeCell(worksheet, `F${estrato.fila}`, valorNoCorriente);
+      const totalCXCEstrato = valorCorriente + valorNoCorriente;
+      this.writeCell(worksheet, `G${estrato.fila}`, totalCXCEstrato);
+
+      // Distribuir por rangos de vencimiento (columnas H-P)
+      let sumaRangos = 0;
+      for (const rango of rangosVencimiento) {
+        const valorRango = Math.round(totalCXCEstrato * rango.porcentaje);
+        this.writeCell(worksheet, `${rango.columna}${estrato.fila}`, valorRango);
+        sumaRangos += valorRango;
+      }
+
+      // Ajustar diferencia de redondeo en columna J (mayor porcentaje)
+      const diferencia = totalCXCEstrato - sumaRangos;
+      if (diferencia !== 0) {
+        const valorJActual = (worksheet.getCell(`J${estrato.fila}`).value as number) || 0;
+        this.writeCell(worksheet, `J${estrato.fila}`, valorJActual + diferencia);
+        sumaRangos = totalCXCEstrato;
+      }
+
+      // Columna Q = suma de rangos (debe coincidir con G)
+      this.writeCell(worksheet, `Q${estrato.fila}`, sumaRangos);
+    }
+
+    console.log('[R414] Hoja26 (FC03-3 Aseo) completada.');
+  }
+
+  /**
    * Llena la Hoja32 (FC05b - Pasivos por edades de vencimiento).
+   * 
+   * Estructura Hoja32:
+   * - Filas 15-29: 15 categorías de pasivos
+   * - Fila 30: TOTAL (fórmula)
+   * 
+   * Columnas:
+   * - D = Pasivos corrientes
+   * - E = Total (Corriente + No Corriente)
+   * - F = Pasivos no corrientes
+   * - G = No vencidos
+   * - H = Total por bandas de tiempo (G + J)
+   * - I = Vencidos hasta 30 días
+   * - J = Total vencidos (I+K+L+M+N+O)
+   * - K = Vencidos hasta 60 días
+   * - L = Vencidos hasta 90 días
+   * - M = Vencidos hasta 180 días
+   * - N = Vencidos hasta 360 días
+   * - O = Vencidos mayor 360 días
    */
   fillFC05bSheet(
     worksheet: ExcelJS.Worksheet,
     sheet2: ExcelJS.Worksheet
   ): void {
-    // Obtener valores de pasivos de Hoja2
-    const columns = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
+    console.log('[R414] Escribiendo datos en Hoja32 (FC05b - Pasivos por edades de vencimiento)...');
 
-    // Filas de pasivos en Hoja2 a distribuir
-    const pasivosRows = [73, 74, 75, 76, 78, 79, 80, 82, 83, 86, 87];
-
-    // Distribución por rango de vencimiento (porcentajes por defecto)
-    const rangos = [
-      { columna: 'D', porcentaje: 0.4 }, // 0-30 días
-      { columna: 'E', porcentaje: 0.25 }, // 31-60 días
-      { columna: 'F', porcentaje: 0.15 }, // 61-90 días
-      { columna: 'G', porcentaje: 0.1 }, // 91-180 días
-      { columna: 'H', porcentaje: 0.05 }, // 181-360 días
-      { columna: 'I', porcentaje: 0.05 }, // >360 días
-    ];
-
-    let filaDestino = 14;
-    for (const pasivoRow of pasivosRows) {
-      // Obtener total de columna P (total)
-      const totalPasivo = (sheet2.getCell(`P${pasivoRow}`).value as number) || 0;
-
-      if (totalPasivo !== 0) {
-        // Distribuir por rangos
-        for (const rango of rangos) {
-          const valor = Math.round(totalPasivo * rango.porcentaje);
-          this.writeCell(worksheet, `${rango.columna}${filaDestino}`, valor);
+    // Función auxiliar para obtener valor de celda de Hoja2 (columna P = Total)
+    const getValorHoja2 = (filas: number[]): number => {
+      let suma = 0;
+      for (const fila of filas) {
+        const valor = sheet2.getCell(`P${fila}`).value;
+        if (typeof valor === 'number') {
+          suma += valor;
+        } else if (valor && typeof valor === 'object' && 'result' in valor) {
+          suma += (valor as { result: number }).result || 0;
         }
       }
+      return suma;
+    };
 
-      filaDestino++;
+    // Mapeo de los 15 tipos de pasivos de Hoja32 a las filas de Hoja2
+    // Basado en la estructura de R414 ESF (Estado de Situación Financiera)
+    const mapeoHoja32aHoja2 = [
+      {
+        fila32: 15,
+        nombre: 'Nómina por pagar',
+        // Fila 69: Provisiones beneficios empleados (parte nómina)
+        filasCorrientes: [69],
+        filasNoCorrientes: []
+      },
+      {
+        fila32: 16,
+        nombre: 'Prestaciones sociales por pagar',
+        // Beneficios empleados largo plazo
+        filasCorrientes: [],
+        filasNoCorrientes: [91]  // Provisiones beneficios empleados LP
+      },
+      {
+        fila32: 17,
+        nombre: 'Cuentas comerciales por pagar por adquisición de bienes y servicios',
+        // Filas 73 (servicios) + 74 (proveedores) + 76 (otras cuentas por pagar)
+        filasCorrientes: [73, 74, 76],
+        filasNoCorrientes: [95]  // Cuentas por pagar bienes LP
+      },
+      {
+        fila32: 18,
+        nombre: 'Impuestos por pagar',
+        // Fila 80: Impuesto ganancias por pagar
+        filasCorrientes: [80],
+        filasNoCorrientes: []
+      },
+      {
+        fila32: 19,
+        nombre: 'Cuentas por pagar a partes relacionadas y asociadas',
+        // Fila 75: Cuentas por pagar partes relacionadas
+        filasCorrientes: [75],
+        filasNoCorrientes: []
+      },
+      {
+        fila32: 20,
+        nombre: 'Obligaciones financieras por pagar',
+        // Filas 78 (títulos deuda) + 79 (préstamos)
+        filasCorrientes: [78, 79],
+        filasNoCorrientes: [100, 101]  // Títulos deuda LP + Préstamos LP
+      },
+      {
+        fila32: 21,
+        nombre: 'Ingresos recibidos por anticipado e ingresos diferidos',
+        // Fila 82: Ingresos diferidos corrientes
+        filasCorrientes: [82],
+        filasNoCorrientes: [105]  // Ingresos diferidos LP
+      },
+      {
+        fila32: 22,
+        nombre: 'Pasivos por impuestos diferidos',
+        // Fila 83: Pasivos por impuestos diferidos corrientes
+        filasCorrientes: [83],
+        filasNoCorrientes: [103]  // Pasivos por impuestos diferidos LP
+      },
+      {
+        fila32: 23,
+        nombre: 'Provisiones',
+        // Fila 70: Otras provisiones corrientes
+        filasCorrientes: [70],
+        filasNoCorrientes: [92]  // Otras provisiones no corrientes
+      },
+      {
+        fila32: 24,
+        nombre: 'Tasas ambientales y tasas de uso por pagar',
+        // No hay fila específica en Hoja2 - se deja en 0
+        filasCorrientes: [],
+        filasNoCorrientes: []
+      },
+      {
+        fila32: 25,
+        nombre: 'Otras tasas y contribuciones por pagar',
+        // No hay fila específica en Hoja2 - se deja en 0
+        filasCorrientes: [],
+        filasNoCorrientes: []
+      },
+      {
+        fila32: 26,
+        nombre: 'Pasivos pretoma (Solo intervenidas)',
+        // No aplica para empresas normales - se deja en 0
+        filasCorrientes: [],
+        filasNoCorrientes: []
+      },
+      {
+        fila32: 27,
+        nombre: 'Recursos recibidos en administración',
+        // No hay fila específica en Hoja2 - se deja en 0
+        filasCorrientes: [],
+        filasNoCorrientes: []
+      },
+      {
+        fila32: 28,
+        nombre: 'Recursos recibidos a favor de terceros',
+        // No hay fila específica en Hoja2 - se deja en 0
+        filasCorrientes: [],
+        filasNoCorrientes: []
+      },
+      {
+        fila32: 29,
+        nombre: 'Otros pasivos',
+        // Filas 86 (otros pasivos financieros) + 87 (otros pasivos no financieros)
+        filasCorrientes: [86, 87],
+        filasNoCorrientes: [108]  // Otros pasivos financieros LP
+      },
+    ];
+
+    // Porcentajes de distribución por antigüedad
+    // Se aplican al TOTAL (columna E) para calcular las bandas de vencimiento
+    const porcentajesAntiguedad = {
+      noVencido: 0.25,      // Col G: 25%
+      hasta30: 0.15,        // Col I: 15%
+      hasta60: 0.30,        // Col K: 30%
+      hasta90: 0.15,        // Col L: 15%
+      hasta180: 0.10,       // Col M: 10%
+      hasta360: 0.05,       // Col N: 5%
+      mayor360: 0.00,       // Col O: 0%
+    };
+
+    let totalCorrientes = 0;
+    let totalNoCorrientes = 0;
+    let totalGeneral = 0;
+
+    for (const mapeo of mapeoHoja32aHoja2) {
+      // Obtener valores reales de Hoja2
+      const valorCorriente = getValorHoja2(mapeo.filasCorrientes);
+      const valorNoCorriente = getValorHoja2(mapeo.filasNoCorrientes);
+      const valorTotal = valorCorriente + valorNoCorriente;
+
+      totalCorrientes += valorCorriente;
+      totalNoCorrientes += valorNoCorriente;
+      totalGeneral += valorTotal;
+
+      // Columna D = Pasivos corrientes
+      if (valorCorriente !== 0) {
+        this.writeCell(worksheet, `D${mapeo.fila32}`, valorCorriente);
+      }
+
+      // Columna F = Pasivos no corrientes
+      if (valorNoCorriente !== 0) {
+        this.writeCell(worksheet, `F${mapeo.fila32}`, valorNoCorriente);
+      }
+
+      // Columna E = Total (Corriente + No Corriente)
+      if (valorTotal !== 0) {
+        this.writeCell(worksheet, `E${mapeo.fila32}`, valorTotal);
+
+        // Calcular distribución por antigüedad basada en el Total (E)
+        const noVencido = Math.round(valorTotal * porcentajesAntiguedad.noVencido);
+        const hasta30 = Math.round(valorTotal * porcentajesAntiguedad.hasta30);
+        const hasta60 = Math.round(valorTotal * porcentajesAntiguedad.hasta60);
+        const hasta90 = Math.round(valorTotal * porcentajesAntiguedad.hasta90);
+        const hasta180 = Math.round(valorTotal * porcentajesAntiguedad.hasta180);
+        const hasta360 = Math.round(valorTotal * porcentajesAntiguedad.hasta360);
+        const mayor360 = Math.round(valorTotal * porcentajesAntiguedad.mayor360);
+
+        // Total vencidos = suma de todas las bandas vencidas
+        const totalVencidos = hasta30 + hasta60 + hasta90 + hasta180 + hasta360 + mayor360;
+
+        // Total H = noVencido + totalVencidos
+        let totalH = noVencido + totalVencidos;
+
+        // Ajustar diferencia de redondeo en la columna hasta60 (mayor porcentaje)
+        const diferencia = valorTotal - totalH;
+        const hasta60Ajustado = hasta60 + diferencia;
+
+        // Escribir valores de antigüedad
+        this.writeCell(worksheet, `G${mapeo.fila32}`, noVencido);           // No vencidos
+        this.writeCell(worksheet, `I${mapeo.fila32}`, hasta30);             // Hasta 30 días
+        this.writeCell(worksheet, `K${mapeo.fila32}`, hasta60Ajustado);     // Hasta 60 días (con ajuste)
+        this.writeCell(worksheet, `L${mapeo.fila32}`, hasta90);             // Hasta 90 días
+        this.writeCell(worksheet, `M${mapeo.fila32}`, hasta180);            // Hasta 180 días
+        this.writeCell(worksheet, `N${mapeo.fila32}`, hasta360);            // Hasta 360 días
+        this.writeCell(worksheet, `O${mapeo.fila32}`, mayor360);            // Mayor 360 días
+        this.writeCell(worksheet, `J${mapeo.fila32}`, totalVencidos + diferencia);  // Total vencidos
+        this.writeCell(worksheet, `H${mapeo.fila32}`, valorTotal);          // Total bandas
+
+        console.log(`[R414] Hoja32 fila ${mapeo.fila32} (${mapeo.nombre}): D=${valorCorriente}, F=${valorNoCorriente}, E=${valorTotal}`);
+      }
     }
+
+    console.log(`[R414] Hoja32 - Resumen:`);
+    console.log(`[R414]   Total Pasivos Corrientes: ${totalCorrientes}`);
+    console.log(`[R414]   Total Pasivos No Corrientes: ${totalNoCorrientes}`);
+    console.log(`[R414]   Total General: ${totalGeneral}`);
+    console.log('[R414] Hoja32 (FC05b - Pasivos por edades) completada.');
+  }
+
+  /**
+   * Llena la Hoja9 (Formulario [800500] Notas - Lista de Notas).
+   * 
+   * Contiene las notas explicativas a los estados financieros.
+   * Celdas E11 a E67 con respuestas predefinidas para empresas de servicios públicos.
+   */
+  fillHoja9Sheet(
+    worksheet: ExcelJS.Worksheet,
+    options: TemplateWithDataOptions
+  ): void {
+    console.log('[R414] Escribiendo datos en Hoja9 (Notas - Lista de Notas)...');
+
+    const companyName = options.companyName;
+    const reportDate = options.reportDate;
+
+    // Definir todas las notas con sus respuestas
+    const notas: Array<{ celda: string; contenido: string }> = [
+      // E11: Información a revelar sobre notas y otra información explicativa
+      {
+        celda: 'E11',
+        contenido: `Las presentes notas forman parte integral de los estados financieros de ${companyName}. Contienen información adicional sobre las políticas contables aplicadas, los juicios y estimaciones realizados por la administración, así como explicaciones detalladas sobre las partidas significativas presentadas en el Estado de Situación Financiera y el Estado de Resultados. La empresa opera como prestador de servicios públicos domiciliarios de acueducto, alcantarillado y/o aseo bajo la regulación de la Ley 142 de 1994 y la supervisión de la Superintendencia de Servicios Públicos Domiciliarios.`
+      },
+      // E12: Información a revelar sobre juicios y estimaciones contables
+      {
+        celda: 'E12',
+        contenido: `La preparación de los estados financieros requiere que la administración realice juicios, estimaciones y supuestos que afectan la aplicación de las políticas contables y los valores reportados. Las principales estimaciones incluyen: la vida útil de los activos de infraestructura de acueducto y alcantarillado (redes, plantas de tratamiento, tanques de almacenamiento), la provisión para cuentas de difícil cobro de usuarios de servicios públicos, las obligaciones por beneficios a empleados, y las provisiones para litigios y contingencias regulatorias. Estas estimaciones se revisan periódicamente y los ajustes se reconocen en el período en que se realiza la revisión.`
+      },
+      // E13: Información a revelar sobre remuneración de los auditores
+      {
+        celda: 'E13',
+        contenido: `Los honorarios por servicios de auditoría externa corresponden a la revisión de los estados financieros anuales y la evaluación del sistema de control interno. No se han contratado servicios adicionales que puedan comprometer la independencia del auditor. Los honorarios se establecen mediante contrato y corresponden a tarifas de mercado para empresas de servicios públicos de similar tamaño y complejidad.`
+      },
+      // E14: Información a revelar sobre la autorización de los estados financieros
+      {
+        celda: 'E14',
+        contenido: `Los estados financieros de ${companyName} correspondientes al periodo terminado el ${reportDate} fueron autorizados para su emisión por la Junta Directiva y el Representante Legal en reunión celebrada con posterioridad a la fecha de cierre. Los estados financieros se preparan de conformidad con las Normas de Información Financiera aplicables en Colombia (NCIF) y la Resolución 414 de 2014 de la Contaduría General de la Nación.`
+      },
+      // E15: Información a revelar sobre efectivo y equivalentes al efectivo
+      {
+        celda: 'E15',
+        contenido: `El efectivo y equivalentes al efectivo comprende el dinero en caja, depósitos bancarios a la vista y otras inversiones de alta liquidez con vencimiento original de tres meses o menos. La empresa mantiene sus recursos principalmente en cuentas corrientes y de ahorro en entidades financieras vigiladas por la Superintendencia Financiera de Colombia. Los recursos se utilizan principalmente para cubrir los costos operativos del servicio, el mantenimiento de la infraestructura de acueducto y alcantarillado, y la gestión integral de residuos sólidos.`
+      },
+      // E16: Información a revelar sobre el estado de flujos de efectivo
+      {
+        celda: 'E16',
+        contenido: `El estado de flujos de efectivo se prepara utilizando el método indirecto. Los flujos de efectivo de actividades de operación provienen principalmente del recaudo de tarifas por la prestación de los servicios de acueducto, alcantarillado y aseo a usuarios residenciales, comerciales e industriales. Las actividades de inversión incluyen la adquisición y mejora de infraestructura de captación, tratamiento, distribución y disposición final. Las actividades de financiación comprenden los préstamos obtenidos para expansión de cobertura y mejoramiento del servicio.`
+      },
+      // E17: Información a revelar sobre activos contingentes
+      {
+        celda: 'E17',
+        contenido: `No Aplica`
+      },
+      // E18: Información a revelar sobre compromisos y pasivos contingentes
+      {
+        celda: 'E18',
+        contenido: `La empresa tiene compromisos derivados de contratos de operación, mantenimiento y expansión de infraestructura. Existen pasivos contingentes relacionados con procesos judiciales y administrativos ante la Superintendencia de Servicios Públicos Domiciliarios, reclamaciones de usuarios por calidad del servicio, y posibles sanciones regulatorias. La administración evalúa periódicamente la probabilidad de ocurrencia y el impacto financiero de estas contingencias, reconociendo provisiones cuando es probable una salida de recursos.`
+      },
+      // E19: Información a revelar sobre gastos por depreciación y amortización
+      {
+        celda: 'E19',
+        contenido: `Los activos de infraestructura de servicios públicos se deprecian utilizando el método de línea recta durante su vida útil estimada. Las principales vidas útiles son: plantas de tratamiento de agua (30-50 años), redes de distribución de acueducto y alcantarillado (30-50 años), equipos de bombeo (15-20 años), vehículos recolectores de residuos (8-10 años), edificaciones (50 años), y equipos de cómputo (5 años). Los activos intangibles con vida útil finita se amortizan durante el período del contrato o concesión.`
+      },
+      // E20: Información a revelar sobre instrumentos financieros derivados
+      {
+        celda: 'E20',
+        contenido: `No Aplica`
+      },
+      // E21: Información a revelar sobre el efecto de las variaciones en las tasas de cambio
+      {
+        celda: 'E21',
+        contenido: `No Aplica`
+      },
+      // E22: Información a revelar sobre beneficios a los empleados
+      {
+        celda: 'E22',
+        contenido: `La empresa reconoce los beneficios a empleados de corto plazo (salarios, prestaciones sociales, vacaciones, primas) en el período en que se presta el servicio. Los beneficios post-empleo incluyen las contribuciones a fondos de pensiones y cesantías administrados por terceros. Se reconocen provisiones por beneficios de largo plazo cuando corresponde por convenciones colectivas o políticas de la empresa. El personal operativo incluye fontaneros, operadores de plantas, conductores y personal de aseo, quienes reciben capacitación continua en seguridad industrial y manejo de equipos especializados.`
+      },
+      // E23: Información a revelar sobre hechos ocurridos después del periodo
+      {
+        celda: 'E23',
+        contenido: `Entre la fecha de cierre de los estados financieros y la fecha de autorización para su emisión, no se han presentado hechos significativos que requieran ajuste o revelación adicional. La empresa continúa sus operaciones normales de prestación de servicios públicos domiciliarios y no se han identificado eventos que afecten materialmente la situación financiera o los resultados del período reportado.`
+      },
+      // E24: Información a revelar sobre gastos
+      {
+        celda: 'E24',
+        contenido: `Los gastos de la empresa se clasifican en: gastos operacionales (personal operativo, mantenimiento de infraestructura, insumos químicos para tratamiento de agua, combustibles para vehículos recolectores, disposición final de residuos), gastos administrativos (personal administrativo, servicios públicos de oficinas, honorarios profesionales), y otros gastos (provisiones, deterioro de cartera). Los gastos se reconocen cuando se incurren, independientemente del momento del pago.`
+      },
+      // E25: Información a revelar sobre ingresos (costos) financieros
+      {
+        celda: 'E25',
+        contenido: `Los ingresos financieros provienen principalmente de rendimientos de inversiones temporales y cuentas de ahorro. Los costos financieros incluyen intereses por préstamos bancarios para financiación de infraestructura, comisiones bancarias, e intereses de mora pagados. La empresa también reconoce ingresos por financiación de usuarios cuando se otorgan facilidades de pago por deudas de servicios públicos.`
+      },
+      // E26: Información a revelar sobre instrumentos financieros
+      {
+        celda: 'E26',
+        contenido: `Los instrumentos financieros de la empresa incluyen: efectivo y equivalentes, cuentas por cobrar a usuarios de servicios públicos (clasificadas por estrato socioeconómico y antigüedad), cuentas por pagar a proveedores de bienes y servicios, y obligaciones financieras con entidades bancarias. Las cuentas por cobrar se miden inicialmente al precio de la transacción y posteriormente al costo amortizado menos deterioro. Los pasivos financieros se miden al costo amortizado utilizando el método de la tasa de interés efectiva.`
+      },
+      // E27: Información a revelar sobre gestión del riesgo financiero
+      {
+        celda: 'E27',
+        contenido: `La empresa gestiona los siguientes riesgos financieros: riesgo de crédito (asociado a la cartera de usuarios, mitigado mediante cortes de servicio y gestión de cobro), riesgo de liquidez (gestionado mediante presupuesto de caja y líneas de crédito disponibles), y riesgo de tasa de interés (para préstamos a tasa variable). No existe exposición significativa a riesgo cambiario. La Junta Directiva aprueba las políticas de gestión de riesgo y supervisa su cumplimiento.`
+      },
+      // E28: Información a revelar sobre la adopción por primera vez del marco normativo
+      {
+        celda: 'E28',
+        contenido: `No Aplica`
+      },
+      // E29: Información a revelar sobre información general sobre los estados financieros
+      {
+        celda: 'E29',
+        contenido: `${companyName} es una empresa de servicios públicos domiciliarios constituida conforme a las leyes colombianas, cuyo objeto social principal es la prestación de los servicios de acueducto, alcantarillado y/o aseo. Opera bajo el marco regulatorio de la Ley 142 de 1994 y sus decretos reglamentarios, y está sujeta a la vigilancia y control de la Superintendencia de Servicios Públicos Domiciliarios. Los estados financieros se preparan bajo el supuesto de negocio en marcha y cumplen con los requisitos de la Resolución 414 de 2014 de la Contaduría General de la Nación.`
+      },
+      // E30: Información a revelar sobre la plusvalía
+      {
+        celda: 'E30',
+        contenido: `No Aplica`
+      },
+      // E31: Información a revelar sobre subvenciones del gobierno
+      {
+        celda: 'E31',
+        contenido: `La empresa recibe subsidios del gobierno para cubrir la diferencia entre las tarifas plenas y las tarifas subsidiadas cobradas a usuarios de estratos 1, 2 y 3, de conformidad con la Ley 142 de 1994. Estos subsidios son transferidos por el municipio y se reconocen como ingresos en el período en que se presta el servicio subsidiado. Adicionalmente, la empresa puede recibir aportes para expansión de infraestructura que se reconocen como ingresos diferidos y se amortizan durante la vida útil de los activos financiados.`
+      },
+      // E32: Descripción de la naturaleza y cuantía de las subvenciones reconocidas
+      {
+        celda: 'E32',
+        contenido: `Las subvenciones reconocidas corresponden a: subsidios para estratos 1, 2 y 3 por los servicios de acueducto, alcantarillado y aseo, calculados como la diferencia entre la tarifa de referencia y la tarifa subsidiada según los porcentajes establecidos por la normativa (hasta 70% para estrato 1, 40% para estrato 2 y 15% para estrato 3). El valor de los subsidios reconocidos en el período se detalla en las notas complementarias por servicio.`
+      },
+      // E33: Descripción de las condiciones cumplidas, por cumplir y otras contingencias
+      {
+        celda: 'E33',
+        contenido: `Las condiciones para el reconocimiento de subsidios incluyen: estar debidamente registrado ante la SSPD, reportar información al Sistema Único de Información (SUI), aplicar correctamente las metodologías tarifarias de la CRA, mantener los estratos socioeconómicos actualizados, y cumplir con los indicadores de calidad del servicio. No existen contingencias significativas relacionadas con la devolución de subsidios recibidos.`
+      },
+      // E34: Periodos que cubre las subvención, así como los montos amortizados y por amortizar
+      {
+        celda: 'E34',
+        contenido: `Los subsidios operativos se reconocen mensualmente en el período en que se presta el servicio, sin generar montos diferidos. Los aportes de capital recibidos para infraestructura se amortizan durante la vida útil de los activos financiados (generalmente entre 20 y 50 años dependiendo del tipo de infraestructura). El saldo por amortizar corresponde a aportes para redes, plantas y equipos que aún se encuentran en operación.`
+      },
+      // E35: Descripción de las subvenciones a las que no se les haya podido asignar un valor
+      {
+        celda: 'E35',
+        contenido: `No Aplica`
+      },
+      // E36: Descripción de otro tipo de ayudas gubernamentales
+      {
+        celda: 'E36',
+        contenido: `La empresa puede beneficiarse de exenciones tributarias aplicables a empresas de servicios públicos, así como de programas de financiación con tasas preferenciales a través de Findeter u otras entidades de fomento para proyectos de expansión de cobertura y mejoramiento de la calidad del servicio. También puede acceder a recursos del Sistema General de Participaciones y del Sistema General de Regalías para proyectos de agua potable y saneamiento básico.`
+      },
+      // E37: Información a revelar sobre deterioro de valor de activos
+      {
+        celda: 'E37',
+        contenido: `La empresa evalúa al cierre de cada período si existe algún indicio de deterioro del valor de sus activos. Para los activos de infraestructura de servicios públicos, se considera deterioro cuando existen indicios de obsolescencia tecnológica, daño físico significativo, cambios adversos en el entorno regulatorio, o cuando los flujos de efectivo futuros esperados son menores al valor en libros. Durante el período no se identificaron indicios de deterioro significativo en los activos operativos.`
+      },
+      // E38: Información a revelar sobre impuestos a las ganancias
+      {
+        celda: 'E38',
+        contenido: `El gasto por impuesto a las ganancias comprende el impuesto corriente y el impuesto diferido. El impuesto corriente se calcula sobre la base gravable del período aplicando las tarifas vigentes. El impuesto diferido surge de las diferencias temporarias entre el valor en libros de los activos y pasivos para propósitos financieros y su base fiscal, principalmente por diferencias en la depreciación de activos fijos y la provisión de cartera. La empresa aplica las tarifas de impuesto de renta establecidas para el régimen ordinario.`
+      },
+      // E39: Información a revelar sobre empleados
+      {
+        celda: 'E39',
+        contenido: `La planta de personal de la empresa incluye personal administrativo, operativo y técnico necesario para la prestación de los servicios de acueducto, alcantarillado y aseo. El personal operativo comprende fontaneros, operadores de plantas de tratamiento, lectores de medidores, personal de mantenimiento de redes, conductores de vehículos recolectores y operarios de aseo. La empresa cumple con todas las obligaciones laborales y de seguridad social de conformidad con la legislación colombiana.`
+      },
+      // E40: Información a revelar sobre personal clave de la gerencia
+      {
+        celda: 'E40',
+        contenido: `El personal clave de la gerencia incluye al Gerente General, los directores de área (Comercial, Técnica, Administrativa y Financiera) y los miembros de la Junta Directiva. La remuneración del personal clave comprende salarios, prestaciones sociales, bonificaciones por cumplimiento de metas, y contribuciones a seguridad social. No existen beneficios post-empleo especiales ni pagos basados en acciones para el personal directivo.`
+      },
+      // E41: Información a revelar sobre activos intangibles
+      {
+        celda: 'E41',
+        contenido: `Los activos intangibles incluyen principalmente software de gestión comercial, facturación y control de pérdidas, así como derechos de uso sobre licencias y servidumbres necesarias para la operación de la infraestructura. Los intangibles se amortizan durante su vida útil estimada o el término del contrato de licencia. No existen activos intangibles de vida útil indefinida. Los costos de desarrollo de software se capitalizan cuando cumplen los criterios de reconocimiento.`
+      },
+      // E42: Información a revelar sobre gastos por intereses
+      {
+        celda: 'E42',
+        contenido: `Los gastos por intereses corresponden principalmente a obligaciones financieras contraídas para la financiación de proyectos de infraestructura de acueducto, alcantarillado y aseo. Incluyen intereses de préstamos bancarios, créditos de fomento a través de Findeter, y otros pasivos financieros. Los intereses se reconocen utilizando el método de la tasa de interés efectiva durante el período del préstamo.`
+      },
+      // E43: Información a revelar sobre ingresos por intereses
+      {
+        celda: 'E43',
+        contenido: `Los ingresos por intereses provienen de rendimientos financieros de inversiones temporales, cuentas de ahorro, e intereses de mora cobrados a usuarios por pagos tardíos de facturas de servicios públicos. Los intereses se reconocen utilizando el método de la tasa de interés efectiva. La política de la empresa establece el cobro de intereses de mora de acuerdo con las tasas máximas permitidas por la regulación.`
+      },
+      // E44: Información a revelar sobre inventarios
+      {
+        celda: 'E44',
+        contenido: `Los inventarios comprenden principalmente materiales para mantenimiento de redes (tuberías, válvulas, accesorios, medidores), insumos químicos para tratamiento de agua (cloro, sulfato de aluminio, polímeros), repuestos para equipos de bombeo y plantas de tratamiento, y materiales de aseo. Los inventarios se miden al menor entre el costo y el valor neto realizable. El costo se determina utilizando el método de promedio ponderado.`
+      },
+      // E45: Información a revelar sobre propiedades de inversión
+      {
+        celda: 'E45',
+        contenido: `No Aplica`
+      },
+      // E46: Información a revelar sobre inversiones contabilizadas utilizando el método de la participación
+      {
+        celda: 'E46',
+        contenido: `No Aplica`
+      },
+      // E47: Información a revelar sobre inversiones distintas de las contabilizadas utilizando el método de la participación
+      {
+        celda: 'E47',
+        contenido: `No Aplica`
+      },
+      // E48: Información a revelar sobre arrendamientos
+      {
+        celda: 'E48',
+        contenido: `La empresa puede tener contratos de arrendamiento operativo para vehículos, equipos de cómputo y oficinas administrativas. Los arrendamientos de corto plazo y de activos de bajo valor se reconocen como gasto de forma lineal durante el término del contrato. Para arrendamientos significativos, se reconoce un activo por derecho de uso y un pasivo por arrendamiento. No existen arrendamientos financieros significativos sobre activos de infraestructura.`
+      },
+      // E49: Información a revelar sobre préstamos y anticipos a bancos
+      {
+        celda: 'E49',
+        contenido: `No Aplica`
+      },
+      // E50: Información a revelar sobre préstamos y anticipos a clientes
+      {
+        celda: 'E50',
+        contenido: `No Aplica`
+      },
+      // E51: Información a revelar sobre objetivos, políticas y procesos para la gestión del capital
+      {
+        celda: 'E51',
+        contenido: `El objetivo de la gestión del capital es mantener una estructura financiera sólida que permita la sostenibilidad del servicio público y la expansión de cobertura. La política de la empresa busca mantener un nivel de endeudamiento prudente, reinvertir las utilidades en mejoramiento de infraestructura, y asegurar la capacidad de pago de obligaciones. La Junta Directiva revisa periódicamente los indicadores de capital de trabajo, endeudamiento y rentabilidad.`
+      },
+      // E52: Información a revelar sobre otros activos corrientes
+      {
+        celda: 'E52',
+        contenido: `Los otros activos corrientes incluyen anticipos a contratistas y proveedores, gastos pagados por anticipado (seguros, arrendamientos), anticipos de impuestos y retenciones a favor, y otros derechos de cobro de corto plazo. Estos activos se miden al costo o al valor recuperable si existe evidencia de deterioro.`
+      },
+      // E53: Información a revelar sobre otros pasivos corrientes
+      {
+        celda: 'E53',
+        contenido: `Los otros pasivos corrientes incluyen ingresos recibidos por anticipado (conexiones facturadas no instaladas, depósitos de usuarios), retenciones y aportes por pagar (retención en la fuente, IVA, aportes a seguridad social), provisiones de corto plazo, y otros acreedores diversos. Se reconocen al valor de la obligación estimada.`
+      },
+      // E54: Información a revelar sobre otros activos no corrientes
+      {
+        celda: 'E54',
+        contenido: `Los otros activos no corrientes incluyen depósitos en garantía, cuentas por cobrar de largo plazo con acuerdos de pago, activos por impuesto diferido, y otros derechos cuya realización se espera después de doce meses. Se miden al costo amortizado o al valor presente cuando el efecto del valor temporal del dinero es significativo.`
+      },
+      // E55: Información a revelar sobre otros pasivos no corrientes
+      {
+        celda: 'E55',
+        contenido: `Los otros pasivos no corrientes incluyen ingresos diferidos por aportes de capital para infraestructura, provisiones de largo plazo (beneficios a empleados, litigios), pasivos por impuesto diferido, y otras obligaciones cuyo vencimiento es superior a doce meses. Se miden al valor presente de los flujos de efectivo futuros cuando corresponde.`
+      },
+      // E56: Información a revelar sobre otros ingresos (gastos) de operación
+      {
+        celda: 'E56',
+        contenido: `Los otros ingresos de operación incluyen reconexiones, venta de materiales, arrendamiento de infraestructura, servicios complementarios, y recuperación de cartera castigada. Los otros gastos de operación comprenden provisiones para contingencias, pérdidas por deterioro de cartera, gastos legales, y otros gastos no clasificados en las categorías principales. Se reconocen cuando se incurren.`
+      },
+      // E57: Información a revelar sobre anticipos y otros activos
+      {
+        celda: 'E57',
+        contenido: `Los anticipos comprenden pagos realizados a contratistas por obras de infraestructura en ejecución, anticipos a proveedores de insumos y materiales, y pagos por cuenta de terceros. Se reconocen como activo hasta que se reciben los bienes o servicios correspondientes, momento en el cual se reclasifican al costo del activo o al gasto según corresponda.`
+      },
+      // E58: Información a revelar sobre ganancias (pérdidas) por actividades de operación
+      {
+        celda: 'E58',
+        contenido: `El resultado de actividades de operación refleja la diferencia entre los ingresos por prestación de servicios públicos (incluyendo subsidios y contribuciones) y los costos y gastos necesarios para la operación. Los principales factores que afectan el resultado operacional incluyen: nivel de recaudo de cartera, eficiencia operativa, costos de energía para bombeo, costos de disposición final de residuos, y mantenimiento de infraestructura.`
+      },
+      // E59: Información a revelar sobre propiedades, planta y equipo
+      {
+        celda: 'E59',
+        contenido: `Las propiedades, planta y equipo comprenden los activos de infraestructura para la prestación de servicios públicos: plantas de tratamiento de agua potable y residual, redes de acueducto y alcantarillado, estaciones de bombeo, tanques de almacenamiento, vehículos recolectores, equipos para disposición final de residuos, terrenos, edificaciones y equipos administrativos. Se miden al costo menos depreciación acumulada y deterioro. Las adiciones y mejoras que incrementan la vida útil o capacidad se capitalizan.`
+      },
+      // E60: Información a revelar sobre provisiones
+      {
+        celda: 'E60',
+        contenido: `Las provisiones incluyen obligaciones presentes por litigios laborales y civiles, reclamaciones de usuarios, posibles sanciones regulatorias, obligaciones ambientales, y beneficios a empleados de largo plazo. Se reconoce una provisión cuando existe una obligación presente, es probable la salida de recursos, y el monto puede estimarse de forma fiable. Las provisiones se revisan al cierre de cada período y se ajustan según la mejor estimación disponible.`
+      },
+      // E61: Información a revelar sobre gastos de investigación y desarrollo
+      {
+        celda: 'E61',
+        contenido: `No Aplica`
+      },
+      // E62: Información a revelar sobre reservas dentro de patrimonio
+      {
+        celda: 'E62',
+        contenido: `Las reservas del patrimonio incluyen la reserva legal (constituida con el 10% de las utilidades hasta alcanzar el 50% del capital), reservas estatutarias según los estatutos sociales, y otras reservas aprobadas por la Asamblea de Accionistas. Las reservas se utilizan para absorber pérdidas, capitalizar la empresa, o distribuir como dividendos según decisión del máximo órgano social.`
+      },
+      // E63: Información a revelar sobre efectivo y equivalentes al efectivo restringidos
+      {
+        celda: 'E63',
+        contenido: `No Aplica`
+      },
+      // E64: Información a revelar sobre ingresos de actividades ordinarias
+      {
+        celda: 'E64',
+        contenido: `Los ingresos ordinarios provienen de la facturación por prestación de servicios de acueducto (cargo fijo y consumo), alcantarillado (cargo fijo y vertimiento), y aseo (cargo fijo, recolección y disposición final). Los ingresos se reconocen cuando el servicio se presta, medido según el consumo de agua o la frecuencia de recolección. También se incluyen las contribuciones de solidaridad de estratos 5 y 6, los subsidios recibidos del gobierno, y los cargos por conexión y reconexión de servicios.`
+      },
+      // E65: Información a revelar sobre cuentas por cobrar y por pagar por impuestos
+      {
+        celda: 'E65',
+        contenido: `Las cuentas por cobrar por impuestos incluyen saldos a favor de retención en la fuente, IVA descontable, y anticipos de impuesto de renta. Las cuentas por pagar por impuestos incluyen impuesto de renta corriente, impuesto diferido, IVA por pagar, retenciones practicadas, impuesto de industria y comercio, y contribuciones a la SSPD y CRA. Se reconocen según las disposiciones tributarias vigentes.`
+      },
+      // E66: Información a revelar sobre acreedores comerciales y otras cuentas por pagar
+      {
+        celda: 'E66',
+        contenido: `Los acreedores comerciales corresponden a obligaciones con proveedores de insumos químicos, materiales de construcción, repuestos, combustibles, y contratistas de obras y servicios. Las otras cuentas por pagar incluyen honorarios profesionales, servicios públicos, arrendamientos, y otros gastos acumulados por pagar. Se miden al valor nominal o al costo amortizado cuando el plazo de pago genera un componente financiero significativo.`
+      },
+      // E67: Información a revelar sobre deudores comerciales y otras cuentas por cobrar
+      {
+        celda: 'E67',
+        contenido: `Los deudores comerciales corresponden a la cartera por facturación de servicios públicos a usuarios residenciales (estratos 1 a 6), comerciales, industriales y oficiales. Se clasifican por servicio, estrato y antigüedad de la deuda. Se reconoce deterioro para cuentas de difícil cobro con base en la antigüedad y el análisis histórico de recuperación. Las otras cuentas por cobrar incluyen anticipos de subsidios, deudores varios, y cuentas por cobrar a empleados.`
+      },
+    ];
+
+    // Escribir todas las notas en el worksheet
+    for (const nota of notas) {
+      this.writeCell(worksheet, nota.celda, nota.contenido);
+    }
+
+    console.log(`[R414] Hoja9 completada - ${notas.length} notas escritas (E11 a E67).`);
   }
 
   /**
@@ -619,6 +1309,14 @@ export class R414TemplateService extends BaseTemplateService {
     const sheet7 = wb.getWorksheet('Hoja7');
     if (sheet7) {
       this.fillHoja7Sheet(sheet7, options.accounts);
+    }
+
+    // =====================================================
+    // HOJA9: Notas - Lista de Notas [800500]
+    // =====================================================
+    const sheet9 = wb.getWorksheet('Hoja9');
+    if (sheet9) {
+      this.fillHoja9Sheet(sheet9, options);
     }
 
     // =====================================================
@@ -697,12 +1395,12 @@ export class R414TemplateService extends BaseTemplateService {
     }
 
     // Hoja26 (900023): FC03-3 CXC Aseo
+    // NOTA: Hoja26 tiene estructura diferente (E/F/G, filas 15-24, rangos H-P, suma Q)
     const sheet26 = wb.getWorksheet('Hoja26');
     if (sheet26 && sheet2) {
-      this.fillFC03Sheet(
+      this.fillFC03AseoSheet(
         sheet26,
         sheet2,
-        'K', // Columna de aseo en Hoja2
         options.usuariosEstrato?.aseo
       );
     }

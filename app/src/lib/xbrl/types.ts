@@ -140,6 +140,8 @@ export interface TemplateCustomization {
   companyName: string;
   /** Fecha de corte (YYYY-MM-DD) */
   reportDate: string;
+  /** Fecha de inicio de operaciones (YYYY-MM-DD) */
+  startDate?: string;
   /** Año de taxonomía SSPD (2017-2025) */
   taxonomyYear?: TaxonomyYear;
   /** NIT de la empresa */
