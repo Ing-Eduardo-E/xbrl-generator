@@ -1076,6 +1076,29 @@ export class R414TemplateService extends BaseTemplateService {
       this.writeCell(worksheet, `${servicio.columna}22`, 0);
     }
 
+    // =====================================================
+    // Columna K: Suma de E + F + G (Total servicios públicos)
+    // =====================================================
+    // Filas de subsidios (14, 15, 16)
+    for (const fila of [14, 15, 16]) {
+      const valorE = (worksheet.getCell(`E${fila}`).value as number) || 0;
+      const valorF = (worksheet.getCell(`F${fila}`).value as number) || 0;
+      const valorG = (worksheet.getCell(`G${fila}`).value as number) || 0;
+      const totalK = valorE + valorF + valorG;
+      this.writeCell(worksheet, `K${fila}`, totalK);
+    }
+
+    // Filas de contribuciones (19, 20, 21, 22)
+    for (const fila of [19, 20, 21, 22]) {
+      const valorE = (worksheet.getCell(`E${fila}`).value as number) || 0;
+      const valorF = (worksheet.getCell(`F${fila}`).value as number) || 0;
+      const valorG = (worksheet.getCell(`G${fila}`).value as number) || 0;
+      const totalK = valorE + valorF + valorG;
+      this.writeCell(worksheet, `K${fila}`, totalK);
+    }
+
+    // Las filas 17, 23 y 24 de columna K tienen fórmulas que se calculan automáticamente
+
     console.log('[R414] Hoja30 (FC04 - Subsidios y Contribuciones) completada.');
   }
 
@@ -1582,6 +1605,66 @@ export class R414TemplateService extends BaseTemplateService {
     console.log(`[R414] Hoja10 completada - ${politicas.length} políticas escritas (D11 a D43).`);
   }
 
+  // ============================================
+  // HOJA35: FC08 - Conciliación de Ingresos [900031]
+  // ============================================
+
+  /**
+   * Llena la Hoja35 [900031] FC08 - Conciliación de ingresos.
+   * 
+   * Esta hoja desglosa los ingresos de actividades ordinarias del Estado de Resultados
+   * por tipo de ingreso para cada servicio (Acueducto, Alcantarillado, Aseo).
+   * 
+   * Estructura de columnas:
+   * - G: Acueducto
+   * - H: Alcantarillado
+   * - I: Aseo
+   * - J: Energía Eléctrica
+   * - K: Gas combustible por redes
+   * 
+   * Para empresas de acueducto, alcantarillado y aseo, el ingreso principal proviene
+   * de la prestación de servicios públicos domiciliarios (fila 26), que corresponde
+   * a los "Ingresos de actividades ordinarias" del Estado de Resultados.
+   * 
+   * @param worksheet Hoja35 del workbook
+   * @param sheet3 Hoja3 (Estado de Resultados) para obtener los valores de ingresos
+   */
+  protected fillFC08Sheet(
+    worksheet: ExcelJS.Worksheet,
+    sheet3: ExcelJS.Worksheet
+  ): void {
+    console.log('[R414] Llenando Hoja35 [900031] FC08 - Conciliación de ingresos...');
+
+    // Mapeo de columnas Hoja3 (ER) → Hoja35 (FC08)
+    // En Hoja3: E=Acueducto, F=Alcantarillado, G=Aseo
+    // En Hoja35: G=Acueducto, H=Alcantarillado, I=Aseo
+    const servicios = [
+      { nombre: 'Acueducto', columnaER: 'E', columnaFC08: 'G' },
+      { nombre: 'Alcantarillado', columnaER: 'F', columnaFC08: 'H' },
+      { nombre: 'Aseo', columnaER: 'G', columnaFC08: 'I' },
+    ];
+
+    // Fila 14 en Hoja3 = "Ingresos de actividades ordinarias"
+    // Esta fila se mapea a la fila 26 en Hoja35 = "Ingresos por prestación de servicios públicos domiciliarios"
+    const filaIngresosER = 14;
+    const filaIngresosFC08 = 26;
+
+    for (const servicio of servicios) {
+      // Obtener el valor de ingresos del Estado de Resultados
+      const celdaER = `${servicio.columnaER}${filaIngresosER}`;
+      const valorIngresos = (sheet3.getCell(celdaER).value as number) || 0;
+
+      if (valorIngresos !== 0) {
+        // Escribir en la celda de "Ingresos por prestación de servicios públicos domiciliarios"
+        const celdaFC08 = `${servicio.columnaFC08}${filaIngresosFC08}`;
+        this.writeCell(worksheet, celdaFC08, valorIngresos);
+        console.log(`  ${servicio.nombre}: ${valorIngresos.toLocaleString('es-CO')} -> ${celdaFC08}`);
+      }
+    }
+
+    console.log('[R414] Hoja35 FC08 completada.');
+  }
+
   /**
    * Override del método fillExcelData para incluir Hoja7 y otras hojas específicas.
    */
@@ -1716,6 +1799,14 @@ export class R414TemplateService extends BaseTemplateService {
     const sheet30 = wb.getWorksheet('Hoja30');
     if (sheet30) {
       this.fillFC04Sheet(sheet30, options);
+    }
+
+    // =====================================================
+    // HOJA FC08: Conciliación de Ingresos (Hoja35)
+    // =====================================================
+    const sheet35 = wb.getWorksheet('Hoja35');
+    if (sheet35 && sheet3) {
+      this.fillFC08Sheet(sheet35, sheet3);
     }
   }
 }
