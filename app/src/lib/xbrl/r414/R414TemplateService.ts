@@ -982,6 +982,104 @@ export class R414TemplateService extends BaseTemplateService {
   }
 
   /**
+   * Llena la Hoja30 (Formulario [900027] FC04 - Información Subsidios y Contribuciones).
+   * 
+   * Estructura Hoja30:
+   * - Columnas: E=Acueducto, F=Alcantarillado, G=Aseo
+   * - Filas 14-16: Subsidios por estrato (1, 2, 3)
+   * - Fila 17: Total Subsidios (fórmula)
+   * - Filas 19-22: Contribuciones (estrato 5, 6, comercial, industrial)
+   * - Fila 23: Total Contribuciones (fórmula)
+   * - Fila 24: Valor Neto (fórmula)
+   * 
+   * Los subsidios se distribuyen proporcionalmente entre estratos 1, 2 y 3
+   * según el número de usuarios de cada estrato.
+   */
+  fillFC04Sheet(
+    worksheet: ExcelJS.Worksheet,
+    options: TemplateWithDataOptions
+  ): void {
+    console.log('[R414] Escribiendo datos en Hoja30 (FC04 - Subsidios y Contribuciones)...');
+
+    const subsidios = options.subsidios;
+    const usuariosEstrato = options.usuariosEstrato;
+
+    if (!subsidios) {
+      console.log('[R414] Hoja30 - No hay datos de subsidios, omitiendo...');
+      return;
+    }
+
+    // Columnas por servicio
+    const servicios = [
+      { nombre: 'acueducto', columna: 'E' },
+      { nombre: 'alcantarillado', columna: 'F' },
+      { nombre: 'aseo', columna: 'G' },
+    ];
+
+    for (const servicio of servicios) {
+      const subsidioTotal = subsidios[servicio.nombre as keyof typeof subsidios] || 0;
+      
+      if (subsidioTotal === 0) {
+        console.log(`[R414] Hoja30 - ${servicio.nombre}: Sin subsidios asignados`);
+        continue;
+      }
+
+      // Obtener usuarios de estratos 1, 2 y 3 para este servicio
+      const usuariosServicio = usuariosEstrato?.[servicio.nombre as keyof typeof usuariosEstrato];
+      
+      const usuariosE1 = usuariosServicio?.estrato1 || 0;
+      const usuariosE2 = usuariosServicio?.estrato2 || 0;
+      const usuariosE3 = usuariosServicio?.estrato3 || 0;
+      
+      // Total de usuarios de estratos subsidiables (1, 2 y 3)
+      const totalUsuariosSubsidiables = usuariosE1 + usuariosE2 + usuariosE3;
+
+      console.log(`[R414] Hoja30 - ${servicio.nombre}:`);
+      console.log(`  Subsidio total: ${subsidioTotal}`);
+      console.log(`  Usuarios E1: ${usuariosE1}, E2: ${usuariosE2}, E3: ${usuariosE3}`);
+      console.log(`  Total usuarios subsidiables: ${totalUsuariosSubsidiables}`);
+
+      if (totalUsuariosSubsidiables === 0) {
+        // Si no hay usuarios subsidiables, poner todo el subsidio en estrato 1 por defecto
+        console.log(`  Sin usuarios subsidiables, asignando todo a E1`);
+        this.writeCell(worksheet, `${servicio.columna}14`, subsidioTotal);
+        this.writeCell(worksheet, `${servicio.columna}15`, 0);
+        this.writeCell(worksheet, `${servicio.columna}16`, 0);
+      } else {
+        // Distribuir proporcionalmente según usuarios
+        // Regla de 3 simple: subsidioEstrato = (usuariosEstrato / totalUsuarios) * subsidioTotal
+        const subsidioE1 = Math.round((usuariosE1 / totalUsuariosSubsidiables) * subsidioTotal);
+        const subsidioE2 = Math.round((usuariosE2 / totalUsuariosSubsidiables) * subsidioTotal);
+        // E3 recibe el resto para evitar diferencias de redondeo
+        const subsidioE3 = subsidioTotal - subsidioE1 - subsidioE2;
+
+        console.log(`  Subsidio E1: ${subsidioE1} (${((usuariosE1 / totalUsuariosSubsidiables) * 100).toFixed(1)}%)`);
+        console.log(`  Subsidio E2: ${subsidioE2} (${((usuariosE2 / totalUsuariosSubsidiables) * 100).toFixed(1)}%)`);
+        console.log(`  Subsidio E3: ${subsidioE3} (${((usuariosE3 / totalUsuariosSubsidiables) * 100).toFixed(1)}%)`);
+
+        // Escribir valores de subsidios
+        // Fila 14: Estrato 1
+        this.writeCell(worksheet, `${servicio.columna}14`, subsidioE1);
+        // Fila 15: Estrato 2
+        this.writeCell(worksheet, `${servicio.columna}15`, subsidioE2);
+        // Fila 16: Estrato 3
+        this.writeCell(worksheet, `${servicio.columna}16`, subsidioE3);
+      }
+
+      // Las filas 17, 23 y 24 tienen fórmulas que se calculan automáticamente
+
+      // Contribuciones (filas 19-22) - se dejan en 0 por ahora
+      // ya que no tenemos datos de contribuciones de estratos 5, 6, comercial e industrial
+      this.writeCell(worksheet, `${servicio.columna}19`, 0);
+      this.writeCell(worksheet, `${servicio.columna}20`, 0);
+      this.writeCell(worksheet, `${servicio.columna}21`, 0);
+      this.writeCell(worksheet, `${servicio.columna}22`, 0);
+    }
+
+    console.log('[R414] Hoja30 (FC04 - Subsidios y Contribuciones) completada.');
+  }
+
+  /**
    * Llena la Hoja9 (Formulario [800500] Notas - Lista de Notas).
    * 
    * Contiene las notas explicativas a los estados financieros.
@@ -1294,6 +1392,197 @@ export class R414TemplateService extends BaseTemplateService {
   }
 
   /**
+   * Llena la Hoja10 (Formulario [800600] Notas - Lista de Políticas).
+   * 
+   * Contiene las políticas contables significativas.
+   * Celdas D11 a D43 con respuestas predefinidas para empresas de servicios públicos.
+   */
+  fillHoja10Sheet(
+    worksheet: ExcelJS.Worksheet,
+    options: TemplateWithDataOptions
+  ): void {
+    console.log('[R414] Escribiendo datos en Hoja10 (Notas - Lista de Políticas)...');
+
+    const companyName = options.companyName;
+
+    // Definir todas las políticas contables con sus respuestas
+    const politicas: Array<{ celda: string; contenido: string }> = [
+      // D11: Información a revelar sobre un resumen de las políticas contables significativas
+      {
+        celda: 'D11',
+        contenido: `${companyName} prepara sus estados financieros de conformidad con las Normas de Información Financiera aplicables en Colombia y la Resolución 414 de 2014 de la Contaduría General de la Nación. Las políticas contables significativas se aplican de manera uniforme para todos los períodos presentados. Los estados financieros se preparan sobre la base del costo histórico, excepto por ciertos instrumentos financieros que se miden a valor razonable. La empresa opera como prestador de servicios públicos domiciliarios de acueducto, alcantarillado y/o aseo bajo la regulación de la Ley 142 de 1994.`
+      },
+      // D12: Descripción de la política contable de activos financieros disponibles para la venta
+      {
+        celda: 'D12',
+        contenido: `No Aplica`
+      },
+      // D13: Descripción de la política contable para costos de financiación
+      {
+        celda: 'D13',
+        contenido: `Los costos de financiación directamente atribuibles a la adquisición, construcción o producción de activos de infraestructura de servicios públicos que requieren un período sustancial para estar listos para su uso, se capitalizan como parte del costo del activo. Los demás costos de financiación se reconocen como gasto en el período en que se incurren. Los costos de financiación incluyen intereses calculados utilizando el método de la tasa de interés efectiva, cargas financieras por arrendamientos, y diferencias en cambio originadas en préstamos en moneda extranjera en la medida en que se consideren un ajuste a los costos por intereses.`
+      },
+      // D14: Descripción de la política contable para préstamos por pagar
+      {
+        celda: 'D14',
+        contenido: `Los préstamos por pagar se reconocen inicialmente al valor razonable del efectivo recibido menos los costos de transacción directamente atribuibles. Posteriormente se miden al costo amortizado utilizando el método de la tasa de interés efectiva. La empresa obtiene préstamos principalmente de entidades financieras para financiar proyectos de expansión y mejoramiento de la infraestructura de acueducto, alcantarillado y aseo, incluyendo créditos de fomento a través de Findeter para proyectos de agua potable y saneamiento básico.`
+      },
+      // D15: Descripción de la política contable para instrumentos financieros derivados
+      {
+        celda: 'D15',
+        contenido: `No Aplica`
+      },
+      // D16: Descripción de la política contable para beneficios a los empleados
+      {
+        celda: 'D16',
+        contenido: `Los beneficios a empleados de corto plazo (salarios, prestaciones sociales legales, vacaciones, bonificaciones) se reconocen como gasto y pasivo cuando el empleado ha prestado el servicio. Los beneficios post-empleo incluyen contribuciones definidas a fondos de pensiones y cesantías administrados por terceros, reconocidas como gasto cuando se incurren. Los beneficios de largo plazo (quinquenios, primas de antigüedad) se reconocen como provisión cuando existe una obligación legal o implícita. Las indemnizaciones por terminación se reconocen cuando la empresa está comprometida a terminar el empleo.`
+      },
+      // D17: Descripción de la política contable para gastos
+      {
+        celda: 'D17',
+        contenido: `Los gastos se reconocen cuando se incurren, independientemente del momento del pago, siguiendo el principio de devengo. Los gastos operacionales incluyen los costos necesarios para la prestación de servicios de acueducto, alcantarillado y aseo: personal operativo, mantenimiento de infraestructura, insumos químicos, energía eléctrica para bombeo, combustibles, y disposición final de residuos. Los gastos administrativos incluyen personal administrativo, honorarios profesionales, y gastos generales de oficina. Los gastos se clasifican por naturaleza en el estado de resultados.`
+      },
+      // D18: Descripción de la política contable para conversión de moneda extranjera
+      {
+        celda: 'D18',
+        contenido: `No Aplica`
+      },
+      // D19: Descripción de la política contable para la moneda funcional
+      {
+        celda: 'D19',
+        contenido: `La moneda funcional y de presentación de la empresa es el peso colombiano (COP), que es la moneda del entorno económico principal en el que opera. Todas las transacciones se registran en pesos colombianos. La empresa no mantiene operaciones significativas en moneda extranjera dado que sus actividades de servicios públicos domiciliarios se desarrollan exclusivamente en el territorio colombiano.`
+      },
+      // D20: Descripción de la política contable para la plusvalía
+      {
+        celda: 'D20',
+        contenido: `No Aplica`
+      },
+      // D21: Descripción de las políticas contables para subvenciones gubernamentales
+      {
+        celda: 'D21',
+        contenido: `Las subvenciones gubernamentales se reconocen cuando existe seguridad razonable de que se cumplirán las condiciones asociadas y que la subvención será recibida. Los subsidios operativos para cubrir la diferencia entre tarifas plenas y subsidiadas de estratos 1, 2 y 3 se reconocen como ingreso en el período en que se presta el servicio subsidiado. Los aportes de capital para infraestructura se reconocen inicialmente como ingreso diferido y se amortizan sistemáticamente durante la vida útil del activo financiado. Las contribuciones de solidaridad de estratos 5 y 6 se reconocen como ingreso cuando se facturan.`
+      },
+      // D22: Descripción de la política contable para deterioro del valor de activos
+      {
+        celda: 'D22',
+        contenido: `Al cierre de cada período se evalúa si existe algún indicio de deterioro del valor de los activos. Si existe tal indicio, se estima el valor recuperable del activo (mayor entre valor razonable menos costos de venta y valor en uso). Si el valor en libros excede el valor recuperable, se reconoce una pérdida por deterioro. Para activos de infraestructura de servicios públicos, los indicios de deterioro incluyen obsolescencia tecnológica, daño físico, cambios regulatorios adversos, o reducción significativa en la demanda del servicio. Las pérdidas por deterioro se reversan si las circunstancias que las originaron dejan de existir.`
+      },
+      // D23: Descripción de la política contable para impuestos a las ganancias
+      {
+        celda: 'D23',
+        contenido: `El gasto por impuesto a las ganancias comprende el impuesto corriente y el impuesto diferido. El impuesto corriente se calcula sobre la renta líquida gravable del período aplicando las tarifas vigentes. El impuesto diferido se reconoce sobre las diferencias temporarias entre el valor en libros de los activos y pasivos y su base fiscal, utilizando las tarifas que se espera aplicar cuando las diferencias se reviertan. Las principales diferencias temporarias surgen por depreciación de activos fijos, provisión de cartera, y beneficios a empleados. Los activos por impuesto diferido se reconocen solo cuando es probable su recuperación.`
+      },
+      // D24: Descripción de la política contable para activos intangibles
+      {
+        celda: 'D24',
+        contenido: `Los activos intangibles adquiridos separadamente se miden inicialmente al costo. Los intangibles generados internamente (excepto costos de desarrollo capitalizados) se reconocen como gasto cuando se incurren. Los activos intangibles con vida útil finita se amortizan durante su vida útil estimada y se evalúan para deterioro cuando hay indicios. Los principales intangibles incluyen software de gestión comercial y facturación, licencias de uso, derechos de servidumbre, y costos de desarrollo de sistemas de información. La amortización se calcula por el método de línea recta durante el menor entre la vida útil estimada y el término del contrato.`
+      },
+      // D25: Descripción de las políticas contables para inversiones en asociadas
+      {
+        celda: 'D25',
+        contenido: `No Aplica`
+      },
+      // D26: Descripción de la política contable para inversiones en negocios conjuntos
+      {
+        celda: 'D26',
+        contenido: `No Aplica`
+      },
+      // D27: Descripción de la política contable para propiedades de inversión
+      {
+        celda: 'D27',
+        contenido: `No Aplica`
+      },
+      // D28: Descripción de la política contable para el capital emitido
+      {
+        celda: 'D28',
+        contenido: `El capital social se reconoce al valor nominal de las acciones o cuotas emitidas. Las primas en colocación de acciones se reconocen en el patrimonio como prima de emisión. Los costos directamente atribuibles a la emisión de instrumentos de patrimonio se reconocen como deducción del patrimonio. La distribución de dividendos se reconoce como pasivo cuando es aprobada por el máximo órgano social. Las reservas legales y estatutarias se constituyen según los requisitos legales y los estatutos de la empresa.`
+      },
+      // D29: Descripción de la política contable para arrendamientos
+      {
+        celda: 'D29',
+        contenido: `La empresa evalúa al inicio del contrato si este contiene un arrendamiento. Para arrendamientos en los que la empresa es arrendataria, se reconoce un activo por derecho de uso y un pasivo por arrendamiento, excepto para arrendamientos de corto plazo (12 meses o menos) y de activos de bajo valor, que se reconocen como gasto de forma lineal. El activo por derecho de uso se deprecia durante el menor entre la vida útil del activo y el plazo del arrendamiento. Los principales arrendamientos incluyen vehículos, equipos de cómputo, y oficinas administrativas.`
+      },
+      // D30: Descripción de la política contable para préstamos y cuentas por cobrar
+      {
+        celda: 'D30',
+        contenido: `Las cuentas por cobrar comerciales (cartera de usuarios de servicios públicos) se reconocen inicialmente al precio de transacción y posteriormente al costo amortizado menos deterioro. El deterioro se determina utilizando el modelo de pérdidas crediticias esperadas, basado en la experiencia histórica de recaudo, la antigüedad de la cartera, y las condiciones económicas actuales y proyectadas. La cartera se clasifica por servicio (acueducto, alcantarillado, aseo), por tipo de usuario (residencial por estratos, comercial, industrial, oficial), y por antigüedad. Se castigan las cuentas incobrables después de agotar la gestión de cobro.`
+      },
+      // D31: Descripción de las políticas contables para la medición de inventarios
+      {
+        celda: 'D31',
+        contenido: `Los inventarios se miden al menor entre el costo y el valor neto realizable. El costo se determina utilizando el método de promedio ponderado e incluye los costos de adquisición y otros costos incurridos para darles su condición y ubicación actuales. Los inventarios incluyen materiales para mantenimiento de redes (tuberías, válvulas, accesorios, medidores), insumos químicos para tratamiento de agua, repuestos de equipos, y materiales de aseo. Se reconoce deterioro cuando el valor neto realizable es inferior al costo o cuando los inventarios están dañados, obsoletos o de lento movimiento.`
+      },
+      // D32: Descripción de la política contable para activos de petróleo y gas
+      {
+        celda: 'D32',
+        contenido: `No Aplica`
+      },
+      // D33: Descripción de la política contable para propiedades, planta y equipo
+      {
+        celda: 'D33',
+        contenido: `Las propiedades, planta y equipo se reconocen inicialmente al costo, que incluye el precio de adquisición, aranceles, impuestos no recuperables, y costos directamente atribuibles para poner el activo en condiciones de uso. Posteriormente se miden al costo menos depreciación acumulada y deterioro. La depreciación se calcula por el método de línea recta durante la vida útil estimada: plantas de tratamiento (30-50 años), redes de acueducto y alcantarillado (30-50 años), equipos de bombeo (15-20 años), vehículos recolectores (8-10 años), edificaciones (50 años), muebles y equipos de oficina (10 años), equipos de cómputo (5 años). Los costos de mantenimiento se reconocen como gasto; las mejoras que incrementan vida útil o capacidad se capitalizan.`
+      },
+      // D34: Descripción de la política contable para provisiones
+      {
+        celda: 'D34',
+        contenido: `Se reconoce una provisión cuando la empresa tiene una obligación presente (legal o implícita) como resultado de un evento pasado, es probable que se requiera una salida de recursos para liquidar la obligación, y el monto puede estimarse de manera fiable. Las provisiones se miden por la mejor estimación del desembolso requerido para cancelar la obligación a la fecha del balance. Incluyen provisiones por litigios laborales y civiles, reclamaciones de usuarios, sanciones regulatorias, obligaciones ambientales, garantías, y beneficios a empleados de largo plazo. Las provisiones se revisan cada período y se ajustan para reflejar la mejor estimación actual.`
+      },
+      // D35: Descripción de las políticas contables para el reconocimiento de ingresos de actividades ordinarias
+      {
+        celda: 'D35',
+        contenido: `Los ingresos se reconocen cuando se transfiere el control del servicio al cliente. Para servicios de acueducto, alcantarillado y aseo, los ingresos se reconocen en el período en que se presta el servicio: el consumo de agua medido (o estimado para usuarios sin medidor), el vertimiento de aguas residuales, y la recolección de residuos sólidos. Los ingresos incluyen cargo fijo y cargo por consumo/uso según las tarifas aprobadas por la CRA. Las contribuciones de solidaridad de estratos 5 y 6 se reconocen cuando se facturan. Los subsidios se reconocen cuando se presta el servicio subsidiado. Los cargos por conexión y reconexión se reconocen cuando se realiza el servicio.`
+      },
+      // D36: Descripción de la política contable para gastos de investigación y desarrollo
+      {
+        celda: 'D36',
+        contenido: `No Aplica`
+      },
+      // D37: Descripción de la política contable para el efectivo y equivalentes al efectivo restringido
+      {
+        celda: 'D37',
+        contenido: `No Aplica`
+      },
+      // D38: Descripción de la política contable para acreedores comerciales y otras cuentas por pagar
+      {
+        celda: 'D38',
+        contenido: `Los acreedores comerciales y otras cuentas por pagar se reconocen inicialmente al valor razonable y posteriormente al costo amortizado utilizando el método de la tasa de interés efectiva. Cuando el plazo de pago es corto y no existe un componente financiero significativo, se miden al valor nominal. Incluyen obligaciones con proveedores de insumos químicos, materiales, repuestos, contratistas de obras y servicios, honorarios profesionales, y otros acreedores. Se dan de baja cuando la obligación se liquida, cancela o expira.`
+      },
+      // D39: Descripción de la política contable para transacciones con partes relacionadas
+      {
+        celda: 'D39',
+        contenido: `Las transacciones con partes relacionadas (accionistas, administradores, empresas vinculadas, personal clave de la gerencia) se realizan en condiciones equivalentes a las que existen para transacciones entre partes independientes. Se revelan la naturaleza de la relación, el tipo de transacciones, los montos involucrados, y los saldos pendientes al cierre. Las partes relacionadas incluyen los accionistas con influencia significativa, los miembros de la Junta Directiva, el Gerente General, los directores de área, y las empresas del mismo grupo empresarial si aplica.`
+      },
+      // D40: Descripción de otras políticas contables relevantes para comprender los estados financieros
+      {
+        celda: 'D40',
+        contenido: `Otras políticas contables relevantes incluyen: (a) Hechos posteriores: se ajustan los estados financieros por eventos que proporcionan evidencia de condiciones existentes al cierre; los eventos que no requieren ajuste se revelan. (b) Negocio en marcha: los estados financieros se preparan bajo el supuesto de que la empresa continuará operando indefinidamente. (c) Materialidad: las partidas se consideran materiales cuando su omisión o error puede influir en las decisiones económicas de los usuarios. (d) Compensación: los activos y pasivos, e ingresos y gastos, no se compensan excepto cuando lo requiere o permite una norma.`
+      },
+      // D41: Descripción de la política contable de inversiones de administración de liquidez
+      {
+        celda: 'D41',
+        contenido: `Las inversiones de administración de liquidez comprenden instrumentos financieros de alta liquidez y bajo riesgo que se mantienen para cubrir necesidades de efectivo de corto plazo. Incluyen depósitos a término fijo, certificados de depósito, y otros instrumentos de renta fija con vencimiento original menor a un año. Se miden al costo amortizado cuando se mantienen para cobrar flujos contractuales de principal e intereses. Los rendimientos se reconocen como ingreso financiero utilizando el método de la tasa de interés efectiva durante el período de la inversión.`
+      },
+      // D42: Descripción de la política contable para préstamos por cobrar
+      {
+        celda: 'D42',
+        contenido: `No Aplica`
+      },
+      // D43: Descripción de la política contable para el reconocimiento de ingresos por contratos de construcción
+      {
+        celda: 'D43',
+        contenido: `No Aplica`
+      },
+    ];
+
+    // Escribir todas las políticas en el worksheet
+    for (const politica of politicas) {
+      this.writeCell(worksheet, politica.celda, politica.contenido);
+    }
+
+    console.log(`[R414] Hoja10 completada - ${politicas.length} políticas escritas (D11 a D43).`);
+  }
+
+  /**
    * Override del método fillExcelData para incluir Hoja7 y otras hojas específicas.
    */
   override fillExcelData(
@@ -1317,6 +1606,14 @@ export class R414TemplateService extends BaseTemplateService {
     const sheet9 = wb.getWorksheet('Hoja9');
     if (sheet9) {
       this.fillHoja9Sheet(sheet9, options);
+    }
+
+    // =====================================================
+    // HOJA10: Notas - Lista de Políticas [800600]
+    // =====================================================
+    const sheet10 = wb.getWorksheet('Hoja10');
+    if (sheet10) {
+      this.fillHoja10Sheet(sheet10, options);
     }
 
     // =====================================================
@@ -1411,6 +1708,14 @@ export class R414TemplateService extends BaseTemplateService {
     const sheet32 = wb.getWorksheet('Hoja32');
     if (sheet32 && sheet2) {
       this.fillFC05bSheet(sheet32, sheet2);
+    }
+
+    // =====================================================
+    // HOJA FC04: Subsidios y Contribuciones (Hoja30)
+    // =====================================================
+    const sheet30 = wb.getWorksheet('Hoja30');
+    if (sheet30) {
+      this.fillFC04Sheet(sheet30, options);
     }
   }
 }
