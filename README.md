@@ -158,6 +158,7 @@ app/
 |---------|-------------|
 | `CLAUDE.md` | Guía para Claude Code |
 | `todo.md` | Estado de tareas |
+| `docs/ENVIRONMENTS.md` | **Configuración de entornos (Dev/Prod)** |
 | `docs/plan_refactorizacion_taxonomias.md` | Plan de refactorización |
 | `docs/CONTINUIDAD_REFACTORIZACION.md` | Documento de continuidad |
 | `docs/analisis_taxonomias_sspd.md` | Análisis de taxonomías |

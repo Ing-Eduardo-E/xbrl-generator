@@ -76,11 +76,8 @@ export function GenerateStep({ onBack, onReset, ifeCompanyData, ifeMetadata }: G
   // Formulario para datos de la empresa
   const [companyId, setCompanyId] = useState('');
   const [companyName, setCompanyName] = useState('');
-  // Fecha por defecto: 31 de diciembre del año actual (se sobrescribe con ifeMetadata si aplica)
-  const [reportDate, setReportDate] = useState(() => {
-    const year = new Date().getFullYear();
-    return `${year}-12-31`;
-  });
+  // Fecha por defecto: 31 de diciembre de 2024 (Corte fiscal actual)
+  const [reportDate, setReportDate] = useState('2024-12-31');
   const [nit, setNit] = useState('');
   const [businessNature, setBusinessNature] = useState('Servicios publicos domiciliarios');
   const [startDate, setStartDate] = useState('');
