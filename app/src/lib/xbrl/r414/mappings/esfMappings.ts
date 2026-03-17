@@ -24,6 +24,10 @@ export const R414_SERVICE_COLUMNS: ServiceColumnMapping = {
   acueducto: 'I',
   alcantarillado: 'J',
   aseo: 'K',
+  energia: 'L',
+  gas: 'M',
+  glp: 'N',
+  otras: 'O',
   total: 'P',
 };
 

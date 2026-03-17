@@ -21,6 +21,10 @@ import * as XLSX from 'xlsx';
 import { ESF_CONCEPTS, getTaxonomyConfig, findESFConceptByPUC } from '../taxonomyConfig';
 import type { NiifGroup } from '../taxonomyConfig';
 import type { AccountData, ServiceBalanceData, TemplateCustomization, TemplateWithDataOptions } from './interfaces';
+import {
+  R414_SERVICE_COLUMNS,
+  R414_ESF_MAPPINGS as _R414_ESF_MAPPINGS,
+} from '../r414/mappings';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SECCIÓN 1 — Constantes de mapeo y configuración (~L25-185)
@@ -140,17 +144,7 @@ const SERVICE_COLUMNS: Record<string, string> = {
   other: 'Q',
 };
 
-// DEUDA: R414_SERVICE_COLUMNS está duplicado del monolito (L186). Mover a official/mappings/ e importar directamente en Fase 7.
-const R414_SERVICE_COLUMNS: Record<string, string> = {
-  acueducto: 'I',
-  alcantarillado: 'J',
-  aseo: 'K',
-  energia: 'L',
-  gas: 'M',
-  glp: 'N',
-  otras: 'O',
-  total: 'P',
-};
+// R414_SERVICE_COLUMNS importado desde r414/mappings (fuente canónica).
 
 // DEUDA: R414_ER_COLUMNS está duplicado del monolito (L512). Mover a official/mappings/ e importar directamente en Fase 7.
 const R414_ER_COLUMNS: Record<string, string> = {
@@ -167,12 +161,8 @@ interface R414ESFMapping {
   excludePrefixes?: string[];
 }
 
-// DEUDA: R414_ESF_MAPPINGS está duplicado del monolito (L502). Mover a official/mappings/ e importar directamente en Fase 7.
-// Esta es la versión consolidada (R414_ESF_ACTIVOS + R414_ESF_PASIVOS + R414_ESF_PATRIMONIO).
-// Para la lista completa ver officialTemplateService.ts L208–L506.
-// Se deja vacía para evitar duplicar ~300 líneas; al usar este módulo de forma independiente
-// deberá importarse o pasarse como parámetro.
-const R414_ESF_MAPPINGS: R414ESFMapping[] = [];   // DEPENDENCIA CRUZADA — ver L502
+// R414_ESF_MAPPINGS importado desde r414/mappings (fuente canónica).
+const R414_ESF_MAPPINGS: R414ESFMapping[] = _R414_ESF_MAPPINGS as R414ESFMapping[];
 
 // DEUDA: R414_ER_MAPPINGS está duplicado del monolito (L542). Mover a official/mappings/ e importar directamente en Fase 7.
 const R414_ER_MAPPINGS: R414ESFMapping[] = [
@@ -428,8 +418,9 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
           }
 
           // Escribir valores por servicio en columnas I, J, K
+          const r414ServiceColumnMap = R414_SERVICE_COLUMNS as unknown as Record<string, string | undefined>;
           for (const service of activeServices) {
-            const serviceColumn = R414_SERVICE_COLUMNS[service];
+            const serviceColumn = r414ServiceColumnMap[service];
             if (!serviceColumn) continue;
 
             let serviceValue = 0;

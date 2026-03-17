@@ -3,6 +3,13 @@
  * Extraído de officialTemplateService.ts (L34–891).
  */
 import type { NiifGroup } from '../taxonomyConfig';
+import {
+  R414_SERVICE_COLUMNS,
+  R414_ESF_ACTIVOS as _R414_ESF_ACTIVOS,
+  R414_ESF_PASIVOS as _R414_ESF_PASIVOS,
+  R414_ESF_PATRIMONIO as _R414_ESF_PATRIMONIO,
+  R414_ESF_MAPPINGS as _R414_ESF_MAPPINGS,
+} from '../r414/mappings';
 
 /** Rutas de plantillas por grupo NIIF */
 export const TEMPLATE_PATHS: Record<NiifGroup, {
@@ -156,17 +163,9 @@ export const SERVICE_COLUMNS: Record<string, string> = {
 /**
  * Estructura de columnas para R414
  * En R414: I = Acueducto, J = Alcantarillado, K = Aseo, P = Total
+ * Importado desde r414/mappings (fuente canónica).
  */
-export const R414_SERVICE_COLUMNS: Record<string, string> = {
-  acueducto: 'I',
-  alcantarillado: 'J',
-  aseo: 'K',
-  energia: 'L',
-  gas: 'M',
-  glp: 'N',
-  otras: 'O',
-  total: 'P',
-};
+export { R414_SERVICE_COLUMNS };
 
 /**
  * Mapeo de filas ESF para R414 Hoja2
@@ -179,217 +178,14 @@ export interface R414ESFMapping {
   excludePrefixes?: string[];
 }
 
-export const R414_ESF_ACTIVOS: R414ESFMapping[] = [
-  // =====================================================
-  // ACTIVOS CORRIENTES (filas 14-32)
-  // Basado en PUC Resolución 414 CGN para servicios públicos
-  // =====================================================
-
-  // Fila 15: Efectivo y equivalentes al efectivo
-  { row: 15, label: 'Efectivo y equivalentes al efectivo', pucPrefixes: ['11'], excludePrefixes: ['1132'] },
-
-  // Fila 16: Efectivo de uso restringido corriente
-  { row: 16, label: 'Efectivo de uso restringido corriente', pucPrefixes: ['1132'] },
-
-  // Fila 19: CXC por prestación de servicios públicos (SIN subsidios ni aprovechamiento)
-  { row: 19, label: 'CXC servicios públicos (sin subsidios)', pucPrefixes: ['131801', '131802', '131803', '131804', '131805', '131806'] },
-
-  // Fila 20: CXC por subsidios corrientes
-  { row: 20, label: 'CXC subsidios corrientes', pucPrefixes: ['131807', '131808', '131809', '131810', '131811', '131812'] },
-
-  // Fila 22: CXC por actividad de aprovechamiento corrientes
-  { row: 22, label: 'CXC aprovechamiento corrientes', pucPrefixes: ['138424'] },
-
-  // Fila 24: CXC por venta de bienes corrientes
-  { row: 24, label: 'CXC venta de bienes corrientes', pucPrefixes: ['1316'] },
-
-  // Fila 25: CXC a partes relacionadas corrientes
-  { row: 25, label: 'CXC partes relacionadas corrientes', pucPrefixes: ['138401', '138414'] },
-
-  // Fila 26: Otras cuentas por cobrar corrientes
-  { row: 26, label: 'Otras CXC corrientes', pucPrefixes: ['1311', '1317', '1319', '1322', '1324', '1333', '1384', '1385', '1387'], excludePrefixes: ['138401', '138414', '138424'] },
-
-  // Fila 27: Deterioro acumulado de CXC (resta)
-  { row: 27, label: 'Deterioro CXC corrientes', pucPrefixes: ['1386', '1388'] },
-
-  // Fila 28: Inventarios corrientes
-  { row: 28, label: 'Inventarios corrientes', pucPrefixes: ['15'], excludePrefixes: ['1580'] },
-
-  // Fila 30: Otros activos financieros corrientes
-  { row: 30, label: 'Otros activos financieros corrientes', pucPrefixes: ['12'], excludePrefixes: ['1280'] },
-
-  // Fila 31: Otros activos no financieros corrientes
-  { row: 31, label: 'Otros activos no financieros corrientes', pucPrefixes: ['19'] },
-
-  // =====================================================
-  // ACTIVOS NO CORRIENTES (filas 33-63)
-  // =====================================================
-
-  // Fila 34: Propiedades, planta y equipo (NETO)
-  { row: 34, label: 'Propiedades, planta y equipo', pucPrefixes: ['16'] },
-
-  // Fila 35: Efectivo de uso restringido no corriente
-  { row: 35, label: 'Efectivo restringido no corriente', pucPrefixes: ['113210'] },
-
-  // Fila 37: Inversiones en asociadas (método participación)
-  { row: 37, label: 'Inversiones en asociadas', pucPrefixes: ['1230'] },
-
-  // Fila 38: Inversiones en negocios conjuntos
-  { row: 38, label: 'Inversiones en negocios conjuntos', pucPrefixes: ['1233'] },
-
-  // Fila 39: Inversiones en controladas (subsidiarias)
-  { row: 39, label: 'Inversiones en controladas', pucPrefixes: ['1227'] },
-
-  // Fila 40: Inversiones en entidades en liquidación
-  { row: 40, label: 'Inversiones entidades en liquidación', pucPrefixes: ['1216'] },
-
-  // Fila 53: Activos por impuestos diferidos
-  { row: 53, label: 'Activos por impuestos diferidos', pucPrefixes: ['1905'] },
-
-  // Fila 55: Planes de activos (beneficios empleados LP)
-  { row: 55, label: 'Planes de activos', pucPrefixes: ['1920'] },
-
-  // Fila 57: Propiedad de inversión
-  { row: 57, label: 'Propiedad de inversión', pucPrefixes: ['1975'] },
-
-  // Fila 59: Activos intangibles
-  { row: 59, label: 'Activos intangibles', pucPrefixes: ['17'] },
-
-  // Fila 61: Otros activos no corrientes
-  { row: 61, label: 'Otros activos no corrientes', pucPrefixes: ['19'] },
-];
-
-export const R414_ESF_PASIVOS: R414ESFMapping[] = [
-  // =====================================================
-  // PASIVOS CORRIENTES (filas 67-88)
-  // =====================================================
-
-  // Fila 69: Provisiones corrientes por beneficios a empleados
-  { row: 69, label: 'Provisiones beneficios empleados corrientes', pucPrefixes: ['2511'] },
-
-  // Fila 70: Otras provisiones corrientes
-  { row: 70, label: 'Otras provisiones corrientes', pucPrefixes: ['27'] },
-
-  // Fila 73: Cuentas por pagar por adquisición de servicios
-  { row: 73, label: 'Cuentas por pagar servicios', pucPrefixes: ['240101'] },
-
-  // Fila 74: Cuentas por pagar por adquisición de bienes
-  { row: 74, label: 'Cuentas por pagar proveedores', pucPrefixes: ['2401', '2406'], excludePrefixes: ['240101'] },
-
-  // Fila 75: Cuentas por pagar a partes relacionadas corrientes
-  { row: 75, label: 'Cuentas por pagar partes relacionadas', pucPrefixes: ['249056', '249057'] },
-
-  // Fila 76: Otras cuentas comerciales por pagar corrientes
-  { row: 76, label: 'Otras cuentas por pagar', pucPrefixes: ['2424', '2407', '2490'], excludePrefixes: ['249056', '249057'] },
-
-  // Fila 78: Emisión de títulos de deuda corrientes
-  { row: 78, label: 'Títulos de deuda corrientes', pucPrefixes: ['2222', '2224'] },
-
-  // Fila 79: Préstamos por pagar corrientes
-  { row: 79, label: 'Préstamos por pagar corrientes', pucPrefixes: ['2313', '2316'] },
-
-  // Fila 80: Pasivo por impuesto a las ganancias corriente
-  { row: 80, label: 'Impuesto ganancias por pagar', pucPrefixes: ['244001'] },
-
-  // Fila 82: Ingresos recibidos por anticipado corrientes
-  { row: 82, label: 'Ingresos diferidos corrientes', pucPrefixes: ['2910'] },
-
-  // Fila 83: Pasivos por impuestos diferidos corrientes
-  { row: 83, label: 'Pasivos impuestos diferidos corrientes', pucPrefixes: ['2918'] },
-
-  // Fila 86: Otros pasivos financieros corrientes
-  { row: 86, label: 'Otros pasivos financieros corrientes', pucPrefixes: ['21'] },
-
-  // Fila 87: Otros pasivos no financieros corrientes
-  { row: 87, label: 'Otros pasivos no financieros corrientes', pucPrefixes: ['2436', '2440', '2445', '29'], excludePrefixes: ['244001'] },
-
-  // =====================================================
-  // PASIVOS NO CORRIENTES (filas 89-110)
-  // =====================================================
-
-  // Fila 91: Provisiones no corrientes por beneficios a empleados
-  { row: 91, label: 'Provisiones beneficios empleados LP', pucPrefixes: ['2512', '2513', '2514', '2515'] },
-
-  // Fila 92: Otras provisiones no corrientes
-  { row: 92, label: 'Otras provisiones no corrientes', pucPrefixes: ['2790'] },
-
-  // Fila 95: Cuentas por pagar por adquisición de bienes no corrientes
-  { row: 95, label: 'Cuentas por pagar bienes LP', pucPrefixes: ['2495'] },
-
-  // Fila 100: Emisión de títulos de deuda no corrientes
-  { row: 100, label: 'Títulos de deuda LP', pucPrefixes: ['2223', '2225'] },
-
-  // Fila 101: Préstamos por pagar no corrientes
-  { row: 101, label: 'Préstamos por pagar LP', pucPrefixes: ['2314', '2317'] },
-
-  // Fila 103: Pasivos por impuestos diferidos no corrientes
-  { row: 103, label: 'Pasivos por impuestos diferidos LP', pucPrefixes: ['2918'] },
-
-  // Fila 105: Ingresos recibidos por anticipado no corrientes
-  { row: 105, label: 'Ingresos diferidos LP', pucPrefixes: ['2990'] },
-
-  // Fila 108: Otros pasivos financieros no corrientes
-  { row: 108, label: 'Otros pasivos financieros LP', pucPrefixes: ['26'] },
-];
-
-export const R414_ESF_PATRIMONIO: R414ESFMapping[] = [
-  // =====================================================
-  // PATRIMONIO (filas 112-130)
-  // PUC Resolución 414 CGN - Clase 32: Patrimonio de las empresas
-  // =====================================================
-
-  // Fila 113: Aportes sociales (cooperativas, fondos)
-  { row: 113, label: 'Aportes sociales', pucPrefixes: ['3203'] },
-
-  // Fila 114: Capital suscrito y pagado
-  { row: 114, label: 'Capital suscrito y pagado', pucPrefixes: ['3204'] },
-
-  // Fila 115: Capital fiscal (entidades del estado)
-  { row: 115, label: 'Capital fiscal', pucPrefixes: ['3208'] },
-
-  // Fila 116: Prima en colocación de acciones
-  { row: 116, label: 'Prima en colocación', pucPrefixes: ['3210'] },
-
-  // Fila 117: Reserva legal
-  { row: 117, label: 'Reserva legal', pucPrefixes: ['321501'] },
-
-  // Fila 118: Otras reservas
-  { row: 118, label: 'Otras reservas', pucPrefixes: ['3215'], excludePrefixes: ['321501'] },
-
-  // Fila 119: Dividendos decretados en especie
-  { row: 119, label: 'Dividendos decretados especie', pucPrefixes: ['3220'] },
-
-  // Fila 120: Ganancias acumuladas (resultados)
-  { row: 120, label: 'Ganancias acumuladas', pucPrefixes: ['3225', '3230'] },
-
-  // Fila 121: Impactos por transición al nuevo marco NIIF
-  { row: 121, label: 'Impactos transición NIIF', pucPrefixes: ['3290'] },
-
-  // Fila 123: ORI Inversiones valor razonable
-  { row: 123, label: 'ORI Inversiones', pucPrefixes: ['3271'] },
-
-  // Fila 124: ORI Coberturas de flujos de efectivo
-  { row: 124, label: 'ORI Coberturas flujos efectivo', pucPrefixes: ['3272'] },
-
-  // Fila 126: ORI Método de participación
-  { row: 126, label: 'ORI Método participación', pucPrefixes: ['3274', '3275', '3276'] },
-
-  // Fila 127: ORI Cobertura inversión neta en extranjero
-  { row: 127, label: 'ORI Cobertura inversión extranjero', pucPrefixes: ['3273'] },
-
-  // Fila 129: ORI Beneficios a empleados (actuariales)
-  { row: 129, label: 'ORI Beneficios empleados', pucPrefixes: ['3280'] },
-
-  // Fila 130: ORI Conversión de estados financieros
-  { row: 130, label: 'ORI Conversión estados financieros', pucPrefixes: ['3281'] },
-];
-
-// Combinar todos los mapeos R414
-export const R414_ESF_MAPPINGS: R414ESFMapping[] = [
-  ...R414_ESF_ACTIVOS,
-  ...R414_ESF_PASIVOS,
-  ...R414_ESF_PATRIMONIO,
-];
+/**
+ * Mapeos ESF R414 importados desde r414/mappings (fuente canónica).
+ * Casteados a R414ESFMapping[] para compatibilidad con el tipo local (label requerido).
+ */
+export const R414_ESF_ACTIVOS: R414ESFMapping[] = _R414_ESF_ACTIVOS as R414ESFMapping[];
+export const R414_ESF_PASIVOS: R414ESFMapping[] = _R414_ESF_PASIVOS as R414ESFMapping[];
+export const R414_ESF_PATRIMONIO: R414ESFMapping[] = _R414_ESF_PATRIMONIO as R414ESFMapping[];
+export const R414_ESF_MAPPINGS: R414ESFMapping[] = _R414_ESF_MAPPINGS as R414ESFMapping[];
 
 // ===============================================
 // MAPEOS R414 - ESTADO DE RESULTADOS (Hoja3)
