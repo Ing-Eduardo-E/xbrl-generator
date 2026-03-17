@@ -1,332 +1,253 @@
 /**
- * Servicio Dispatcher para plantillas XBRL oficiales de la SSPD.
- *
- * Este archivo actúa como puente/dispatcher que delega la generación
- * de plantillas a los servicios específicos de cada taxonomía.
- *
- * Taxonomías soportadas:
- * - R414: Resolución 414 CGN (Sector Público) - ACTIVA
- * - IFE: Informe Financiero Especial (Trimestral) - ACTIVA
- * - Grupo1, Grupo2, Grupo3: Pendientes de implementación
- *
- * @module officialTemplateService
+ * OfficialTemplateService — punto de entrada público.
+ * La implementación está en lib/xbrl/official/.
  */
+export * from './official';
 
-import type { NiifGroup, TaxonomyYear } from './taxonomyConfig';
-import { r414TemplateService } from './r414';
-import { ifeTemplateService } from './ife';
+import path from 'path';
+import JSZip from 'jszip';
+import type { NiifGroup } from './taxonomyConfig';
+import { getTaxonomyConfig } from './taxonomyConfig';
+import { loadTemplate, loadBinaryTemplate } from './official/fileLoaders';
+import { customizeExcelWithData } from './official/excelDataFiller';
+import { rewriteFinancialDataWithExcelJS } from './official/excelRewriter';
+import { customizeXbrlt, customizeXml, generateReadme } from './official/templateCustomizers';
+import { TEMPLATE_PATHS } from './official/templatePaths';
+import type { TemplateWithDataOptions, TemplateCustomization, OfficialTemplatePackage } from './official/interfaces';
 
-// Importar tipos desde types.ts (no re-exportar para evitar conflictos)
-import type {
-  AccountData,
-  ServiceBalanceData,
-  UsuariosEstrato,
-  OfficialTemplatePackage,
-} from './types';
-
-// ============================================
-// INTERFACES PARA COMPATIBILIDAD CON ROUTER
-// ============================================
+// ═══════════════════════════════════════════════════════════════════
+// FUNCIONES PÚBLICAS (L4717–4943 del monolito original)
+// ═══════════════════════════════════════════════════════════════════
 
 /**
- * Estructura de subsidios por servicio
- */
-export interface SubsidiosPorServicio {
-  acueducto: number;
-  alcantarillado: number;
-  aseo: number;
-}
-
-/**
- * Opciones de personalización de plantilla base
- */
-export interface TemplateCustomization {
-  /** Grupo NIIF de la taxonomía */
-  niifGroup: NiifGroup;
-  /** ID de la empresa (RUPS) */
-  companyId: string;
-  /** Nombre de la empresa */
-  companyName: string;
-  /** Fecha del reporte (YYYY-MM-DD) */
-  reportDate: string;
-  /** Año de la taxonomía */
-  taxonomyYear?: TaxonomyYear;
-  /** NIT de la empresa */
-  nit?: string;
-  /** Naturaleza del negocio */
-  businessNature?: string;
-  /** Fecha de inicio de operaciones */
-  startDate?: string;
-  /** Grado de redondeo (1=Pesos, 2=Miles, 3=Millones, 4=Pesos redondeada a miles) */
-  roundingDegree?: string;
-  /** ¿Presenta información reexpresada? (Sí/No) */
-  hasRestatedInfo?: string;
-  /** Período de reexpresión */
-  restatedPeriod?: string;
-}
-
-/**
- * Datos específicos para IFE (Informe Financiero Especial)
- */
-export interface IFESpecificData {
-  // Dirección y contacto
-  address?: string;
-  city?: string;
-  phone?: string;
-  cellphone?: string;
-  email?: string;
-  // Empleados
-  employeesStart?: number;
-  employeesEnd?: number;
-  employeesAverage?: number;
-  // Representante legal
-  representativeDocType?: string;
-  representativeDocNumber?: string;
-  representativeFirstName?: string;
-  representativeLastName?: string;
-  // Marco normativo y continuidad
-  normativeGroup?: string;
-  complianceDeclaration?: string;
-  goingConcernUncertainty?: string;
-  goingConcernExplanation?: string;
-  servicesContinuityUncertainty?: string;
-  servicesTermination?: string;
-  servicesTerminationDetail?: string;
-}
-
-/**
- * Opciones extendidas con datos financieros
- */
-export interface TemplateWithDataOptions extends TemplateCustomization {
-  /** Cuentas consolidadas del balance */
-  consolidatedAccounts?: Array<{
-    code: string;
-    name: string;
-    value: number;
-    isLeaf: boolean;
-    level: number;
-    class: string;
-  }>;
-  /** Balances distribuidos por servicio */
-  serviceBalances?: Array<{
-    service: string;
-    code: string;
-    name: string;
-    value: number;
-    isLeaf: boolean;
-  }>;
-  /** Servicios activos para la empresa */
-  activeServices?: string[];
-  /** Usuarios por estrato y servicio (para distribución proporcional) */
-  usuariosEstrato?: {
-    acueducto?: Record<string, number>;
-    alcantarillado?: Record<string, number>;
-    aseo?: Record<string, number>;
-  };
-  /** Subsidios recibidos por servicio */
-  subsidios?: SubsidiosPorServicio;
-  /** Datos específicos para IFE */
-  ifeData?: IFESpecificData;
-}
-
-// ============================================
-// FUNCIONES PÚBLICAS - DISPATCHER
-// ============================================
-
-/**
- * Genera un paquete de plantilla oficial sin datos financieros.
- * Solo personaliza metadatos (empresa, fecha, etc.)
- *
- * @deprecated Usar generateOfficialTemplatePackageWithData en su lugar
+ * Genera el paquete completo de archivos XBRL usando plantillas oficiales
+ * Esta función solo llena metadatos. Para incluir datos financieros use
+ * generateOfficialTemplatePackageWithData.
  */
 export async function generateOfficialTemplatePackage(
   options: TemplateCustomization
-): Promise<{ fileName: string; fileData: string; mimeType: string }> {
-  // Delegar al servicio con datos pero sin accounts/balances
+): Promise<OfficialTemplatePackage> {
   return generateOfficialTemplatePackageWithData(options as TemplateWithDataOptions);
 }
 
 /**
- * Genera un paquete de plantilla oficial con datos financieros.
- * Función principal que delega a los servicios específicos de cada taxonomía.
+ * Genera el paquete completo de archivos XBRL usando plantillas oficiales
+ * INCLUYE datos financieros del balance distribuido.
+ *
+ * Esta función:
+ * 1. Llena la Hoja1 con metadatos de la empresa
+ * 2. Llena la Hoja2 (ESF) con datos del balance
+ * 3. Llena la Hoja3 (ER) con datos de resultados
+ * 4. Llena las hojas FC01 con gastos por servicio
+ * 5. Llena las hojas FC02/FC03 con ingresos y CXC
  */
 export async function generateOfficialTemplatePackageWithData(
   options: TemplateWithDataOptions
-): Promise<{ fileName: string; fileData: string; mimeType: string }> {
-  const { niifGroup } = options;
+): Promise<OfficialTemplatePackage> {
+  const templatePaths = TEMPLATE_PATHS[options.niifGroup];
 
-  // Dispatcher según el grupo de taxonomía
-  switch (niifGroup) {
-    case 'r414':
-      return r414TemplateService.generateTemplatePackage(convertToR414Options(options));
+  // Verificar que el grupo tiene plantillas disponibles
+  if (!templatePaths.xbrlt) {
+    throw new Error(`No hay plantillas oficiales disponibles para ${options.niifGroup}. Use el generador estándar.`);
+  }
 
-    case 'ife':
-      return ifeTemplateService.generateTemplatePackage(convertToIFEOptions(options));
+  // Generar nombre de archivo de salida
+  const outputPrefix = templatePaths.outputPrefix;
+  const outputFileName = `${outputPrefix}_ID${options.companyId}_${options.reportDate}`;
 
-    case 'grupo1':
-    case 'grupo2':
-    case 'grupo3':
-      throw new Error(
-        `La taxonomía ${niifGroup} aún no está implementada. ` +
-        `Actualmente R414 e IFE están disponibles.`
-      );
+  const zip = new JSZip();
 
-    default:
-      throw new Error(`Grupo NIIF no soportado: ${niifGroup}`);
+  try {
+    // 1. Cargar y personalizar .xbrlt
+    const xbrltContent = await loadTemplate(templatePaths.xbrlt);
+    const customizedXbrlt = customizeXbrlt(xbrltContent, options, outputFileName);
+    zip.file(`${outputFileName}.xbrlt`, customizedXbrlt);
+
+    // 2. Cargar y personalizar .xml
+    const xmlContent = await loadTemplate(templatePaths.xml);
+    const customizedXml = customizeXml(xmlContent, options);
+    zip.file(`${outputFileName}.xml`, customizedXml);
+
+    // 3. Cargar y personalizar .xlsx con datos del formulario Y datos financieros
+    const xlsxContent = await loadBinaryTemplate(templatePaths.xlsx);
+    let customizedXlsx = customizeExcelWithData(xlsxContent, options);
+
+    // 3.1 Re-escribir datos financieros con ExcelJS para mejor compatibilidad con XBRL Express
+    // La librería xlsx puede no generar celdas que XBRL Express pueda leer correctamente
+    customizedXlsx = await rewriteFinancialDataWithExcelJS(customizedXlsx, options);
+
+    zip.file(`${outputFileName}.xlsx`, customizedXlsx);
+
+    // 4. Cargar .xbrl (referencia)
+    const xbrlContent = await loadTemplate(templatePaths.xbrl);
+    zip.file(`${outputFileName}.xbrl`, xbrlContent);
+
+    // 5. Generar README actualizado
+    const readmeContent = generateReadmeWithData(options, outputPrefix);
+    zip.file('README.txt', readmeContent);
+
+    // Generar el ZIP
+    const zipBuffer = await zip.generateAsync({
+      type: 'nodebuffer',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 9 }
+    });
+
+    const base64 = Buffer.from(zipBuffer).toString('base64');
+
+    return {
+      fileName: `${outputFileName}.zip`,
+      fileData: base64,
+      mimeType: 'application/zip',
+    };
+  } catch (error) {
+    console.error('Error generando paquete de plantillas:', error);
+    throw new Error(
+      error instanceof Error
+        ? `Error generando paquete: ${error.message}`
+        : 'Error desconocido generando paquete'
+    );
   }
 }
 
 /**
- * Verifica si un grupo NIIF tiene plantillas oficiales disponibles.
+ * Genera README con información sobre datos financieros incluidos
+ */
+function generateReadmeWithData(options: TemplateWithDataOptions, outputPrefix: string): string {
+  const taxonomyNames: Record<NiifGroup, string> = {
+    grupo1: 'NIIF Plenas (Grupo 1)',
+    grupo2: 'NIIF para PYMES (Grupo 2)',
+    grupo3: 'Microempresas (Grupo 3)',
+    r414: 'Resolución 414 - Sector Público',
+    r533: 'Resolución 533',
+    ife: 'Informe Financiero Especial',
+  };
+
+  const hasData = options.consolidatedAccounts && options.consolidatedAccounts.length > 0;
+  const activeServices = options.activeServices || ['acueducto', 'alcantarillado', 'aseo'];
+
+  return `================================================================================
+PAQUETE DE ARCHIVOS XBRL - TAXONOMÍA OFICIAL SSPD
+${hasData ? '*** CON DATOS FINANCIEROS PRE-LLENADOS ***' : ''}
+================================================================================
+
+Empresa: ${options.companyName}
+ID RUPS: ${options.companyId}
+NIT: ${options.nit || 'No especificado'}
+Taxonomía: ${taxonomyNames[options.niifGroup]}
+Fecha de Reporte: ${options.reportDate}
+Generado: ${new Date().toLocaleString('es-CO')}
+${hasData ? `Cuentas procesadas: ${options.consolidatedAccounts!.length}
+Servicios activos: ${activeServices.join(', ')}` : ''}
+
+================================================================================
+CONTENIDO DEL PAQUETE
+================================================================================
+
+1. ${outputPrefix}_ID${options.companyId}_${options.reportDate}.xbrlt
+   → Plantilla de mapeo XBRL (para XBRL Express)
+
+2. ${outputPrefix}_ID${options.companyId}_${options.reportDate}.xml
+   → Configuración de mapeo Excel → XBRL
+
+3. ${outputPrefix}_ID${options.companyId}_${options.reportDate}.xlsx
+   → Plantilla Excel oficial ${hasData ? '(PRE-LLENADA con datos)' : '(para diligenciar datos)'}
+
+4. ${outputPrefix}_ID${options.companyId}_${options.reportDate}.xbrl
+   → Archivo de instancia XBRL (referencia)
+
+5. README.txt
+   → Este archivo
+
+${hasData ? `================================================================================
+HOJAS PRE-LLENADAS AUTOMÁTICAMENTE
+================================================================================
+
+Las siguientes hojas contienen datos del balance distribuido:
+
+✓ [110000] Información general - Datos de la empresa
+✓ [210000] Estado de Situación Financiera - Balance por servicio
+✓ [310000] Estado de Resultados - P&G por servicio
+✓ [900017a] FC01-1 Gastos Acueducto
+✓ [900017b] FC01-2 Gastos Alcantarillado
+✓ [900017c] FC01-3 Gastos Aseo
+✓ [900017g] FC01-7 Total servicios públicos
+
+Las demás hojas (notas, revelaciones, etc.) deben completarse manualmente.
+
+` : ''}================================================================================
+INSTRUCCIONES DE USO
+================================================================================
+
+PASO 1: Extraer los archivos
+   - Extraiga todos los archivos de este ZIP en una misma carpeta
+   - Mantenga todos los archivos juntos, NO los renombre
+
+PASO 2: ${hasData ? 'Revisar y complementar el Excel' : 'Diligenciar el Excel'}
+   1. Abra el archivo .xlsx con Microsoft Excel
+   ${hasData ? '2. Revise que los datos automáticos sean correctos' : '2. Diligencia la Hoja1 con la información general de la empresa'}
+   ${hasData ? '3. Complete las hojas de notas y revelaciones' : '3. Diligencia la Hoja2 con el Estado de Situación Financiera'}
+   4. Guarde el archivo (NO cambie el nombre)
+
+PASO 3: Abrir en XBRL Express
+   1. Abra el aplicativo XBRL Express
+   2. Vaya a: Archivo → Abrir plantilla (.xbrlt)
+   3. Seleccione el archivo .xbrlt de esta carpeta
+   4. XBRL Express cargará automáticamente:
+      - La configuración de mapeo (.xml)
+      - Los datos del Excel (.xlsx)
+
+PASO 4: Validar y Generar
+   1. Revise que todos los datos se hayan cargado correctamente
+   2. Use la función de validación para detectar errores
+   3. Corrija cualquier error encontrado
+   4. Genere el archivo XBRL final
+
+PASO 5: Certificar en SUI
+   1. Ingrese a la plataforma SUI
+   2. Cargue el archivo XBRL generado
+   3. Complete el proceso de certificación
+
+================================================================================
+IMPORTANTE
+================================================================================
+
+- Los archivos de este paquete fueron generados usando las plantillas
+  OFICIALES de la SSPD para la taxonomía ${taxonomyNames[options.niifGroup]}.
+
+- El archivo .xlsx contiene la estructura EXACTA requerida por XBRL Express.
+  NO modifique la estructura de las hojas ni las columnas.
+
+- Si tiene problemas al cargar en XBRL Express, verifique que:
+  1. Todos los archivos estén en la misma carpeta
+  2. No haya renombrado ningún archivo
+  3. La taxonomía correcta esté instalada en XBRL Express
+
+================================================================================
+SOPORTE
+================================================================================
+
+Para soporte técnico de XBRL Express:
+- Reporting Standard: https://www.reportingstandard.com
+- Documentación SSPD: https://www.superservicios.gov.co
+
+================================================================================
+`;
+}
+
+/**
+ * Verifica si un grupo tiene plantillas oficiales disponibles
  */
 export function hasOfficialTemplates(niifGroup: NiifGroup): boolean {
-  return niifGroup === 'r414' || niifGroup === 'ife';
+  const templatePaths = TEMPLATE_PATHS[niifGroup];
+  return !!templatePaths.xbrlt;
 }
 
 /**
- * Obtiene la lista de grupos con plantillas disponibles.
+ * Obtiene la lista de grupos con plantillas disponibles
  */
 export function getAvailableTemplateGroups(): NiifGroup[] {
-  return ['r414', 'ife'];
-}
-
-// ============================================
-// FUNCIONES INTERNAS - CONVERSIÓN DE TIPOS
-// ============================================
-
-/**
- * Convierte las opciones del dispatcher al formato esperado por R414TemplateService.
- */
-function convertToR414Options(options: TemplateWithDataOptions) {
-  // Importar tipos dinámicamente para evitar dependencias circulares
-  const accounts = options.consolidatedAccounts?.map(acc => ({
-    code: acc.code,
-    name: acc.name,
-    value: acc.value,
-    isLeaf: acc.isLeaf,
-    level: acc.level,
-    class: acc.class,
-  })) ?? [];
-
-  const serviceBalances = options.serviceBalances?.map(sb => ({
-    service: sb.service,
-    code: sb.code,
-    name: sb.name,
-    value: sb.value,
-    isLeaf: sb.isLeaf,
-  })) ?? [];
-
-  // Calcular distribución desde serviceBalances o usar default
-  const distribution: Record<string, number> = {};
-  if (options.activeServices && options.activeServices.length > 0) {
-    const equalShare = 100 / options.activeServices.length;
-    for (const service of options.activeServices) {
-      distribution[service] = equalShare;
-    }
-  } else {
-    distribution.acueducto = 40;
-    distribution.alcantarillado = 35;
-    distribution.aseo = 25;
-  }
-
-  // Convertir usuariosEstrato al formato Record<string, UsuariosEstrato>
-  let usuariosEstrato: Record<string, UsuariosEstrato> | undefined;
-  if (options.usuariosEstrato) {
-    usuariosEstrato = {};
-    if (options.usuariosEstrato.acueducto) {
-      usuariosEstrato.acueducto = convertUsuariosToEstrato(options.usuariosEstrato.acueducto)!;
-    }
-    if (options.usuariosEstrato.alcantarillado) {
-      usuariosEstrato.alcantarillado = convertUsuariosToEstrato(options.usuariosEstrato.alcantarillado)!;
-    }
-    if (options.usuariosEstrato.aseo) {
-      usuariosEstrato.aseo = convertUsuariosToEstrato(options.usuariosEstrato.aseo)!;
-    }
-  }
-
-  return {
-    niifGroup: options.niifGroup,
-    companyId: options.companyId,
-    companyName: options.companyName,
-    reportDate: options.reportDate,
-    startDate: options.startDate,  // Fecha de inicio de operaciones
-    taxonomyYear: options.taxonomyYear,
-    nit: options.nit,
-    roundingDegree: options.roundingDegree as '1' | '2' | '3' | '4' | undefined,
-    accounts,
-    serviceBalances,
-    distribution,
-    usuariosEstrato,
-    subsidios: options.subsidios,
-  };
-}
-
-/**
- * Convierte las opciones del dispatcher al formato esperado por IFETemplateService.
- */
-function convertToIFEOptions(options: TemplateWithDataOptions) {
-  const accounts = options.consolidatedAccounts?.map(acc => ({
-    code: acc.code,
-    name: acc.name,
-    value: acc.value,
-    isLeaf: acc.isLeaf,
-    level: acc.level,
-    class: acc.class,
-  })) ?? [];
-
-  const serviceBalances = options.serviceBalances?.map(sb => ({
-    service: sb.service,
-    code: sb.code,
-    name: sb.name,
-    value: sb.value,
-    isLeaf: sb.isLeaf,
-  })) ?? [];
-
-  // Calcular distribución desde serviceBalances o usar default
-  const distribution: Record<string, number> = {};
-  if (options.activeServices && options.activeServices.length > 0) {
-    const equalShare = 100 / options.activeServices.length;
-    for (const service of options.activeServices) {
-      distribution[service] = equalShare;
-    }
-  } else {
-    // IFE soporta más servicios que R414
-    distribution.acueducto = 40;
-    distribution.alcantarillado = 35;
-    distribution.aseo = 25;
-  }
-
-  return {
-    niifGroup: options.niifGroup,
-    companyId: options.companyId,
-    companyName: options.companyName,
-    reportDate: options.reportDate,
-    taxonomyYear: options.taxonomyYear,
-    nit: options.nit,
-    roundingDegree: options.roundingDegree as '1' | '2' | '3' | '4' | undefined,
-    accounts,
-    serviceBalances,
-    distribution,
-    // Datos específicos de IFE
-    ifeData: options.ifeData,
-  };
-}
-
-/**
- * Convierte Record<string, number> a estructura UsuariosEstrato
- */
-function convertUsuariosToEstrato(data?: Record<string, number>) {
-  if (!data) return undefined;
-  return {
-    estrato1: data.estrato1 ?? data['1'] ?? 0,
-    estrato2: data.estrato2 ?? data['2'] ?? 0,
-    estrato3: data.estrato3 ?? data['3'] ?? 0,
-    estrato4: data.estrato4 ?? data['4'] ?? 0,
-    estrato5: data.estrato5 ?? data['5'] ?? 0,
-    estrato6: data.estrato6 ?? data['6'] ?? 0,
-    industrial: data.industrial ?? 0,
-    comercial: data.comercial ?? 0,
-    oficial: data.oficial ?? 0,
-    especial: data.especial ?? 0,
-  };
+  return (Object.keys(TEMPLATE_PATHS) as NiifGroup[]).filter(
+    group => hasOfficialTemplates(group)
+  );
 }
