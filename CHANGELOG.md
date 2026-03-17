@@ -3,7 +3,11 @@
 Todos los cambios notables del proyecto se documentan aquí.
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
-## [Unreleased] — desarrollo → master
+## [Unreleased]
+
+---
+
+## [2.1.0] — 2026-03-17
 
 ### Añadido
 - **Feature batch IFE**: generación de los 4 trimestres anuales desde un
@@ -29,6 +33,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
   `templatePaths`, `interfaces`, `fileLoaders`, `excelDataFiller`,
   `excelRewriter`, `templateCustomizers`
 - Tipos deduplicados: `excelDataFiller.ts` ahora importa desde `./interfaces`
+
+### Calidad de código
+- `excelRewriter.ts`: 9 `(options as any).__R414_*__` reemplazados por imports
+  directos de `r414/mappings/` — 0 `any` no documentados
+- Marcadores de sección en `excelDataFiller.ts` (6 secciones) y
+  `excelRewriter.ts` (5 secciones) para facilitar subdivisión futura
+- Suite de tests ampliada de 27 → 132 tests (6 archivos, ~400ms)
+- `baseTemplateService.ts`: 23 tests nuevos con mocks de ExcelJS
+  cubriendo `sumAccountsByPrefix`, `writeCell`, `customizeXml`
 
 ### Seguridad
 - Validación de tamaños en schemas Zod (fileData 10MB, companyName 500, nit 255)

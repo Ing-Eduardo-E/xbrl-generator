@@ -19,7 +19,9 @@
       "Bash(git push:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\ndocs: actualizar CLAUDE.md con stack tecnológico y arquitectura actual\n\n- Actualizar stack: Next.js 15, React 19, PostgreSQL, tRPC 11\n- Documentar estructura de carpetas app/src/ actual\n- Agregar tabla de endpoints tRPC (12 procedimientos)\n- Listar taxonomías soportadas (grupo1, grupo2, grupo3, r414, ife)\n- Documentar hojas XBRL automatizadas (12 hojas)\n- Agregar sección IFE (reporte trimestral) en progreso\n- Actualizar comandos pnpm para Next.js\n- Corregir nombres de tablas (working_accounts, service_balances)\n- Agregar referencias a documentación en docs/\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(pnpm type-check:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(pnpm check:*)",
+      "Bash(wc -l src/lib/xbrl/official/*.ts)"
     ],
     "deny": [],
     "ask": []
