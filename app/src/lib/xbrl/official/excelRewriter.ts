@@ -3,42 +3,39 @@
  * Contiene rewriteFinancialDataWithExcelJS y sus helpers.
  * Extraído de officialTemplateService.ts (L2371–4433).
  *
- * DEPENDENCIAS CRUZADAS:
- * - ServiceBalanceData: tipo definido en officialTemplateService.ts (~L antes de 2371)
- * - R414_ESF_MAPPINGS: constante definida en officialTemplateService.ts (~L antes de 2371)
- * - R414_SERVICE_COLUMNS: constante definida en officialTemplateService.ts (~L antes de 2371)
- * - R414_ER_MAPPINGS: constante definida en officialTemplateService.ts (~L antes de 2371)
- * - R414_PPE_MAPPINGS: constante definida en officialTemplateService.ts (~L antes de 2371)
- * - R414_INTANGIBLES_MAPPINGS: constante definida en officialTemplateService.ts (~L antes de 2371)
- * - R414_EFECTIVO_MAPPINGS: constante definida en officialTemplateService.ts (~L antes de 2371)
- * - R414_PROVISIONES_MAPPINGS: constante definida en officialTemplateService.ts (~L antes de 2371)
- * - R414_OTRAS_PROVISIONES_MAPPINGS: constante definida en officialTemplateService.ts (~L antes de 2371)
- * - R414_BENEFICIOS_EMPLEADOS_MAPPINGS: constante definida en officialTemplateService.ts (~L antes de 2371)
- * - TemplateWithDataOptions: tipo/interfaz definido en officialTemplateService.ts (~L antes de 2371)
- *
- * TODO: Para hacer este archivo completamente independiente, mover las constantes
- * R414_*_MAPPINGS, R414_SERVICE_COLUMNS, el tipo ServiceBalanceData y la interfaz
- * TemplateWithDataOptions a archivos separados en official/ e importarlos aquí.
+ * DEPENDENCIAS:
+ * - ServiceBalanceData, TemplateWithDataOptions: importados desde ./interfaces
+ * - R414_*_MAPPINGS, R414_SERVICE_COLUMNS: importados desde ../r414/mappings
  */
 import ExcelJS from 'exceljs';
+import type { TemplateWithDataOptions, ServiceBalanceData } from './interfaces';
+import {
+  R414_ESF_MAPPINGS,
+  R414_SERVICE_COLUMNS,
+  R414_ER_MAPPINGS,
+  R414_PPE_MAPPINGS,
+  R414_INTANGIBLES_MAPPINGS,
+  R414_EFECTIVO_MAPPINGS,
+  R414_PROVISIONES_MAPPINGS,
+  R414_OTRAS_PROVISIONES_MAPPINGS,
+  R414_BENEFICIOS_EMPLEADOS_MAPPINGS,
+} from '../r414/mappings';
 
-// TODO: Importar desde official/interfaces.ts una vez extraídos
-// import type { TemplateWithDataOptions } from './interfaces';
+// ─── (Índice de secciones del body — ver marcadores ═══ abajo) ──────────
+// ─── Sección 1: Función principal + helpers de init (~L29-76)   ─────────
+// ─── Sección 2: R414 Hoja2/3/7 - ESF, ER y Notas PPE (~L77-280) ────────
+// ─── Sección 3: Hoja16/17/18 - Gastos por servicio (~L281-856) ──────────
+// ─── Sección 4: Hoja22/23/24/25/26/30 - Consolidados y CxC (~L857-1474) ─
+// ─── Sección 5: Hoja32/35 - Pasivos y conciliación (~L1475-1613) ────────
 
-// ─── Sección 1: Inicio rewriteFinancialDataWithExcelJS (~L2371-2620) ────
-// ─── Sección 2: Hojas Hoja16/17/18 - Gastos por servicio (~L2620-3360) ─
-// ─── Sección 3: Hoja22/23/24/25/26/30 - Consolidados y CxC (~L3360-4150) ─
-// ─── Sección 4: Hoja32/35 - Pasivos y conciliación (~L4150-4433) ────────
-
-// NOTE: Este archivo importa los tipos y constantes que residen aún en
-// officialTemplateService.ts. Ver DEPENDENCIAS CRUZADAS arriba.
-// Los imports reales se activarán cuando esos símbolos sean extraídos.
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// ═══════════════════════════════════════════════════════════════════════════
+// SECCIÓN 1 — Función principal, workbook setup y helpers de inicialización (~L31-75)
+// Candidato de extracción: official/rewriters/rewriterCore.ts
+// ═══════════════════════════════════════════════════════════════════════════
 
 export async function rewriteFinancialDataWithExcelJS(
   xlsxBuffer: Buffer,
-  options: any /* TODO: TemplateWithDataOptions */
+  options: TemplateWithDataOptions
 ): Promise<Buffer> {
   // Si no hay datos financieros, retornar el buffer sin cambios
   if (!options.consolidatedAccounts || options.consolidatedAccounts.length === 0) {
@@ -46,7 +43,8 @@ export async function rewriteFinancialDataWithExcelJS(
   }
 
   const workbook = new ExcelJS.Workbook();
-  // Cargar el buffer - usamos any para evitar conflictos de tipos entre versiones de Node
+  // ExcelJS load() declara Buffer pero su definición de tipos es incompatible con
+  // Buffer<ArrayBufferLike> de Node — cast inevitable hasta que ExcelJS actualice sus tipos.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await workbook.xlsx.load(xlsxBuffer as any);
 
@@ -54,9 +52,9 @@ export async function rewriteFinancialDataWithExcelJS(
   const activeServices = options.activeServices || ['acueducto', 'alcantarillado', 'aseo'];
 
   // Agrupar cuentas por servicio
-  const accountsByService: Record<string, any[]> = {};
+  const accountsByService: Record<string, ServiceBalanceData[]> = {};
   for (const service of activeServices) {
-    accountsByService[service] = serviceBalances.filter((sb: any) => sb.service === service);
+    accountsByService[service] = (serviceBalances as ServiceBalanceData[]).filter(sb => sb.service === service);
   }
 
   // Función helper para verificar si una cuenta coincide con los prefijos
@@ -72,6 +70,11 @@ export async function rewriteFinancialDataWithExcelJS(
     return false;
   };
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECCIÓN 2 — R414: Hoja2 (ESF) + Hoja3 (ER) + Hoja7 (Notas PPE) (~L68-281)
+  // Candidato de extracción: official/rewriters/r414FinancialStatementsRewriter.ts
+  // ═══════════════════════════════════════════════════════════════════════════
+
   // Solo procesar R414 por ahora
   if (options.niifGroup === 'r414') {
     // ===============================================
@@ -81,8 +84,7 @@ export async function rewriteFinancialDataWithExcelJS(
     if (sheet2) {
       console.log('[ExcelJS] Escribiendo datos en Hoja2...');
 
-      // TODO: R414_ESF_MAPPINGS debe provenir de officialTemplateService.ts
-      for (const mapping of (options as any).__R414_ESF_MAPPINGS__ || []) {
+      for (const mapping of R414_ESF_MAPPINGS) {
         // Calcular total consolidado
         let totalValue = 0;
         for (const account of options.consolidatedAccounts) {
@@ -100,10 +102,9 @@ export async function rewriteFinancialDataWithExcelJS(
         }
 
         // Escribir valores por servicio
-        // TODO: R414_SERVICE_COLUMNS debe provenir de officialTemplateService.ts
-        const R414_SERVICE_COLUMNS: Record<string, string> = (options as any).__R414_SERVICE_COLUMNS__ || {};
+        const serviceColumnMap = R414_SERVICE_COLUMNS as unknown as Record<string, string | undefined>;
         for (const service of activeServices) {
-          const serviceColumn = R414_SERVICE_COLUMNS[service];
+          const serviceColumn = serviceColumnMap[service];
           if (!serviceColumn) continue;
 
           let serviceValue = 0;
@@ -131,8 +132,7 @@ export async function rewriteFinancialDataWithExcelJS(
     if (sheet3) {
       console.log('[ExcelJS] Escribiendo datos en Hoja3...');
 
-      // TODO: R414_ER_MAPPINGS debe provenir de officialTemplateService.ts
-      for (const mapping of (options as any).__R414_ER_MAPPINGS__ || []) {
+      for (const mapping of R414_ER_MAPPINGS) {
         // Calcular total consolidado
         let totalValue = 0;
         for (const account of options.consolidatedAccounts) {
@@ -205,7 +205,7 @@ export async function rewriteFinancialDataWithExcelJS(
       // Función helper para procesar una sección completa
       // Si hay al menos un valor != 0, llena con 0 las celdas vacías de la sección
       const processSectionWithZeroFill = (
-        mappings: Array<{ row: number; label: string; pucPrefixes: string[]; excludePrefixes?: string[]; useAbsoluteValue?: boolean }>,
+        mappings: Array<{ row: number; label?: string; pucPrefixes: string[]; excludePrefixes?: string[]; useAbsoluteValue?: boolean }>,
         sectionName: string,
         allRowsInSection: number[] // Todas las filas de datos (sin autosumas)
       ) => {
@@ -252,49 +252,48 @@ export async function rewriteFinancialDataWithExcelJS(
       // Autosumas: 16, 22, 29, 31, 34
       // ===============================================
       const ppeDataRows = [14, 15, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27, 28, 30, 32, 33];
-      // TODO: R414_PPE_MAPPINGS debe provenir de officialTemplateService.ts
-      processSectionWithZeroFill((options as any).__R414_PPE_MAPPINGS__ || [], 'PPE', ppeDataRows);
+      processSectionWithZeroFill(R414_PPE_MAPPINGS, 'PPE', ppeDataRows);
 
       // ===============================================
       // Activos Intangibles y Plusvalía (filas 37-48)
       // Autosumas: 44, 48
       // ===============================================
       const intangiblesDataRows = [37, 38, 39, 40, 41, 42, 43, 45, 46, 47];
-      // TODO: R414_INTANGIBLES_MAPPINGS debe provenir de officialTemplateService.ts
-      processSectionWithZeroFill((options as any).__R414_INTANGIBLES_MAPPINGS__ || [], 'Intangibles', intangiblesDataRows);
+      processSectionWithZeroFill(R414_INTANGIBLES_MAPPINGS, 'Intangibles', intangiblesDataRows);
 
       // ===============================================
       // Efectivo y Equivalentes al Efectivo (filas 51-60)
       // Autosumas: 53, 58, 60
       // ===============================================
       const efectivoDataRows = [51, 52, 55, 56, 57, 59];
-      // TODO: R414_EFECTIVO_MAPPINGS debe provenir de officialTemplateService.ts
-      processSectionWithZeroFill((options as any).__R414_EFECTIVO_MAPPINGS__ || [], 'Efectivo', efectivoDataRows);
+      processSectionWithZeroFill(R414_EFECTIVO_MAPPINGS, 'Efectivo', efectivoDataRows);
 
       // ===============================================
       // Clases de Otras Provisiones (filas 63-73)
       // Autosumas: 65, 69, 73
       // ===============================================
       const provisionesDataRows = [63, 64, 67, 68, 71, 72];
-      // TODO: R414_PROVISIONES_MAPPINGS debe provenir de officialTemplateService.ts
-      processSectionWithZeroFill((options as any).__R414_PROVISIONES_MAPPINGS__ || [], 'Provisiones', provisionesDataRows);
+      processSectionWithZeroFill(R414_PROVISIONES_MAPPINGS, 'Provisiones', provisionesDataRows);
 
       // ===============================================
       // Otras Provisiones (filas 75-77)
       // Autosuma: 77
       // ===============================================
       const otrasProvisionesDataRows = [75, 76];
-      // TODO: R414_OTRAS_PROVISIONES_MAPPINGS debe provenir de officialTemplateService.ts
-      processSectionWithZeroFill((options as any).__R414_OTRAS_PROVISIONES_MAPPINGS__ || [], 'Otras Provisiones', otrasProvisionesDataRows);
+      processSectionWithZeroFill(R414_OTRAS_PROVISIONES_MAPPINGS, 'Otras Provisiones', otrasProvisionesDataRows);
 
       // ===============================================
       // Beneficios a Empleados (filas 79-83)
       // Autosuma: 83
       // ===============================================
       const beneficiosDataRows = [79, 80, 81, 82];
-      // TODO: R414_BENEFICIOS_EMPLEADOS_MAPPINGS debe provenir de officialTemplateService.ts
-      processSectionWithZeroFill((options as any).__R414_BENEFICIOS_EMPLEADOS_MAPPINGS__ || [], 'Beneficios Empleados', beneficiosDataRows);
+      processSectionWithZeroFill(R414_BENEFICIOS_EMPLEADOS_MAPPINGS, 'Beneficios Empleados', beneficiosDataRows);
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // SECCIÓN 3 — Gastos por servicio: Hoja16/17/18 (~L289-862)
+    // Candidato de extracción: official/rewriters/serviceExpensesRewriter.ts
+    // ═══════════════════════════════════════════════════════════════════════════
 
     // ===============================================
     // HOJA16 (900017a): Gastos del Servicio de Acueducto
@@ -312,10 +311,10 @@ export async function rewriteFinancialDataWithExcelJS(
 
       // DEBUG: Ver cuántas cuentas hay y algunas de ejemplo
       console.log(`[ExcelJS] Hoja16 - Total cuentas acueducto: ${acueductoAccounts.length}`);
-      const gastosAcueducto = acueductoAccounts.filter((a: any) => a.code.startsWith('5'));
+      const gastosAcueducto = acueductoAccounts.filter(a => a.code.startsWith('5'));
       console.log(`[ExcelJS] Hoja16 - Cuentas de gastos (clase 5): ${gastosAcueducto.length}`);
       if (gastosAcueducto.length > 0) {
-        console.log(`[ExcelJS] Hoja16 - Ejemplos de gastos:`, gastosAcueducto.slice(0, 5).map((a: any) => `${a.code}=${a.value}`).join(', '));
+        console.log(`[ExcelJS] Hoja16 - Ejemplos de gastos:`, gastosAcueducto.slice(0, 5).map(a => `${a.code}=${a.value}`).join(', '));
       }
 
       // Función helper para sumar cuentas por prefijos
@@ -567,7 +566,7 @@ export async function rewriteFinancialDataWithExcelJS(
       const alcantarilladoAccounts = accountsByService['alcantarillado'] || [];
 
       console.log(`[ExcelJS] Hoja17 - Total cuentas alcantarillado: ${alcantarilladoAccounts.length}`);
-      const gastosAlcantarillado = alcantarilladoAccounts.filter((a: any) => a.code.startsWith('5'));
+      const gastosAlcantarillado = alcantarilladoAccounts.filter(a => a.code.startsWith('5'));
       console.log(`[ExcelJS] Hoja17 - Cuentas de gastos (clase 5): ${gastosAlcantarillado.length}`);
 
       const sumByPrefixes17 = (accounts: typeof alcantarilladoAccounts, prefixes: string[], excludePrefixes?: string[]): number => {
@@ -718,7 +717,7 @@ export async function rewriteFinancialDataWithExcelJS(
       const aseoAccounts = accountsByService['aseo'] || [];
 
       console.log(`[ExcelJS] Hoja18 - Total cuentas aseo: ${aseoAccounts.length}`);
-      const gastosAseo = aseoAccounts.filter((a: any) => a.code.startsWith('5'));
+      const gastosAseo = aseoAccounts.filter(a => a.code.startsWith('5'));
       console.log(`[ExcelJS] Hoja18 - Cuentas de gastos (clase 5): ${gastosAseo.length}`);
 
       const sumByPrefixes18 = (accounts: typeof aseoAccounts, prefixes: string[], excludePrefixes?: string[]): number => {
@@ -870,6 +869,11 @@ export async function rewriteFinancialDataWithExcelJS(
 
       console.log('[ExcelJS] Hoja18 completada.');
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // SECCIÓN 4 — Consolidados y CxC: Hoja22/23/24/25/26/30 (~L869-1485)
+    // Candidato de extracción: official/rewriters/consolidatedAndCxCRewriter.ts
+    // ═══════════════════════════════════════════════════════════════════════════
 
     // ===============================================
     // HOJA22 (900017g): Gastos Consolidados de Todos los Servicios
@@ -1488,6 +1492,11 @@ export async function rewriteFinancialDataWithExcelJS(
 
       console.log('[ExcelJS] Hoja30 completada.');
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // SECCIÓN 5 — Pasivos y conciliación: Hoja32/35 (~L1491-1620)
+    // Candidato de extracción: official/rewriters/liabilitiesAndReconciliationRewriter.ts
+    // ═══════════════════════════════════════════════════════════════════════════
 
     // ===============================================
     // HOJA32 (900028b): FC05b - Clase de pasivo por edades de vencimiento

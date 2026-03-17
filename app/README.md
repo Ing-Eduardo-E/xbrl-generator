@@ -109,6 +109,52 @@ pnpm lint             # ESLint
 pnpm type-check       # Verificar tipos TypeScript
 ```
 
+## Tests
+
+```bash
+cd app
+pnpm test          # Ejecutar tests una vez
+pnpm test:watch    # Modo watch durante desarrollo
+```
+
+Suite actual: 30+ tests unitarios e integración (Vitest).
+Módulos cubiertos: `shared/dateUtils`, `shared/quarterlyDerivation`, integración batch IFE.
+
+## Arquitectura de módulos XBRL
+
+```
+src/lib/xbrl/
+├── shared/
+│   ├── baseTemplateService.ts   # Clase base con writeCell, sumAccountsByPrefix, etc.
+│   ├── dateUtils.ts             # Rangos de períodos trimestrales
+│   ├── quarterlyDerivation.ts   # Orquestación batch IFE
+│   ├── excelUtils.ts
+│   └── pucUtils.ts
+├── official/
+│   ├── interfaces.ts            # Tipos compartidos (TemplateCustomization, etc.)
+│   ├── templatePaths.ts         # Rutas a plantillas XBRL
+│   ├── fileLoaders.ts           # Carga de archivos binarios
+│   ├── excelDataFiller.ts       # Escritura de datos en plantillas Excel
+│   ├── excelRewriter.ts         # Reescritura financiera con ExcelJS
+│   └── templateCustomizers.ts   # Personalización de XBRL/XML
+├── r414/
+│   └── R414TemplateService.ts   # Taxonomía anual R414
+├── ife/
+│   └── IFETemplateService.ts    # Taxonomía trimestral IFE
+└── officialTemplateService.ts   # Punto de entrada (253 líneas)
+```
+
+## Generación batch IFE
+
+El modo batch genera los 4 trimestres anuales en una sola operación:
+
+1. En el formulario de empresa, seleccionar **"Batch 4 trimestres"**
+2. Ingresar año fiscal (ej: 2025)
+3. El sistema genera T1–T4 automáticamente con fechas correctas
+4. Descarga como ZIP con 4 paquetes XBRL listos para XBRL Express
+
+Disponible solo para taxonomía IFE (informes trimestrales SSPD).
+
 ## 📊 API Endpoints (tRPC)
 
 | Endpoint | Método | Descripción |
@@ -181,15 +227,19 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 - [x] Distribución proporcional por servicios
 - [x] Generación de Excel con 4 hojas
 - [x] Descarga de archivos
+- [x] Generación de archivos XBRL (taxonomías R414 e IFE)
+- [x] Integración con plantillas SSPD
+- [x] Suite de tests Vitest (30+ tests)
+- [x] Generación batch IFE (4 trimestres en una operación)
 
-### 🚧 En Desarrollo
-- [ ] Generación de archivos XBRL
-- [ ] Integración con plantillas SSPD
-- [ ] Tests unitarios e integración
+### 🚧 Pendiente antes de despliegue
+- [ ] Rotar credencial DATABASE_URL en Neon → actualizar Vercel env vars → redeploy
+- [ ] Ejecutar `pnpm db:push` para aplicar índice `idx_service_is_leaf`
+- [ ] Validar generación batch IFE con Excel real en entorno staging
 
 ---
 
-**Versión**: 2.0.0
-**Fecha**: 2025-11-25
-**Estado**: Funcional (sin generación XBRL)
+**Versión**: 2.1.0
+**Fecha**: 2026-03-17
+**Estado**: Producción — generación XBRL R414 e IFE operativa
 

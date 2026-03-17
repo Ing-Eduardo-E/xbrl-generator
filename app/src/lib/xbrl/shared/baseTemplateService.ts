@@ -235,6 +235,16 @@ export abstract class BaseTemplateService implements TaxonomyProcessor {
   ): number {
     let total = 0;
 
+    // Pre-computar qué códigos tienen al menos una cuenta más específica (hijo).
+    // Complejidad: O(N * L) donde L es la longitud máxima del código, en vez de O(N²).
+    // Para cada cuenta, todos sus prefijos propios quedan marcados como "tiene hijo".
+    const codesWithChildren = new Set<string>();
+    for (const account of accounts) {
+      for (let i = 1; i < account.code.length; i++) {
+        codesWithChildren.add(account.code.slice(0, i));
+      }
+    }
+
     for (const account of accounts) {
       // Verificar si coincide con algún prefijo buscado
       const matchesPrefix = prefixes.some((prefix) =>
@@ -249,13 +259,9 @@ export abstract class BaseTemplateService implements TaxonomyProcessor {
       if (isExcluded) continue;
 
       // Verificación dinámica: ¿Existe una cuenta más específica en los datos?
-      // Si existe, no sumamos esta cuenta (su valor ya está incluido en la más específica)
-      const hasMoreSpecificAccount = accounts.some(
-        (other) =>
-          other.code !== account.code &&
-          other.code.startsWith(account.code) &&
-          other.code.length > account.code.length
-      );
+      // Si existe, no sumamos esta cuenta (su valor ya está incluido en la más específica).
+      // O(1) gracias al Set pre-computado, en lugar del accounts.some(...) O(N) previo.
+      const hasMoreSpecificAccount = codesWithChildren.has(account.code);
 
       if (!hasMoreSpecificAccount) {
         total += useAbsoluteValue ? Math.abs(account.value) : account.value;

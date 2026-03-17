@@ -20,63 +20,16 @@
 import * as XLSX from 'xlsx';
 import { ESF_CONCEPTS, getTaxonomyConfig, findESFConceptByPUC } from '../taxonomyConfig';
 import type { NiifGroup } from '../taxonomyConfig';
+import type { AccountData, ServiceBalanceData, TemplateCustomization, TemplateWithDataOptions } from './interfaces';
 
-// -----------------------------------------------------------------------
-// Interfaces y tipos copiados del monolito para auto-contención de tipos
-// -----------------------------------------------------------------------
-
-/** Datos de balance por servicio */
-export interface ServiceBalanceData {
-  service: string;
-  code: string;
-  name: string;
-  value: number;
-  isLeaf: boolean;
-}
-
-/** Cuenta consolidada del balance */
-export interface AccountData {
-  code: string;
-  name: string;
-  value: number;
-  isLeaf: boolean;
-}
-
-/** Configuración para personalizar plantillas */
-export interface TemplateCustomization {
-  niifGroup: NiifGroup;
-  companyId: string;
-  companyName: string;
-  reportDate: string;
-  taxonomyYear?: string;
-  nit?: string;
-  businessNature?: string;
-  startDate?: string;
-  roundingDegree?: string;
-  hasRestatedInfo?: string;
-  restatedPeriod?: string;
-}
-
-/** Opciones extendidas para incluir datos financieros */
-export interface TemplateWithDataOptions extends TemplateCustomization {
-  consolidatedAccounts?: AccountData[];
-  serviceBalances?: ServiceBalanceData[];
-  activeServices?: string[];
-  usuariosEstrato?: {
-    acueducto: Record<string, number>;
-    alcantarillado: Record<string, number>;
-    aseo: Record<string, number>;
-  };
-  subsidios?: {
-    acueducto: number;
-    alcantarillado: number;
-    aseo: number;
-  };
-}
+// ═══════════════════════════════════════════════════════════════════════════
+// SECCIÓN 1 — Constantes de mapeo y configuración (~L25-185)
+// Candidato de extracción: official/mappings/sheetMappings.ts + official/mappings/columnMappings.ts
+// ═══════════════════════════════════════════════════════════════════════════
 
 // -----------------------------------------------------------------------
 // Constantes copiadas del monolito (L97–L592)
-// TODO: depende de SHEET_MAPPING del monolito (L97) — copiado aquí para auto-contención
+// DEUDA: SHEET_MAPPING está duplicado del monolito (L97). Mover a official/mappings/ e importar directamente en Fase 7.
 // -----------------------------------------------------------------------
 
 const SHEET_MAPPING: Record<NiifGroup, Record<string, string>> = {
@@ -174,7 +127,7 @@ const SHEET_MAPPING: Record<NiifGroup, Record<string, string>> = {
   },
 };
 
-// TODO: depende de SERVICE_COLUMNS del monolito (L170) — copiado aquí para auto-contención
+// DEUDA: SERVICE_COLUMNS está duplicado del monolito (L170). Mover a official/mappings/ e importar directamente en Fase 7.
 const SERVICE_COLUMNS: Record<string, string> = {
   total: 'I',
   acueducto: 'J',
@@ -187,7 +140,7 @@ const SERVICE_COLUMNS: Record<string, string> = {
   other: 'Q',
 };
 
-// TODO: depende de R414_SERVICE_COLUMNS del monolito (L186) — copiado aquí para auto-contención
+// DEUDA: R414_SERVICE_COLUMNS está duplicado del monolito (L186). Mover a official/mappings/ e importar directamente en Fase 7.
 const R414_SERVICE_COLUMNS: Record<string, string> = {
   acueducto: 'I',
   alcantarillado: 'J',
@@ -199,7 +152,7 @@ const R414_SERVICE_COLUMNS: Record<string, string> = {
   total: 'P',
 };
 
-// TODO: depende de R414_ER_COLUMNS del monolito (L512) — copiado aquí para auto-contención
+// DEUDA: R414_ER_COLUMNS está duplicado del monolito (L512). Mover a official/mappings/ e importar directamente en Fase 7.
 const R414_ER_COLUMNS: Record<string, string> = {
   acueducto: 'E',
   alcantarillado: 'F',
@@ -214,14 +167,14 @@ interface R414ESFMapping {
   excludePrefixes?: string[];
 }
 
-// TODO: depende de R414_ESF_MAPPINGS del monolito (L502) — re-exportado aquí para auto-contención
+// DEUDA: R414_ESF_MAPPINGS está duplicado del monolito (L502). Mover a official/mappings/ e importar directamente en Fase 7.
 // Esta es la versión consolidada (R414_ESF_ACTIVOS + R414_ESF_PASIVOS + R414_ESF_PATRIMONIO).
 // Para la lista completa ver officialTemplateService.ts L208–L506.
 // Se deja vacía para evitar duplicar ~300 líneas; al usar este módulo de forma independiente
 // deberá importarse o pasarse como parámetro.
 const R414_ESF_MAPPINGS: R414ESFMapping[] = [];   // DEPENDENCIA CRUZADA — ver L502
 
-// TODO: depende de R414_ER_MAPPINGS del monolito (L542) — re-exportado aquí para auto-contención
+// DEUDA: R414_ER_MAPPINGS está duplicado del monolito (L542). Mover a official/mappings/ e importar directamente en Fase 7.
 const R414_ER_MAPPINGS: R414ESFMapping[] = [
   { row: 14, label: 'Ingresos de actividades ordinarias', pucPrefixes: ['43'] },
   { row: 15, label: 'Costo de ventas', pucPrefixes: ['6', '62', '63'] },
@@ -235,9 +188,14 @@ const R414_ER_MAPPINGS: R414ESFMapping[] = [
   { row: 26, label: 'Impuesto a las ganancias diferido', pucPrefixes: ['5410'] },
 ];
 
+// ═══════════════════════════════════════════════════════════════════════════
+// SECCIÓN 2 — Helpers internos (~L190-223)
+// Candidato de extracción: official/helpers/formatHelpers.ts
+// ═══════════════════════════════════════════════════════════════════════════
+
 // -----------------------------------------------------------------------
 // Helper: getRoundingDegreeLabel
-// TODO: depende de getRoundingDegreeLabel del monolito (L1039) — copiado aquí
+// DEUDA: getRoundingDegreeLabel está duplicado del monolito (L1039). Mover a official/helpers/ e importar directamente en Fase 7.
 // -----------------------------------------------------------------------
 function getRoundingDegreeLabel(degree: string | undefined): string {
   const labels: Record<string, string> = {
@@ -383,6 +341,11 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
       }
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECCIÓN 3 — Hoja2 (ESF) + Hoja3 (ER): Estados financieros principales (~L340-605)
+  // Candidato de extracción: official/fillers/financialStatementsFiller.ts
+  // ═══════════════════════════════════════════════════════════════════════════
 
   // ===============================================
   // PARTE 2: LLENAR DATOS FINANCIEROS SI HAY DATOS
@@ -651,6 +614,11 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
       }
     }
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // SECCIÓN 4 — Hojas FC01/FC02/FC03/FC05b: Formularios complementarios (~L610-835)
+    // Candidato de extracción: official/fillers/complementaryFormsFiller.ts
+    // ═══════════════════════════════════════════════════════════════════════════
+
     // ===============================================
     // HOJAS FC01 (900017a-c): Gastos por servicio
     // ===============================================
@@ -877,6 +845,11 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
         }
       }
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // SECCIÓN 5 — Hoja9/10/11: Notas textuales NIIF (~L840-1275)
+    // Candidato de extracción: official/fillers/notesFiller.ts
+    // ═══════════════════════════════════════════════════════════════════════════
 
     // ===============================================
     // HOJA9 (800500): Notas - Lista de Notas
@@ -1313,6 +1286,11 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
       setInfoCell(sheet11, 'E32', 'NA');
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECCIÓN 6 — IFE trimestral: Hoja3/4/5 IFE (~L1280-1521)
+  // Candidato de extracción: official/fillers/ifeDataFiller.ts
+  // ═══════════════════════════════════════════════════════════════════════════
 
   // ===============================================
   // PARTE 3: LLENAR DATOS PARA IFE (TRIMESTRAL)
