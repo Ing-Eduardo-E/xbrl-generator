@@ -187,20 +187,21 @@ function parseValue(value: unknown): number {
  * Mark accounts that are leaf accounts (no children)
  */
 function markLeafAccounts(accounts: ParsedAccount[]): void {
-  // Sort by code length (longer codes are children of shorter codes)
+  // Sort lexicographically: children always follow their parent immediately
   const sorted = [...accounts].sort((a, b) => a.code.localeCompare(b.code));
 
   for (let i = 0; i < sorted.length; i++) {
     const account = sorted[i];
     if (!account) continue;
 
-    // Check if there's any account that starts with this code
-    const hasChildren = sorted.some(
-      (other) =>
-        other.code !== account.code &&
-        other.code.startsWith(account.code) &&
-        other.code.length > account.code.length
-    );
+    // O(N log N) total: in lexicographic order, the only possible direct child
+    // is the very next element.  If it starts with this code and is longer,
+    // this account has at least one child — no need to scan further.
+    const next = sorted[i + 1];
+    const hasChildren =
+      next !== undefined &&
+      next.code.startsWith(account.code) &&
+      next.code.length > account.code.length;
 
     account.isLeaf = !hasChildren;
   }

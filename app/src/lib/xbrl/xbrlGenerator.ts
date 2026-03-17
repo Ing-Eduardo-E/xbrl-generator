@@ -7,9 +7,9 @@ import JSZip from 'jszip';
 import { db } from '@/lib/db';
 import { workingAccounts, serviceBalances, balanceSessions } from '@/db/schema';
 import { eq, sql, desc } from 'drizzle-orm';
-import { 
-  getTaxonomyConfig, 
-  getXbrlConcept, 
+import {
+  getTaxonomyConfig,
+  getXbrlConcept,
   getConceptIdWithSuffix,
   getTaxonomyConfigForYear,
   getDecimalsFromRounding,
@@ -79,16 +79,16 @@ export async function generateXBRLPackage(options: XBRLGenerationOptions): Promi
   const taxonomyYear = options.taxonomyYear || '2024';
   const config = getTaxonomyConfigForYear(options.niifGroup, taxonomyYear);
   const zip = new JSZip();
-  
+
   // Obtener datos de la sesión actual
   const session = await db
     .select()
     .from(balanceSessions)
     .orderBy(desc(balanceSessions.createdAt))
     .limit(1);
-  
+
   const sessionData = session[0];
-  
+
   // Obtener distribución de porcentajes
   let distribution: Record<string, number> = { acueducto: 40, alcantarillado: 35, aseo: 25 };
   if (sessionData?.distribution) {
@@ -98,24 +98,24 @@ export async function generateXBRLPackage(options: XBRLGenerationOptions): Promi
       // Usar distribución por defecto
     }
   }
-  
+
   // Obtener datos de cuentas consolidadas
   const consolidatedAccounts = await db
     .select()
     .from(workingAccounts)
     .orderBy(workingAccounts.code);
-  
+
   // Obtener datos por servicio
   const services = ['acueducto', 'alcantarillado', 'aseo'];
   const serviceDataList: ServiceData[] = [];
-  
+
   for (const serviceName of services) {
     const accounts = await db
       .select()
       .from(serviceBalances)
       .where(eq(serviceBalances.service, serviceName))
       .orderBy(serviceBalances.code);
-    
+
     serviceDataList.push({
       service: serviceName,
       accounts: accounts.map(a => ({
@@ -128,36 +128,36 @@ export async function generateXBRLPackage(options: XBRLGenerationOptions): Promi
       })),
     });
   }
-  
+
   const baseFileName = `${config.prefix}_Individual_${options.companyId}_${options.reportDate}`;
-  
+
   // Determinar servicios activos desde la distribución
   const activeServices = Object.keys(distribution).filter(s => distribution[s] > 0);
-  
+
   // 1. Generar archivo .xbrl (instancia XBRL)
   const xbrlContent = generateXBRLInstance(options, config, taxonomyYear);
   zip.file(`${baseFileName}.xbrl`, xbrlContent);
-  
+
   // 2. Generar archivo .xbrlt (template de mapeo)
   const xbrltContent = generateXBRLTemplate(options, config, serviceDataList, distribution, taxonomyYear);
   zip.file(`${baseFileName}.xbrlt`, xbrltContent);
-  
+
   // 3. Generar archivo .xml (mapeo Excel-XBRL)
   const xmlContent = generateExcelMapping(options, config, consolidatedAccounts, activeServices);
   zip.file(`${baseFileName}.xml`, xmlContent);
-  
+
   // 4. Generar archivo README
   const readmeContent = generateReadme(options, config, distribution);
   zip.file('README.txt', readmeContent);
-  
+
   // 5. Generar resumen de la generación
   const summaryContent = generateSummary(options, config, consolidatedAccounts, serviceDataList);
   zip.file('RESUMEN.txt', summaryContent);
-  
+
   // Generar el ZIP
   const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
   const base64 = Buffer.from(zipBuffer).toString('base64');
-  
+
   return {
     fileName: `${baseFileName}.zip`,
     fileData: base64,
@@ -167,7 +167,7 @@ export async function generateXBRLPackage(options: XBRLGenerationOptions): Promi
 
 /**
  * Genera el archivo .xbrl (instancia XBRL)
- * 
+ *
  * Este archivo es la instancia XBRL completa con:
  * - Contextos (períodos y dimensiones)
  * - Unidades de medida
@@ -178,23 +178,23 @@ function generateXBRLInstance(options: XBRLGenerationOptions, config: TaxonomyCo
   const year = options.reportDate.split('-')[0];
   const endDate = options.reportDate;
   const startDate = options.startDate || `${year}-01-01`;
-  
+
   const decimalsValue = getDecimalsFromRounding(options.roundingDegree);
   const roundingDesc = getRoundingDescription(options.roundingDegree);
   const roundingXBRLValue = getRoundingXBRLValue(options.roundingDegree);
-  
+
   // Generar contextos para el período de reporte
   const instantContextId = 'ctx_instant';
   const durationContextId = 'ctx_duration';
   const prevInstantContextId = 'ctx_prev_instant';
-  
+
   // Contextos por servicio
   const services = ['acueducto', 'alcantarillado', 'aseo'];
   const serviceContexts = services.map(svc => {
     const memberName = svc.charAt(0).toUpperCase() + svc.slice(1) + 'Member';
     return `  <xbrli:context id="ctx_${svc}">
     <xbrli:entity>
-      <xbrli:identifier scheme="${TAXONOMY_CATALOG.entityScheme}">${options.companyId}</xbrli:identifier>
+      <xbrli:identifier scheme="${TAXONOMY_CATALOG.entityScheme}">${escapeXml(options.companyId)}</xbrli:identifier>
     </xbrli:entity>
     <xbrli:period>
       <xbrli:instant>${endDate}</xbrli:instant>
@@ -211,118 +211,118 @@ function generateXBRLInstance(options: XBRLGenerationOptions, config: TaxonomyCo
 <!-- Generated by: XBRL Generator Web App                           -->
 <!-- ============================================================== -->
 <!-- Empresa: ${escapeXml(options.companyName)} -->
-<!-- ID RUPS: ${options.companyId} -->
-<!-- NIT: ${options.nit || 'No especificado'} -->
+<!-- ID RUPS: ${escapeXml(options.companyId)} -->
+<!-- NIT: ${escapeXml(options.nit || 'No especificado')} -->
 <!-- Fecha de reporte: ${options.reportDate} -->
 <!-- Año de taxonomía: ${taxonomyYear} -->
 <!-- Grado de redondeo: ${roundingDesc} (decimals=${decimalsValue}) -->
 <!-- ============================================================== -->
-<xbrli:xbrl 
-  xmlns:xbrli="http://www.xbrl.org/2003/instance" 
-  xmlns:link="http://www.xbrl.org/2003/linkbase" 
+<xbrli:xbrl
+  xmlns:xbrli="http://www.xbrl.org/2003/instance"
+  xmlns:link="http://www.xbrl.org/2003/linkbase"
   xmlns:xlink="http://www.w3.org/1999/xlink"
   xmlns:${config.prefix}="${config.namespace}"
   xmlns:ifrs-full="${ifrsNamespace}ifrs-full"
   xmlns:iso4217="http://www.xbrl.org/2003/iso4217"
   xmlns:xbrldi="http://xbrl.org/2006/xbrldi">
-  
+
   <!-- ============================================================== -->
   <!-- SCHEMA REFERENCE                                               -->
   <!-- ============================================================== -->
   <link:schemaRef xlink:type="simple" xlink:href="${config.entryPoint}"/>
-  
+
   <!-- ============================================================== -->
   <!-- CONTEXTS - Períodos y Dimensiones                              -->
   <!-- ============================================================== -->
-  
+
   <!-- Contexto Instant (fecha de corte) -->
   <xbrli:context id="${instantContextId}">
     <xbrli:entity>
-      <xbrli:identifier scheme="${TAXONOMY_CATALOG.entityScheme}">${options.companyId}</xbrli:identifier>
+      <xbrli:identifier scheme="${TAXONOMY_CATALOG.entityScheme}">${escapeXml(options.companyId)}</xbrli:identifier>
     </xbrli:entity>
     <xbrli:period>
       <xbrli:instant>${endDate}</xbrli:instant>
     </xbrli:period>
   </xbrli:context>
-  
+
   <!-- Contexto Duration (período del reporte) -->
   <xbrli:context id="${durationContextId}">
     <xbrli:entity>
-      <xbrli:identifier scheme="${TAXONOMY_CATALOG.entityScheme}">${options.companyId}</xbrli:identifier>
+      <xbrli:identifier scheme="${TAXONOMY_CATALOG.entityScheme}">${escapeXml(options.companyId)}</xbrli:identifier>
     </xbrli:entity>
     <xbrli:period>
       <xbrli:startDate>${startDate}</xbrli:startDate>
       <xbrli:endDate>${endDate}</xbrli:endDate>
     </xbrli:period>
   </xbrli:context>
-  
+
   <!-- Contexto Instant Período Anterior (comparativo) -->
   <xbrli:context id="${prevInstantContextId}">
     <xbrli:entity>
-      <xbrli:identifier scheme="${TAXONOMY_CATALOG.entityScheme}">${options.companyId}</xbrli:identifier>
+      <xbrli:identifier scheme="${TAXONOMY_CATALOG.entityScheme}">${escapeXml(options.companyId)}</xbrli:identifier>
     </xbrli:entity>
     <xbrli:period>
       <xbrli:instant>${parseInt(year) - 1}-12-31</xbrli:instant>
     </xbrli:period>
   </xbrli:context>
-  
+
   <!-- Contextos por Servicio -->
 ${serviceContexts}
-  
+
   <!-- ============================================================== -->
   <!-- UNITS - Unidades de Medida                                     -->
   <!-- ============================================================== -->
   <xbrli:unit id="COP">
     <xbrli:measure>iso4217:COP</xbrli:measure>
   </xbrli:unit>
-  
+
   <xbrli:unit id="pure">
     <xbrli:measure>xbrli:pure</xbrli:measure>
   </xbrli:unit>
-  
+
   <!-- ============================================================== -->
   <!-- FACTS - Información General                                    -->
   <!-- ============================================================== -->
-  
+
   <!-- Nombre de la entidad -->
   <ifrs-full:NameOfReportingEntityOrOtherMeansOfIdentification contextRef="${durationContextId}">${escapeXml(options.companyName)}</ifrs-full:NameOfReportingEntityOrOtherMeansOfIdentification>
-  
+
   <!-- ID RUPS -->
-  <${config.prefix}:IdentificacionDeLaEmpresaRUPS contextRef="${durationContextId}">${options.companyId}</${config.prefix}:IdentificacionDeLaEmpresaRUPS>
-  
+  <${config.prefix}:IdentificacionDeLaEmpresaRUPS contextRef="${durationContextId}">${escapeXml(options.companyId)}</${config.prefix}:IdentificacionDeLaEmpresaRUPS>
+
   <!-- NIT -->
-  <${config.prefix}:NumeroDeIdentificacionTributariaNIT contextRef="${durationContextId}">${options.nit || ''}</${config.prefix}:NumeroDeIdentificacionTributariaNIT>
-  
+  <${config.prefix}:NumeroDeIdentificacionTributariaNIT contextRef="${durationContextId}">${escapeXml(options.nit || '')}</${config.prefix}:NumeroDeIdentificacionTributariaNIT>
+
   <!-- Naturaleza del negocio -->
   <${config.prefix}:InformacionARevelarSobreLaNaturalezaDelNegocioIndividualSeparado contextRef="${durationContextId}">${escapeXml(options.businessNature || 'Servicios públicos domiciliarios')}</${config.prefix}:InformacionARevelarSobreLaNaturalezaDelNegocioIndividualSeparado>
-  
+
   <!-- Fecha de cierre -->
   <ifrs-full:DateOfEndOfReportingPeriod2013 contextRef="${durationContextId}">${endDate}</ifrs-full:DateOfEndOfReportingPeriod2013>
-  
+
   <!-- Grado de redondeo (valor exacto de enumeración TipoGradoRedondeo) -->
   <${config.prefix}:GradoDeRedondeoUtilizadoEnLosEstadosFinancieros contextRef="${durationContextId}">${roundingXBRLValue}</${config.prefix}:GradoDeRedondeoUtilizadoEnLosEstadosFinancieros>
-  
+
   <!-- ============================================================== -->
   <!-- NOTA: Los valores del Estado de Situación Financiera           -->
   <!-- deben ser completados usando XBRL Express después de           -->
   <!-- importar la plantilla Excel generada.                          -->
   <!-- ============================================================== -->
-  
+
 </xbrli:xbrl>`;
 }
 
 /**
  * Genera el archivo .xbrlt (template de mapeo XBRL)
- * 
+ *
  * Este archivo sigue el formato exacto requerido por XBRL Express (Reporting Standard).
  * Los identificadores de entidad usan placeholders (_) que XBRL Express reemplaza
  * con los valores reales de scheme y company definidos fuera de los contextos.
- * 
+ *
  * IMPORTANTE: Debe incluir la sección <facts> que conecta los mapIdentifier
  * del archivo XML con los conceptos XBRL y sus contextos.
  */
 function generateXBRLTemplate(
-  options: XBRLGenerationOptions, 
+  options: XBRLGenerationOptions,
   config: TaxonomyConfig,
   serviceData: ServiceData[],
   distribution: Record<string, number>,
@@ -332,21 +332,21 @@ function generateXBRLTemplate(
   const endDate = options.reportDate;
   const startDate = options.startDate || `${year}-01-01`;
   const prevEndDate = `${parseInt(year) - 1}-12-31`;
-  
+
   // IDs de contexto siguiendo el patrón de XBRL Express
   // id4 = duration (periodo), id5 = instant período anterior
   // id6+ = instant con dimensiones por servicio para período actual
   let contextIdCounter = 4;
-  
+
   // Contexto de duración (para información general)
   const durationContextId = `id${contextIdCounter++}`; // id4
-  
+
   // Contexto instant período anterior (comparativo)
   const prevInstantContextId = `id${contextIdCounter++}`; // id5
-  
+
   // Contexto instant período actual total (sin dimensión)
   const currentInstantTotalContextId = `id${contextIdCounter++}`; // id6
-  
+
   // Mapeo de servicios a sus Members XBRL y sus context IDs
   // Orden exacto como en la taxonomía oficial
   const serviceMembers: Array<{id: string; member: string; contextId: string; ifrsSuffix: number; sspdSuffix: number}> = [
@@ -358,10 +358,10 @@ function generateXBRLTemplate(
     { id: 'glp', member: 'GasLicuadoDePetroleoMember', contextId: `id${contextIdCounter++}`, ifrsSuffix: 26, sspdSuffix: 37 }, // id12
     { id: 'otras', member: 'OtrasActividadesNoVigiladasMember', contextId: `id${contextIdCounter++}`, ifrsSuffix: 28, sspdSuffix: 38 }, // id13
   ];
-  
+
   // ID de la unidad monetaria
   const unitCOPId = 'id14';
-  
+
   // Generar contextos para cada servicio (instant con dimensión)
   const serviceContexts = serviceMembers.map(svc => {
     return `      <context id="${svc.contextId}">
@@ -388,7 +388,7 @@ function generateXBRLTemplate(
     'co-sspd-ife': 'ife',
   };
   const groupPath = groupPathMap[config.prefix] || 'grupo1';
-  
+
   // Para R414, el schema tiene un nombre diferente
   let sspdSchemaUrl: string;
   if (config.prefix === 'co-sspd-ef-Res414') {
@@ -396,10 +396,10 @@ function generateXBRLTemplate(
   } else {
     sspdSchemaUrl = `${TAXONOMY_CATALOG.baseUrl}/Corte_${taxonomyYear}/${groupPath}/Comun/co-sspd-ef-${groupPath.charAt(0).toUpperCase() + groupPath.slice(1)}_${taxonomyYear}-12-31.xsd`;
   }
-  
+
   const ifrsNamespace = TAXONOMY_CATALOG.ifrsUrl;
   const ifrsSchemaUrl = `${TAXONOMY_CATALOG.ifrsUrl}full_ifrs/full_ifrs-cor_2022-03-24.xsd`;
-  
+
   // El schemaLocation debe incluir los esquemas necesarios
   const schemaLocation = `http://www.reportingstandard.com/map/4 https://www.reportingstandard.com/schemas/mapper/mapper-2021.xsd http://xbrl.org/2006/xbrldi http://www.xbrl.org/2006/xbrldi-2006.xsd ${config.namespace} ${sspdSchemaUrl} ${ifrsNamespace}/ifrs-full ${ifrsSchemaUrl}`;
 
@@ -407,40 +407,40 @@ function generateXBRLTemplate(
   // GENERAR SECCIÓN DE FACTS
   // =============================================
   const facts: string[] = [];
-  
+
   // 1. Facts de Información General (Hoja1) - usan contexto duration sin unitRef
   for (const infoConcept of INFO_CONCEPTS) {
     // Reemplazar prefijo si es necesario
     const conceptName = infoConcept.concept.replace('co-sspd-ef-Grupo1', config.prefix);
     const mapId = conceptName.replace(':', '_');
-    
+
     facts.push(`      <item sourceRef="source0" contextRef="${durationContextId}" mapIdentifier="${mapId}" concept="${conceptName}"/>`);
   }
-  
+
   // 2. Facts del Estado de Situación Financiera (Hoja2) - usan contexto instant con unitRef
   for (const esfConcept of ESF_CONCEPTS) {
     // Concepto base sin sufijo - para columna Total (contexto sin dimensión)
     const baseConcept = esfConcept.concept.replace('co-sspd-ef-Grupo1', config.prefix);
     const baseMapId = baseConcept.replace(':', '_');
-    
+
     // Fact para columna Total (I) - contexto instant total
     facts.push(`      <item sourceRef="source0" contextRef="${currentInstantTotalContextId}" mapIdentifier="${baseMapId}" concept="${baseConcept}" unitRef="${unitCOPId}"/>`);
-    
+
     // Facts por cada servicio activo
     for (const service of serviceMembers) {
       // Solo incluir servicios que estén en la distribución con porcentaje > 0
       if (!distribution[service.id] || distribution[service.id] <= 0) continue;
-      
+
       // Determinar sufijo según tipo de concepto
       const isIfrs = baseConcept.startsWith('ifrs-full');
       const suffix = isIfrs ? service.ifrsSuffix : service.sspdSuffix;
-      
+
       const conceptWithSuffix = `${baseConcept}${suffix}`;
       const mapIdWithSuffix = conceptWithSuffix.replace(':', '_');
-      
+
       facts.push(`      <item sourceRef="source0" contextRef="${service.contextId}" mapIdentifier="${mapIdWithSuffix}" concept="${conceptWithSuffix}" unitRef="${unitCOPId}"/>`);
     }
-    
+
     // Fact para período anterior (comparativo) - contexto instant anterior
     const prevMapId = `${baseMapId}_prev`;
     facts.push(`      <item sourceRef="source0" contextRef="${prevInstantContextId}" mapIdentifier="${prevMapId}" concept="${baseConcept}" unitRef="${unitCOPId}"/>`);
@@ -458,7 +458,7 @@ function generateXBRLTemplate(
     </dts>
     <contexts>
       <scheme>http://www.sui.gov.co/rups</scheme>
-      <company>${options.companyId}</company>
+      <company>${escapeXml(options.companyId)}</company>
       <context id="${durationContextId}">
         <entity>
           <xbrli:identifier scheme="_">_</xbrli:identifier>
@@ -503,13 +503,13 @@ ${facts.join('\n')}
 
 /**
  * Genera el archivo .xml de mapeo Excel-XBRL
- * 
+ *
  * Este archivo define exactamente qué celda del Excel corresponde a qué concepto XBRL.
  * La estructura sigue el formato requerido por XBRL Express.
- * 
+ *
  * IMPORTANTE: Los mapId deben coincidir EXACTAMENTE con los mapIdentifier del .xbrlt
  * Se usa formato con guión bajo: ifrs-full_CashAndCashEquivalents (no con :)
- * 
+ *
  * Estructura:
  * - Hoja1: Información general (columna E, filas 12-22)
  * - Hoja2: ESF (columnas I-Q, filas 15-70)
@@ -520,29 +520,29 @@ ${facts.join('\n')}
  *   - Columnas M-Q: Otros servicios
  */
 function generateExcelMapping(
-  options: XBRLGenerationOptions, 
+  options: XBRLGenerationOptions,
   config: TaxonomyConfig,
   accounts: Array<{ code: string; name: string; value: number }>,
   activeServices: string[] = ['acueducto', 'alcantarillado', 'aseo']
 ): string {
   const mappings: string[] = [];
-  
+
   // Helper para convertir concepto a mapId (reemplazar : por _)
   const toMapId = (concept: string) => concept.replace(':', '_').replace('co-sspd-ef-Grupo1', config.prefix.replace(':', '_'));
-  
+
   // 1. Mapeos de Información General (Hoja1)
   for (const infoConcept of INFO_CONCEPTS) {
     // Reemplazar prefijo según configuración
     const conceptName = infoConcept.concept.replace('co-sspd-ef-Grupo1', config.prefix);
     const mapId = toMapId(conceptName);
-    
+
     const mapEntry = `  <map>
     <mapId>${mapId}</mapId>
     <cell>Hoja1!E${infoConcept.row}</cell>
   </map>`;
     mappings.push(mapEntry);
   }
-  
+
   // 2. Mapeos del Estado de Situación Financiera (Hoja2)
   // Servicios con sus sufijos
   const serviceConfig: Array<{id: string; column: string; ifrsSuffix: number; sspdSuffix: number}> = [
@@ -554,31 +554,31 @@ function generateExcelMapping(
     { id: 'glp', column: 'O', ifrsSuffix: 26, sspdSuffix: 37 },
     { id: 'otras', column: 'P', ifrsSuffix: 28, sspdSuffix: 38 },
   ];
-  
+
   for (const esfConcept of ESF_CONCEPTS) {
     // Reemplazar prefijo según configuración
     const baseConcept = esfConcept.concept.replace('co-sspd-ef-Grupo1', config.prefix);
     const baseMapId = toMapId(baseConcept);
-    
+
     // Mapeo para columna Total (I) - sin sufijo
     const totalMap = `  <map>
     <mapId>${baseMapId}</mapId>
     <cell>Hoja2!I${esfConcept.row}</cell>
   </map>`;
     mappings.push(totalMap);
-    
+
     // Mapeos por servicio activo
     for (const service of serviceConfig) {
       // Solo incluir servicios activos
       if (!activeServices.includes(service.id)) continue;
-      
+
       // Determinar sufijo según tipo de concepto (IFRS vs SSPD)
       const isIfrs = baseConcept.startsWith('ifrs-full');
       const suffix = isIfrs ? service.ifrsSuffix : service.sspdSuffix;
-      
+
       const conceptWithSuffix = `${baseConcept}${suffix}`;
       const mapIdWithSuffix = toMapId(conceptWithSuffix);
-      
+
       const serviceMap = `  <map>
     <mapId>${mapIdWithSuffix}</mapId>
     <cell>Hoja2!${service.column}${esfConcept.row}</cell>
@@ -598,6 +598,7 @@ ${mappings.join('\n')}
  * Escapa caracteres especiales para XML
  */
 function escapeXml(str: string): string {
+  if (!str) return '';
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -610,7 +611,7 @@ function escapeXml(str: string): string {
  * Genera el archivo README con instrucciones
  */
 function generateReadme(
-  options: XBRLGenerationOptions, 
+  options: XBRLGenerationOptions,
   config: ReturnType<typeof getTaxonomyConfig>,
   distribution: Record<string, number>
 ): string {
@@ -632,7 +633,7 @@ CONTENIDO DEL PAQUETE
 1. ${config.prefix}_Individual_${options.companyId}_${options.reportDate}.xbrl
    → Archivo de instancia XBRL (estructura base)
 
-2. ${config.prefix}_Individual_${options.companyId}_${options.reportDate}.xbrlt  
+2. ${config.prefix}_Individual_${options.companyId}_${options.reportDate}.xbrlt
    → Template de mapeo con contextos y dimensiones
 
 3. ${config.prefix}_Individual_${options.companyId}_${options.reportDate}.xml
@@ -648,7 +649,7 @@ CONTENIDO DEL PAQUETE
 DISTRIBUCIÓN POR SERVICIOS
 ================================================================================
 
-${Object.entries(distribution).map(([service, pct]) => 
+${Object.entries(distribution).map(([service, pct]) =>
   `• ${service.charAt(0).toUpperCase() + service.slice(1)}: ${pct}%`
 ).join('\n')}
 
@@ -674,7 +675,7 @@ PASO 3: Cargar datos del Excel
 PASO 4: Completar hojas restantes
    Las siguientes hojas requieren diligenciamiento manual:
    • Notas explicativas
-   • Políticas contables  
+   • Políticas contables
    • Revelaciones específicas
    • Estados complementarios
 
@@ -724,7 +725,7 @@ function generateSummary(
     gastos: 0,
     costos: 0,
   };
-  
+
   for (const acc of leafAccounts) {
     const firstDigit = acc.code.charAt(0);
     switch (firstDigit) {
@@ -736,14 +737,14 @@ function generateSummary(
       case '6': totals.costos += acc.value; break;
     }
   }
-  
+
   // Calcular totales por servicio
   const serviceSummaries = serviceData.map(sd => {
     const leafs = sd.accounts.filter(a => a.isLeaf);
     let activos = 0;
     let pasivos = 0;
     let patrimonio = 0;
-    
+
     for (const acc of leafs) {
       const firstDigit = acc.code.charAt(0);
       switch (firstDigit) {
@@ -752,7 +753,7 @@ function generateSummary(
         case '3': patrimonio += acc.value; break;
       }
     }
-    
+
     return {
       service: sd.service,
       activos,

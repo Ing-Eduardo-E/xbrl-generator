@@ -6,6 +6,7 @@ import { UploadStep } from '@/components/UploadStep';
 import { DistributeStep } from '@/components/DistributeStep';
 import { GenerateStep } from '@/components/GenerateStep';
 import { IFECompanyInfoForm, type IFECompanyData } from '@/components/IFECompanyInfoForm';
+import { BatchIFECompanyForm } from '@/components/BatchIFECompanyForm';
 
 type NIIFGroup = 'grupo1' | 'grupo2' | 'grupo3' | 'r414' | 'ife';
 type IFETrimestre = '1T' | '2T' | '3T' | '4T';
@@ -31,6 +32,12 @@ export default function HomePage() {
   const [niifGroup, setNiifGroup] = useState<NIIFGroup>('grupo1');
   const [ifeMetadata, setIfeMetadata] = useState<IFEMetadata | null>(null);
   const [ifeCompanyData, setIfeCompanyData] = useState<IFECompanyData | null>(null);
+  const [batchMode, setBatchMode] = useState(false);
+
+  // generationMode derivado del estado actual
+  type GenerationMode = 'annual' | 'ife-single' | 'ife-batch';
+  const generationMode: GenerationMode =
+    niifGroup === 'ife' ? (batchMode ? 'ife-batch' : 'ife-single') : 'annual';
 
   const isIFE = niifGroup === 'ife';
 
@@ -43,9 +50,9 @@ export default function HomePage() {
   };
 
   const handleDistributeSuccess = () => {
-    // Para IFE, ir al paso de company-info
-    // Para otras taxonomías, ir directamente a generate
-    if (niifGroup === 'ife') {
+    // Para IFE batch o no-IFE: ir directamente a generate
+    // Para IFE individual: ir al paso de company-info primero
+    if (niifGroup === 'ife' && !batchMode) {
       setCurrentStep('company-info');
     } else {
       setCurrentStep('generate');
@@ -63,8 +70,9 @@ export default function HomePage() {
     } else if (currentStep === 'company-info') {
       setCurrentStep('distribute');
     } else if (currentStep === 'generate') {
-      // Para IFE, volver a company-info; para otros, a distribute
-      if (niifGroup === 'ife') {
+      // IFE individual: volver a company-info
+      // IFE batch y otros: volver a distribute
+      if (niifGroup === 'ife' && !batchMode) {
         setCurrentStep('company-info');
       } else {
         setCurrentStep('distribute');
@@ -77,18 +85,18 @@ export default function HomePage() {
     setNiifGroup('grupo1');
     setIfeMetadata(null);
     setIfeCompanyData(null);
+    setBatchMode(false);
   };
 
   return (
     <WizardLayout currentStep={currentStep} steps={isIFE ? ifeSteps : undefined}>
       {currentStep === 'upload' && (
-        <UploadStep onSuccess={handleUploadSuccess} />
+        <UploadStep onSuccess={handleUploadSuccess} onBatchModeChange={setBatchMode} />
       )}
       {currentStep === 'distribute' && (
         <DistributeStep
           onSuccess={handleDistributeSuccess}
           onBack={handleBack}
-          niifGroup={niifGroup}
         />
       )}
       {currentStep === 'company-info' && (
@@ -102,7 +110,13 @@ export default function HomePage() {
           }}
         />
       )}
-      {currentStep === 'generate' && (
+      {currentStep === 'generate' && generationMode === 'ife-batch' && (
+        <BatchIFECompanyForm
+          onBack={handleBack}
+          onReset={handleReset}
+        />
+      )}
+      {currentStep === 'generate' && generationMode !== 'ife-batch' && (
         <GenerateStep
           onBack={handleBack}
           onReset={handleReset}

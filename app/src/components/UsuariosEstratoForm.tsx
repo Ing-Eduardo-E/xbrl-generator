@@ -86,7 +86,10 @@ export function UsuariosEstratoForm({ initialValue, onSubmit }: UsuariosEstratoF
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Usuarios por Estrato y Servicio</h3>
         <div className="overflow-x-auto">
-          <table className="min-w-full border text-sm">
+          <table className="min-w-full border text-sm" aria-label="Usuarios por estrato y servicio">
+            <caption className="sr-only">
+              Número de usuarios por tipo de estrato y servicio (Acueducto, Alcantarillado, Aseo)
+            </caption>
             <thead>
               <tr>
                 <th className="border px-2 py-2 bg-slate-200 text-slate-900 dark:bg-slate-800 dark:text-slate-100 font-semibold text-left">Estrato / Tipo de usuario</th>
@@ -108,6 +111,7 @@ export function UsuariosEstratoForm({ initialValue, onSubmit }: UsuariosEstratoF
                         onChange={(e) => handleChange(servicio.key, estrato.key, e.target.value)}
                         className="w-20 text-right"
                         inputMode="numeric"
+                        aria-label={`${estrato.label} - ${servicio.label}`}
                       />
                     </td>
                   ))}

@@ -7,20 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UsuariosEstratoForm, UsuariosEstratoData } from './UsuariosEstratoForm';
 import { Progress } from '@/components/ui/progress';
-import { AlertCircle, CheckCircle2, Droplets, Waves, Trash2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Droplets, Waves, Trash2, Info } from 'lucide-react';
 import { cn, formatCurrency, validateDistribution } from '@/lib/utils';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 
-type NIIFGroup = 'grupo1' | 'grupo2' | 'grupo3' | 'r414' | 'ife';
-
 interface DistributeStepProps {
   onSuccess: () => void;
   onBack: () => void;
-  niifGroup: NIIFGroup;
 }
 
-export function DistributeStep({ onSuccess, onBack, niifGroup }: DistributeStepProps) {
+export function DistributeStep({ onSuccess, onBack }: DistributeStepProps) {
   const [acueducto, setAcueducto] = useState<number>(40);
   const [alcantarillado, setAlcantarillado] = useState<number>(35);
   const [aseo, setAseo] = useState<number>(25);
@@ -32,6 +29,10 @@ export function DistributeStep({ onSuccess, onBack, niifGroup }: DistributeStepP
   const [subsidioAcueducto, setSubsidioAcueducto] = useState<number>(0);
   const [subsidioAlcantarillado, setSubsidioAlcantarillado] = useState<number>(0);
   const [subsidioAseo, setSubsidioAseo] = useState<number>(0);
+
+  // Obtener información de sesión para saber si es IFE
+  const sessionQuery = trpc.balance.getSessionInfo.useQuery();
+  const isIFE = sessionQuery.data?.niifGroup === 'ife';
 
   const totalsQuery = trpc.balance.getTotals.useQuery();
   const distributeMutation = trpc.balance.distributeBalance.useMutation({
@@ -48,9 +49,6 @@ export function DistributeStep({ onSuccess, onBack, niifGroup }: DistributeStepP
 
   const validation = validateDistribution(acueducto, alcantarillado, aseo);
 
-  // IFE no requiere usuarios por estrato ni subsidios
-  const isIFE = niifGroup === 'ife';
-
   const handleDistribute = async () => {
     if (!validation.isValid) {
       toast.error('Distribución inválida', {
@@ -59,7 +57,7 @@ export function DistributeStep({ onSuccess, onBack, niifGroup }: DistributeStepP
       return;
     }
 
-    // Validar que usuarios por estrato estén definidos (solo para taxonomías que lo requieren)
+    // Validar que usuarios por estrato estén definidos (solo para reportes anuales, NO para IFE)
     if (!isIFE && !usuariosEstrato) {
       toast.error('Debes ingresar el número de usuarios por estrato y servicio.');
       return;
@@ -68,6 +66,7 @@ export function DistributeStep({ onSuccess, onBack, niifGroup }: DistributeStepP
       // Log para debug
       console.log('📤 Enviando datos al servidor:');
       console.log('  - Distribución:', { acueducto, alcantarillado, aseo });
+      console.log('  - Es IFE:', isIFE);
       console.log('  - Usuarios por estrato:', JSON.stringify(usuariosEstrato, null, 2));
       console.log('  - Subsidios:', { acueducto: subsidioAcueducto, alcantarillado: subsidioAlcantarillado, aseo: subsidioAseo });
       
@@ -325,7 +324,7 @@ export function DistributeStep({ onSuccess, onBack, niifGroup }: DistributeStepP
         </div>
       </Card>
 
-      {/* Usuarios por Estrato y Servicio - Solo para taxonomías que lo requieren (no IFE) */}
+      {/* Usuarios por Estrato y Servicio - Solo para reportes anuales, NO para IFE */}
       {!isIFE && (
         <UsuariosEstratoForm
           initialValue={usuariosEstrato ?? undefined}
@@ -333,7 +332,7 @@ export function DistributeStep({ onSuccess, onBack, niifGroup }: DistributeStepP
         />
       )}
 
-      {/* Subsidios por Servicio - Solo para taxonomías que lo requieren (no IFE) */}
+      {/* Subsidios por Servicio - Solo para reportes anuales, NO para IFE */}
       {!isIFE && (
         <Card className="p-6 mt-8">
           <h3 className="text-lg font-semibold mb-4">Subsidios Recibidos por Servicio</h3>
@@ -377,16 +376,16 @@ export function DistributeStep({ onSuccess, onBack, niifGroup }: DistributeStepP
 
       {/* Nota informativa para IFE */}
       {isIFE && (
-        <Card className="p-6 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+        <Card className="p-6 bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
           <div className="flex gap-3">
-            <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <div className="space-y-2 text-sm">
-              <p className="font-medium text-blue-900 dark:text-blue-100">
-                Informe Financiero Especial (IFE) - Trimestral
+              <p className="font-medium text-amber-900 dark:text-amber-100">
+                IFE - Informe Financiero Especial (Trimestral)
               </p>
-              <p className="text-blue-800 dark:text-blue-200">
-                El IFE no requiere usuarios por estrato ni subsidios. Las cuentas por cobrar
-                se distribuirán automáticamente por rangos de vencimiento según la normativa SSPD.
+              <p className="text-amber-800 dark:text-amber-200">
+                Para los informes trimestrales IFE no se requiere información de usuarios por estrato 
+                ni subsidios. Solo se necesita la distribución porcentual por servicio.
               </p>
             </div>
           </div>

@@ -6,15 +6,17 @@ import { workingAccounts, serviceBalances, balanceSessions } from '@/db/schema';
 import { parseExcelFile } from '@/lib/services/excelParser';
 import { generateExcelWithDistribution, generateConsolidatedExcel } from '@/lib/services/excelGenerator';
 import { generateXBRLCompatibleExcel } from '@/lib/services/xbrlExcelGenerator';
-import { 
+import {
   generateOfficialTemplatePackageWithData,
   hasOfficialTemplates,
   getAvailableTemplateGroups,
-  type NiifGroup, 
+  type NiifGroup,
   type AccountData,
   type ServiceBalanceData,
   type RoundingDegree,
 } from '@/lib/xbrl';
+import { generateFiscalYearTrimesters } from '@/lib/xbrl/shared/dateUtils';
+import JSZip from 'jszip';
 
 export const balanceRouter = router({
   /**
@@ -31,64 +33,38 @@ export const balanceRouter = router({
     .input(
       z.object({
         fileName: z.string(),
-        fileData: z.string(), // Base64 encoded
+        fileData: z.string().max(10_485_760, 'Archivo máximo 10MB en base64'), // Base64 encoded
         niifGroup: z.enum(['grupo1', 'grupo2', 'grupo3', 'r414', 'ife']),
-        // Campos específicos para IFE (trimestral)
-        ifeYear: z.string().optional(), // Año del reporte IFE (2020-2025)
-        ifeTrimestre: z.enum(['1T', '2T', '3T', '4T']).optional(), // Trimestre
       })
     )
     .mutation(async ({ input }) => {
       try {
-        // Validar campos IFE si es taxonomía IFE
-        if (input.niifGroup === 'ife') {
-          if (!input.ifeYear) {
-            throw new Error('El año es requerido para reportes IFE');
-          }
-          if (!input.ifeTrimestre) {
-            throw new Error('El trimestre es requerido para reportes IFE');
-          }
-          // Validar que 2020 solo permite 2T, 3T, 4T
-          if (input.ifeYear === '2020' && input.ifeTrimestre === '1T') {
-            throw new Error('El IFE comenzó en el 2do trimestre de 2020. El 1T no está disponible para 2020.');
-          }
-        }
-
         // Parse Excel file
         const parsed = await parseExcelFile(input.fileData, input.fileName);
 
-        // Truncate working_accounts table
-        await db.delete(workingAccounts);
-
-        // Insert accounts in batches
-        const batchSize = 500;
-        for (let i = 0; i < parsed.accounts.length; i += batchSize) {
-          const batch = parsed.accounts.slice(i, i + batchSize);
-          await db.insert(workingAccounts).values(
-            batch.map((account) => ({
-              code: account.code,
-              name: account.name,
-              value: account.value,
-              isLeaf: account.isLeaf,
-              level: account.level,
-              class: account.class,
-            }))
-          );
-        }
-
-        // Preparar metadatos IFE si aplica
-        const ifeMetadata = input.niifGroup === 'ife' ? JSON.stringify({
-          year: input.ifeYear,
-          trimestre: input.ifeTrimestre,
-        }) : null;
-
-        // Create session record
-        await db.insert(balanceSessions).values({
-          fileName: input.fileName,
-          niifGroup: input.niifGroup,
-          accountsCount: parsed.accounts.length,
-          status: 'uploaded',
-          ifeMetadata, // Guardar año y trimestre para IFE
+        // Truncate + insert en transacción para garantizar atomicidad
+        await db.transaction(async (tx) => {
+          await tx.delete(workingAccounts);
+          const batchSize = 500;
+          for (let i = 0; i < parsed.accounts.length; i += batchSize) {
+            const batch = parsed.accounts.slice(i, i + batchSize);
+            await tx.insert(workingAccounts).values(
+              batch.map((account) => ({
+                code: account.code,
+                name: account.name,
+                value: account.value,
+                isLeaf: account.isLeaf,
+                level: account.level,
+                class: account.class,
+              }))
+            );
+          }
+          await tx.insert(balanceSessions).values({
+            fileName: input.fileName,
+            niifGroup: input.niifGroup,
+            accountsCount: parsed.accounts.length,
+            status: 'uploaded',
+          });
         });
 
         return {
@@ -196,53 +172,26 @@ export const balanceRouter = router({
         // Truncate service_balances table
         await db.delete(serviceBalances);
 
-        // Prepare distributed accounts using "Largest Remainder Method"
-        // This ensures the sum of distributed values equals the original value exactly
+        // Prepare distributed accounts
         const services = [
           { name: 'acueducto', percentage: input.acueducto },
           { name: 'alcantarillado', percentage: input.alcantarillado },
           { name: 'aseo', percentage: input.aseo },
         ];
 
-        const distributedAccounts = [];
+        const distributedAccounts: { service: string; code: string; name: string; value: number; isLeaf: boolean; level: number; class: string }[] = [];
 
-        // For each account, distribute using largest remainder method
-        for (const account of accounts) {
-          const originalValue = account.value;
-          
-          // Calculate raw (decimal) values for each service
-          const rawValues = services.map(service => ({
-            service: service.name,
-            rawValue: originalValue * (service.percentage / 100),
-            floorValue: Math.floor(originalValue * (service.percentage / 100)),
-            remainder: (originalValue * (service.percentage / 100)) % 1,
-          }));
+        for (const service of services) {
+          for (const account of accounts) {
+            const distributedValue = Math.round(
+              account.value * (service.percentage / 100)
+            );
 
-          // Calculate the difference between original and sum of floors
-          const sumOfFloors = rawValues.reduce((sum, v) => sum + v.floorValue, 0);
-          let remainder = originalValue - sumOfFloors;
-
-          // Sort by remainder descending to distribute extra units
-          const sortedByRemainder = [...rawValues].sort((a, b) => b.remainder - a.remainder);
-
-          // Create final values, adding 1 to those with largest remainders
-          const finalValues: Record<string, number> = {};
-          for (const item of sortedByRemainder) {
-            if (remainder > 0) {
-              finalValues[item.service] = item.floorValue + 1;
-              remainder--;
-            } else {
-              finalValues[item.service] = item.floorValue;
-            }
-          }
-
-          // Add to distributed accounts
-          for (const service of services) {
             distributedAccounts.push({
               service: service.name,
               code: account.code,
               name: account.name,
-              value: finalValues[service.name],
+              value: distributedValue,
               isLeaf: account.isLeaf,
               level: account.level,
               class: account.class,
@@ -250,23 +199,27 @@ export const balanceRouter = router({
           }
         }
 
-        // Insert in batches
-        const batchSize = 1000;
-        for (let i = 0; i < distributedAccounts.length; i += batchSize) {
-          const batch = distributedAccounts.slice(i, i + batchSize);
-          await db.insert(serviceBalances).values(batch);
-        }
+        // Insert en transacción para garantizar atomicidad
+        await db.transaction(async (tx) => {
+          const batchSize = 1000;
+          for (let i = 0; i < distributedAccounts.length; i += batchSize) {
+            const batch = distributedAccounts.slice(i, i + batchSize);
+            await tx.insert(serviceBalances).values(batch);
+          }
+        });
 
         // Update session status - guardar también usuariosEstrato y subsidios
-        console.log('\n📥 Backend - Datos recibidos en distributeBalance:');
-        console.log('  - Distribución:', { acueducto: input.acueducto, alcantarillado: input.alcantarillado, aseo: input.aseo });
-        console.log('  - Usuarios por estrato:', input.usuariosEstrato ? 'SÍ (datos presentes)' : 'NO');
-        if (input.usuariosEstrato) {
-          console.log('    Acueducto:', JSON.stringify(input.usuariosEstrato.acueducto));
-          console.log('    Alcantarillado:', JSON.stringify(input.usuariosEstrato.alcantarillado));
-          console.log('    Aseo:', JSON.stringify(input.usuariosEstrato.aseo));
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('\n📥 Backend - Datos recibidos en distributeBalance:');
+          console.log('  - Distribución:', { acueducto: input.acueducto, alcantarillado: input.alcantarillado, aseo: input.aseo });
+          console.log('  - Usuarios por estrato:', input.usuariosEstrato ? 'SÍ (datos presentes)' : 'NO');
+          if (input.usuariosEstrato) {
+            console.log('    Acueducto:', JSON.stringify(input.usuariosEstrato.acueducto));
+            console.log('    Alcantarillado:', JSON.stringify(input.usuariosEstrato.alcantarillado));
+            console.log('    Aseo:', JSON.stringify(input.usuariosEstrato.aseo));
+          }
+          console.log('  - Subsidios:', input.subsidios ? `Acue: ${input.subsidios.acueducto}, Alc: ${input.subsidios.alcantarillado}, Aseo: ${input.subsidios.aseo}` : 'NO');
         }
-        console.log('  - Subsidios:', input.subsidios ? `Acue: ${input.subsidios.acueducto}, Alc: ${input.subsidios.alcantarillado}, Aseo: ${input.subsidios.aseo}` : 'NO');
         
         const sessionData = {
           distribution: JSON.stringify(input),
@@ -276,7 +229,9 @@ export const balanceRouter = router({
           updatedAt: new Date(),
         };
         
-        console.log('  - Guardando en BD:', { usuariosEstrato: sessionData.usuariosEstrato ? 'SÍ' : 'NO', subsidios: sessionData.subsidios ? 'SÍ' : 'NO' });
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('  - Guardando en BD:', { usuariosEstrato: sessionData.usuariosEstrato ? 'SÍ' : 'NO', subsidios: sessionData.subsidios ? 'SÍ' : 'NO' });
+        }
         
         await db
           .update(balanceSessions)
@@ -302,37 +257,43 @@ export const balanceRouter = router({
    */
   getTotalesServicios: publicProcedure.query(async () => {
     try {
-      const services = ['acueducto', 'alcantarillado', 'aseo'];
-      const result: Record<string, { activos: number; pasivos: number; patrimonio: number; ingresos: number; gastos: number; costos: number }> = {};
+      // Single query with double GROUP BY instead of 3 separate queries (N+1 → 1)
+      const rows = await db
+        .select({
+          service: serviceBalances.service,
+          firstDigit: sql<string>`substring(${serviceBalances.code}, 1, 1)`,
+          total: sql<number>`sum(${serviceBalances.value})`,
+        })
+        .from(serviceBalances)
+        .where(eq(serviceBalances.isLeaf, true))
+        .groupBy(serviceBalances.service, sql`substring(${serviceBalances.code}, 1, 1)`);
 
-      for (const service of services) {
-        const totals = await db
-          .select({
-            firstDigit: sql<string>`substring(${serviceBalances.code}, 1, 1)`,
-            total: sql<number>`sum(${serviceBalances.value})`,
-          })
-          .from(serviceBalances)
-          .where(sql`${serviceBalances.service} = ${service} AND ${serviceBalances.isLeaf} = true`)
-          .groupBy(sql`substring(${serviceBalances.code}, 1, 1)`);
+      type ServiceTotals = { activos: number; pasivos: number; patrimonio: number; ingresos: number; gastos: number; costos: number };
+      const emptyTotals = (): ServiceTotals => ({
+        activos: 0,
+        pasivos: 0,
+        patrimonio: 0,
+        ingresos: 0,
+        gastos: 0,
+        costos: 0,
+      });
 
-        result[service] = {
-          activos: 0,
-          pasivos: 0,
-          patrimonio: 0,
-          ingresos: 0,
-          gastos: 0,
-          costos: 0,
-        };
+      const result: Record<string, ServiceTotals> = {
+        acueducto: emptyTotals(),
+        alcantarillado: emptyTotals(),
+        aseo: emptyTotals(),
+      };
 
-        for (const row of totals) {
-          const total = Number(row.total) || 0;
-          if (row.firstDigit === '1') result[service]!.activos = total;
-          if (row.firstDigit === '2') result[service]!.pasivos = total;
-          if (row.firstDigit === '3') result[service]!.patrimonio = total;
-          if (row.firstDigit === '4') result[service]!.ingresos = total;
-          if (row.firstDigit === '5') result[service]!.gastos = total;
-          if (row.firstDigit === '6') result[service]!.costos = total;
-        }
+      for (const row of rows) {
+        const svc = row.service;
+        if (!result[svc]) result[svc] = emptyTotals();
+        const total = Number(row.total) || 0;
+        if (row.firstDigit === '1') result[svc]!.activos = total;
+        if (row.firstDigit === '2') result[svc]!.pasivos = total;
+        if (row.firstDigit === '3') result[svc]!.patrimonio = total;
+        if (row.firstDigit === '4') result[svc]!.ingresos = total;
+        if (row.firstDigit === '5') result[svc]!.gastos = total;
+        if (row.firstDigit === '6') result[svc]!.costos = total;
       }
 
       return result;
@@ -393,12 +354,12 @@ export const balanceRouter = router({
     .input(
       z.object({
         companyId: z.string().min(1, 'ID de empresa requerido'),
-        companyName: z.string().min(1, 'Nombre de empresa requerido'),
+        companyName: z.string().min(1, 'Nombre de empresa requerido').max(500, 'Máximo 500 caracteres'),
         reportDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha debe ser YYYY-MM-DD'),
-        nit: z.string().optional(),
-        businessNature: z.string().optional(),
-        startDate: z.string().optional(),
-        roundingDegree: z.string().optional(),
+        nit: z.string().max(255).optional(),
+        businessNature: z.string().max(5000).optional(),
+        startDate: z.string().max(255).optional(),
+        roundingDegree: z.string().max(255).optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -477,14 +438,14 @@ export const balanceRouter = router({
     .input(
       z.object({
         companyId: z.string().min(1, 'ID de empresa requerido'),
-        companyName: z.string().min(1, 'Nombre de empresa requerido'),
+        companyName: z.string().min(1, 'Nombre de empresa requerido').max(500, 'Máximo 500 caracteres'),
         reportDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha debe ser YYYY-MM-DD'),
-        nit: z.string().optional(),
-        businessNature: z.string().optional(),
-        startDate: z.string().optional(),
-        roundingDegree: z.string().optional(),
-        hasRestatedInfo: z.string().optional(),
-        restatedPeriod: z.string().optional(),
+        nit: z.string().max(255).optional(),
+        businessNature: z.string().max(5000).optional(),
+        startDate: z.string().max(255).optional(),
+        roundingDegree: z.string().max(255).optional(),
+        hasRestatedInfo: z.string().max(255).optional(),
+        restatedPeriod: z.string().max(255).optional(),
         includeFinancialData: z.boolean().optional().default(true),
         // Usuarios por estrato y servicio para distribución proporcional
         usuariosEstrato: z.object({
@@ -497,34 +458,6 @@ export const balanceRouter = router({
           acueducto: z.number(),
           alcantarillado: z.number(),
           aseo: z.number(),
-        }).optional(),
-        // ============================================
-        // CAMPOS ESPECÍFICOS PARA IFE
-        // ============================================
-        ifeData: z.object({
-          // Dirección y contacto
-          address: z.string().optional(),
-          city: z.string().optional(),
-          phone: z.string().optional(),
-          cellphone: z.string().optional(),
-          email: z.string().optional(),
-          // Empleados
-          employeesStart: z.number().optional(),
-          employeesEnd: z.number().optional(),
-          employeesAverage: z.number().optional(),
-          // Representante legal
-          representativeDocType: z.string().optional(),
-          representativeDocNumber: z.string().optional(),
-          representativeFirstName: z.string().optional(),
-          representativeLastName: z.string().optional(),
-          // Marco normativo y continuidad
-          normativeGroup: z.string().optional(),
-          complianceDeclaration: z.string().optional(),
-          goingConcernUncertainty: z.string().optional(),
-          goingConcernExplanation: z.string().optional(),
-          servicesContinuityUncertainty: z.string().optional(),
-          servicesTermination: z.string().optional(),
-          servicesTerminationDetail: z.string().optional(),
         }).optional(),
       })
     )
@@ -608,8 +541,6 @@ export const balanceRouter = router({
           activeServices: activeServices.length > 0 ? activeServices : undefined,
           usuariosEstrato,
           subsidios,
-          // Datos específicos de IFE
-          ifeData: input.ifeData,
         });
 
         return {
@@ -621,6 +552,150 @@ export const balanceRouter = router({
       } catch (error) {
         throw new Error(
           error instanceof Error ? error.message : 'Error al generar el paquete de plantillas oficiales'
+        );
+      }
+    }),
+
+  /**
+   * Generar los 4 trimestres IFE de un año fiscal en un único ZIP.
+   *
+   * Produce un archivo ZIP que contiene 4 sub-ZIPs (uno por trimestre),
+   * cada uno generado con las plantillas oficiales IFE para el período correspondiente.
+   */
+  generateBatchIFE: publicProcedure
+    .input(
+      z.object({
+        companyId: z.string().min(1, 'ID de empresa requerido'),
+        companyName: z.string().min(1, 'Nombre de empresa requerido').max(500, 'Máximo 500 caracteres'),
+        nit: z.string().max(255).optional(),
+        businessNature: z.string().max(5000).optional(),
+        roundingDegree: z.string().max(255).optional(),
+        hasRestatedInfo: z.string().max(255).optional(),
+        restatedPeriod: z.string().max(255).optional(),
+        includeFinancialData: z.boolean().optional().default(true),
+        year: z.string().regex(/^\d{4}$/, 'Año debe ser YYYY'),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        // Obtener la sesión actual
+        const session = await db
+          .select()
+          .from(balanceSessions)
+          .orderBy(desc(balanceSessions.createdAt))
+          .limit(1);
+
+        if (session.length === 0) {
+          throw new Error('No hay una sesión activa. Por favor carga un balance primero.');
+        }
+
+        const niifGroup = session[0].niifGroup as NiifGroup;
+
+        // El batch IFE solo aplica al grupo IFE
+        if (niifGroup !== 'ife') {
+          throw new Error(
+            `generateBatchIFE solo aplica al grupo IFE. ` +
+            `La sesión actual es "${niifGroup}". Por favor carga un balance IFE.`
+          );
+        }
+
+        // Obtener datos financieros si se solicita
+        let consolidatedAccounts: AccountData[] = [];
+        let serviceBalancesData: ServiceBalanceData[] = [];
+        let activeServices: string[] = [];
+
+        if (input.includeFinancialData !== false) {
+          const accounts = await db.select().from(workingAccounts);
+          consolidatedAccounts = accounts.map(acc => ({
+            code: acc.code,
+            name: acc.name,
+            value: acc.value,
+            isLeaf: acc.isLeaf ?? false,
+            level: acc.level ?? 0,
+            class: acc.class ?? '',
+          }));
+
+          const balances = await db.select().from(serviceBalances);
+          serviceBalancesData = balances.map(bal => ({
+            service: bal.service,
+            code: bal.code,
+            name: bal.name,
+            value: bal.value,
+            isLeaf: bal.isLeaf ?? false,
+          }));
+
+          const distribution = session[0].distribution
+            ? JSON.parse(session[0].distribution)
+            : { acueducto: 40, alcantarillado: 35, aseo: 25 };
+          activeServices = Object.keys(distribution).filter(s => distribution[s] > 0);
+        }
+
+        // Obtener usuariosEstrato y subsidios de la sesión (IFE no los requiere,
+        // pero se pasan por si el servicio los usa)
+        const usuariosEstrato = session[0].usuariosEstrato
+          ? JSON.parse(session[0].usuariosEstrato)
+          : undefined;
+        const subsidios = session[0].subsidios
+          ? JSON.parse(session[0].subsidios)
+          : undefined;
+
+        // Generar 4 períodos trimestrales para el año solicitado
+        const periods = generateFiscalYearTrimesters(input.year);
+
+        // Generar los 4 paquetes en paralelo
+        const packageResults = await Promise.all(
+          periods.map(period =>
+            generateOfficialTemplatePackageWithData({
+              niifGroup: 'ife',
+              companyId: input.companyId,
+              companyName: input.companyName,
+              reportDate: period.endDate,
+              nit: input.nit,
+              businessNature: input.businessNature,
+              roundingDegree: input.roundingDegree,
+              hasRestatedInfo: input.hasRestatedInfo,
+              restatedPeriod: input.restatedPeriod,
+              consolidatedAccounts: consolidatedAccounts.length > 0 ? consolidatedAccounts : undefined,
+              serviceBalances: serviceBalancesData.length > 0 ? serviceBalancesData : undefined,
+              activeServices: activeServices.length > 0 ? activeServices : undefined,
+              usuariosEstrato,
+              subsidios,
+            })
+          )
+        );
+
+        // Empaquetar los 4 ZIPs individuales en un único ZIP contenedor
+        const batchZip = new JSZip();
+        for (let i = 0; i < packageResults.length; i++) {
+          const pkg = packageResults[i];
+          const period = periods[i];
+          // Nombre legible: IFE_1T_2025_ID12345.zip
+          const entryName = `IFE_${period.trimestre}_${input.year}_ID${input.companyId}.zip`;
+          batchZip.file(entryName, Buffer.from(pkg.fileData, 'base64'));
+        }
+
+        const batchZipBuffer = await batchZip.generateAsync({
+          type: 'nodebuffer',
+          compression: 'DEFLATE',
+          compressionOptions: { level: 9 },
+        });
+
+        const batchBase64 = Buffer.from(batchZipBuffer).toString('base64');
+        const batchFileName = `IFE_Anual_${input.year}_ID${input.companyId}.zip`;
+
+        return {
+          success: true,
+          fileName: batchFileName,
+          fileData: batchBase64,
+          mimeType: 'application/zip',
+          year: input.year,
+          trimestresGenerados: periods.map(p => p.trimestre),
+          accountsProcessed: consolidatedAccounts.length,
+          servicesIncluded: activeServices,
+        };
+      } catch (error) {
+        throw new Error(
+          error instanceof Error ? error.message : 'Error al generar el batch IFE'
         );
       }
     }),
@@ -685,12 +760,14 @@ export const balanceRouter = router({
 
       const s = session[0];
       
-      console.log('\n🔍 DEBUG - Consultando usuarios y subsidios de la sesión:');
-      console.log('  - ID:', s.id);
-      console.log('  - Archivo:', s.fileName);
-      console.log('  - Estado:', s.status);
-      console.log('  - Usuarios estrato (raw):', s.usuariosEstrato);
-      console.log('  - Subsidios (raw):', s.subsidios);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('\n🔍 DEBUG - Consultando usuarios y subsidios de la sesión:');
+        console.log('  - ID:', s.id);
+        console.log('  - Archivo:', s.fileName);
+        console.log('  - Estado:', s.status);
+        console.log('  - Usuarios estrato (raw):', s.usuariosEstrato);
+        console.log('  - Subsidios (raw):', s.subsidios);
+      }
 
       return {
         success: true,

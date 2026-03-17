@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,19 +26,15 @@ import {
 import { formatCurrency } from '@/lib/utils';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
-
 import type { IFECompanyData } from '@/components/IFECompanyInfoForm';
 
-interface IFEMetadata {
-  year: string;
-  trimestre: '1T' | '2T' | '3T' | '4T';
-}
+type IFETrimestre = '1T' | '2T' | '3T' | '4T';
 
 interface GenerateStepProps {
   onBack: () => void;
   onReset: () => void;
   ifeCompanyData?: IFECompanyData | null;
-  ifeMetadata?: IFEMetadata | null;
+  ifeMetadata?: { year: string; trimestre: IFETrimestre } | null;
 }
 
 /**
@@ -69,15 +65,20 @@ function downloadBase64File(base64Data: string, fileName: string, mimeType: stri
   }, 100);
 }
 
-export function GenerateStep({ onBack, onReset, ifeCompanyData, ifeMetadata }: GenerateStepProps) {
+export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
   const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
   const [isDownloadingOfficial, setIsDownloadingOfficial] = useState(false);
   
   // Formulario para datos de la empresa
   const [companyId, setCompanyId] = useState('');
   const [companyName, setCompanyName] = useState('');
-  // Fecha por defecto: 31 de diciembre de 2024 (Corte fiscal actual)
-  const [reportDate, setReportDate] = useState('2024-12-31');
+  // Fecha por defecto: 31 de diciembre del año actual
+  const [reportDate, setReportDate] = useState(() => {
+    const year = new Date().getFullYear();
+    return `${year}-12-31`;
+  });
+  // Trimestre para IFE
+  const [ifeTrimestre, setIfeTrimestre] = useState<'1T' | '2T' | '3T' | '4T'>('2T');
   const [nit, setNit] = useState('');
   const [businessNature, setBusinessNature] = useState('Servicios publicos domiciliarios');
   const [startDate, setStartDate] = useState('');
@@ -91,20 +92,8 @@ export function GenerateStep({ onBack, onReset, ifeCompanyData, ifeMetadata }: G
     enabled: false,
   });
 
-  // Pre-llenar datos del formulario con ifeCompanyData si está disponible
-  useEffect(() => {
-    if (ifeCompanyData) {
-      setCompanyId(ifeCompanyData.idRups || '');
-      setCompanyName(ifeCompanyData.companyName || '');
-      setNit(ifeCompanyData.nit || '');
-      if (ifeCompanyData.reportDate) {
-        setReportDate(ifeCompanyData.reportDate);
-      }
-    }
-  }, [ifeCompanyData]);
-
   // Helper para calcular fecha de cierre según trimestre
-  const getIFEReportDate = (trimestre: '1T' | '2T' | '3T' | '4T', year: string) => {
+  const getIFEReportDate = (trimestre: '1T' | '2T' | '3T' | '4T', year: number) => {
     const endDates = {
       '1T': `${year}-03-31`,
       '2T': `${year}-06-30`,
@@ -115,8 +104,8 @@ export function GenerateStep({ onBack, onReset, ifeCompanyData, ifeMetadata }: G
   };
 
   // Obtener la fecha efectiva del reporte (considera si es IFE o no)
-  const effectiveReportDate = (sessionQuery.data?.niifGroup === 'ife' && ifeMetadata)
-    ? getIFEReportDate(ifeMetadata.trimestre, ifeMetadata.year)
+  const effectiveReportDate = sessionQuery.data?.niifGroup === 'ife' 
+    ? getIFEReportDate(ifeTrimestre, new Date().getFullYear())
     : reportDate;
 
   const downloadOfficialMutation = trpc.balance.downloadOfficialTemplates.useMutation({
@@ -176,31 +165,6 @@ export function GenerateStep({ onBack, onReset, ifeCompanyData, ifeMetadata }: G
     
     setIsDownloadingOfficial(true);
     try {
-      // Construir datos específicos de IFE si están disponibles
-      const ifeData = ifeCompanyData ? {
-        address: ifeCompanyData.address,
-        city: ifeCompanyData.city,
-        phone: ifeCompanyData.phone,
-        cellphone: ifeCompanyData.phone, // Usar mismo teléfono si no hay celular
-        email: ifeCompanyData.email,
-        employeesStart: ifeCompanyData.employeesStart,
-        employeesEnd: ifeCompanyData.employeesEnd,
-        employeesAverage: ifeCompanyData.employeesAverage,
-        representativeDocType: ifeCompanyData.representativeDocType,
-        representativeDocNumber: ifeCompanyData.representativeDocNumber,
-        representativeFirstName: ifeCompanyData.representativeFirstName,
-        representativeLastName: ifeCompanyData.representativeLastName,
-        normativeGroup: ifeCompanyData.normativeGroup,
-        complianceDeclaration: ifeCompanyData.complianceDeclaration ? 'true' : 'false',
-        goingConcernUncertainty: ifeCompanyData.goingConcernUncertainty 
-          ? ifeCompanyData.goingConcernExplanation || 'Sí hay incertidumbre'
-          : 'NA',
-        goingConcernExplanation: ifeCompanyData.goingConcernExplanation || 'NA',
-        servicesContinuityUncertainty: 'NA',
-        servicesTermination: ifeCompanyData.servicesTermination ? 'Sí' : 'No',
-        servicesTerminationDetail: ifeCompanyData.servicesTerminationExplanation || 'NA',
-      } : undefined;
-
       await downloadOfficialMutation.mutateAsync({
         companyId: companyId.trim(),
         companyName: companyName.trim(),
@@ -211,8 +175,6 @@ export function GenerateStep({ onBack, onReset, ifeCompanyData, ifeMetadata }: G
         roundingDegree: roundingDegree || undefined,
         hasRestatedInfo: hasRestatedInfo || undefined,
         restatedPeriod: restatedPeriod.trim() || undefined,
-        // Datos específicos de IFE
-        ifeData,
       });
     } finally {
       setIsDownloadingOfficial(false);
@@ -355,10 +317,10 @@ export function GenerateStep({ onBack, onReset, ifeCompanyData, ifeMetadata }: G
             </div>
             <Button onClick={handleDownloadExcel} disabled={isDownloadingExcel}>
               {isDownloadingExcel ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generando...
-                </>
+                <span className="flex items-center gap-2" role="status" aria-live="polite">
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                  <span>Generando Excel...</span>
+                </span>
               ) : (
                 <>
                   <Download className="w-4 h-4 mr-2" />
@@ -467,25 +429,27 @@ export function GenerateStep({ onBack, onReset, ifeCompanyData, ifeMetadata }: G
                 />
               </div>
 
-              {/* Fecha de cierre - Para IFE muestra período seleccionado, para otros grupos permite editar fecha */}
-              {sessionQuery.data?.niifGroup === 'ife' && ifeMetadata ? (
+              {/* Fecha de cierre - Para IFE se selecciona trimestre, para otros grupos es fecha */}
+              {sessionQuery.data?.niifGroup === 'ife' ? (
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
+                  <Label htmlFor="ifeTrimestre" className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
-                    Período del reporte
+                    Trimestre del reporte *
                   </Label>
-                  <div className="p-3 bg-muted rounded-md">
-                    <p className="font-medium">
-                      {ifeMetadata.trimestre === '1T' && '1er Trimestre'}
-                      {ifeMetadata.trimestre === '2T' && '2do Trimestre'}
-                      {ifeMetadata.trimestre === '3T' && '3er Trimestre'}
-                      {ifeMetadata.trimestre === '4T' && '4to Trimestre'}
-                      {' '}{ifeMetadata.year}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Fecha de cierre: {effectiveReportDate}
-                    </p>
-                  </div>
+                  <Select value={ifeTrimestre} onValueChange={(v) => setIfeTrimestre(v as '1T' | '2T' | '3T' | '4T')}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar trimestre..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1T">1er Trimestre (cierre: 31/03)</SelectItem>
+                      <SelectItem value="2T">2do Trimestre (cierre: 30/06)</SelectItem>
+                      <SelectItem value="3T">3er Trimestre (cierre: 30/09)</SelectItem>
+                      <SelectItem value="4T">4to Trimestre (cierre: 31/12)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Fecha de cierre: {effectiveReportDate}
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -563,10 +527,10 @@ export function GenerateStep({ onBack, onReset, ifeCompanyData, ifeMetadata }: G
                   size="lg"
                 >
                   {isDownloadingOfficial ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Generando paquete XBRL...
-                    </>
+                    <span className="flex items-center gap-2" role="status" aria-live="polite">
+                      <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                      <span>Generando paquete XBRL... esto puede tardar unos segundos</span>
+                    </span>
                   ) : (
                     <>
                       <Download className="w-4 h-4 mr-2" />

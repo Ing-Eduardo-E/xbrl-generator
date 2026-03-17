@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp, serial } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, boolean, timestamp, serial, index } from 'drizzle-orm/pg-core';
 
 /**
  * Tabla de cuentas de trabajo (temporal)
@@ -18,17 +18,21 @@ export const workingAccounts = pgTable('working_accounts', {
 /**
  * Tabla de balances distribuidos por servicio
  */
-export const serviceBalances = pgTable('service_balances', {
-  id: serial('id').primaryKey(),
-  service: text('service').notNull(), // 'acueducto', 'alcantarillado', 'aseo'
-  code: text('code').notNull(), // Código PUC
-  name: text('name').notNull(), // Nombre de la cuenta
-  value: integer('value').notNull(), // Valor distribuido
-  isLeaf: boolean('is_leaf').notNull().default(false), // Es cuenta hoja?
-  level: integer('level').notNull().default(1), // Nivel en jerarquía
-  class: text('class').notNull().default(''), // Clase contable
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+export const serviceBalances = pgTable(
+  'service_balances',
+  {
+    id: serial('id').primaryKey(),
+    service: text('service').notNull(), // 'acueducto', 'alcantarillado', 'aseo'
+    code: text('code').notNull(), // Código PUC
+    name: text('name').notNull(), // Nombre de la cuenta
+    value: integer('value').notNull(), // Valor distribuido
+    isLeaf: boolean('is_leaf').notNull().default(false), // Es cuenta hoja?
+    level: integer('level').notNull().default(1), // Nivel en jerarquía
+    class: text('class').notNull().default(''), // Clase contable
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => [index('idx_service_is_leaf').on(t.service, t.isLeaf)],
+);
 
 /**
  * Tabla de sesiones de balance (opcional para tracking)
