@@ -1,13 +1,17 @@
 'use client';
 
+
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, ArrowLeft } from 'lucide-react';
 import { ProjectionUploadStep } from './ProjectionUploadStep';
 import { ProjectionClassifyStep } from './ProjectionClassifyStep';
 import { ProjectionConfigStep } from './ProjectionConfigStep';
 import { ProjectionResultStep } from './ProjectionResultStep';
+import ThemeToggle from '@/components/ThemeToggle';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 import type { ParsedAccount } from '@/lib/services/excelParser';
 
@@ -33,18 +37,25 @@ export function ProjectionWizard() {
   } | null>(null);
   const [generatedFiles, setGeneratedFiles] = useState<Array<{ fileName: string; base64: string; quarter: string }>>([]);
 
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col items-center py-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950/30 dark:to-indigo-950/20 flex flex-col items-center py-6">
       <div className="w-full max-w-5xl">
-        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">Proyección Trimestral</h1>
-            <p className="text-slate-500 text-sm sm:text-base">Genera balances trimestrales a partir del balance anual</p>
+        {/* HEADER sticky */}
+        <div className="sticky top-0 z-40 w-full mb-6">
+          <div className="flex items-center justify-between px-2 py-3 sm:px-4 backdrop-blur bg-white/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+            <Link href="/" className="flex items-center gap-2 text-slate-700 dark:text-slate-200 font-semibold hover:underline">
+              <ArrowLeft className="w-5 h-5" />
+              <span className="hidden sm:inline">Generador XBRL</span>
+            </Link>
+            <ThemeToggle />
           </div>
-          <a href="/" className="text-blue-700 hover:underline text-sm flex items-center gap-1">
-            <ArrowLeft className="w-4 h-4" /> Volver al Generador XBRL
-          </a>
-        </header>
+        </div>
+        {/* Título y subtítulo */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100">Proyección Trimestral</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base">Genera balances trimestrales a partir del balance anual</p>
+        </div>
 
         {/* Step Indicator */}
         <div className="flex items-center justify-center mb-8">
@@ -55,21 +66,22 @@ export function ProjectionWizard() {
               <React.Fragment key={step.id}>
                 <div className="flex flex-col items-center">
                   <div
-                    className={`${
+                    className={cn(
+                      'rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg transition-all duration-200 border-2',
                       isCompleted
-                        ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white'
+                        ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white border-blue-600 dark:from-blue-700 dark:to-indigo-700 dark:border-blue-700'
                         : isActive
-                        ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white ring-4 ring-blue-200 animate-pulse'
-                        : 'bg-slate-200 text-slate-400'
-                    } rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg transition-all duration-200`}
+                        ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white ring-4 ring-blue-200 dark:from-blue-700 dark:to-indigo-700 dark:ring-blue-900/40 dark:text-white border-blue-400 dark:border-blue-500 animate-pulse'
+                        : 'bg-slate-200 text-slate-400 border-slate-300 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700'
+                    )}
                   >
                     {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : step.number}
                   </div>
-                  <span className="mt-2 text-xs font-semibold text-slate-700">{step.title}</span>
-                  <span className="text-[10px] text-slate-400">{step.subtitle}</span>
+                  <span className="mt-2 text-xs font-semibold text-slate-700 dark:text-slate-200">{step.title}</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500">{step.subtitle}</span>
                 </div>
                 {idx < steps.length - 1 && (
-                  <div className="flex-1 h-1 mx-2 bg-gradient-to-r from-blue-200 to-indigo-200 rounded" style={{ minWidth: 24 }} />
+                  <div className="flex-1 h-1 mx-2 bg-gradient-to-r from-blue-200 to-indigo-200 dark:from-blue-900/40 dark:to-indigo-900/30 rounded" style={{ minWidth: 24 }} />
                 )}
               </React.Fragment>
             );

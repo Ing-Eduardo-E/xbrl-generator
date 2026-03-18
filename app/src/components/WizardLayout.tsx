@@ -1,7 +1,10 @@
 'use client';
 
+
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Circle } from 'lucide-react';
+import { CheckCircle2, Circle, Calculator } from 'lucide-react';
+import ThemeToggle from '@/components/ThemeToggle';
+import Link from 'next/link';
 
 export type WizardStep = 'upload' | 'distribute' | 'company-info' | 'generate';
 
@@ -109,11 +112,25 @@ export function WizardLayout({ currentStep, children, steps = defaultSteps }: Wi
                   SSPD - Servicios Públicos
                 </p>
               </div>
-            </div>
-            <div className="hidden sm:flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-              <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full font-medium">
+              <span className="hidden sm:flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full font-medium ml-2">
                 v2.0
               </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/proyeccion-trimestral"
+                className={
+                  cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-300',
+                    'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100',
+                    'dark:bg-emerald-950/50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/50'
+                  )
+                }
+              >
+                <Calculator className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Proyección Trimestral</span>
+              </Link>
+              <ThemeToggle />
             </div>
           </div>
         </div>
@@ -276,7 +293,7 @@ export function WizardLayout({ currentStep, children, steps = defaultSteps }: Wi
               {' · '}
               <span>Superintendencia de Servicios Públicos Domiciliarios</span>
             </p>
-            <p className="text-center sm:text-right text-slate-500 dark:text-slate-500">
+            <p className="text-center sm:text-right text-slate-500 dark:text-slate-400">
               Desarrollado con Next.js 16 · React 19
             </p>
           </div>

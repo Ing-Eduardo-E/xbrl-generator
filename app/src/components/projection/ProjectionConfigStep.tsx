@@ -127,12 +127,12 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
   return (
     <div className="w-full max-w-3xl mx-auto space-y-8">
       {/* Configuración */}
-      <Card className="shadow-md">
+      <Card className="shadow-md dark:bg-slate-900 dark:border-slate-800">
         <CardHeader>
           <CardTitle className="bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent text-2xl font-bold">
             Configuración de Proyección
           </CardTitle>
-          <CardDescription>Define los parámetros para la proyección trimestral.</CardDescription>
+          <CardDescription className="dark:text-slate-400">Define los parámetros para la proyección trimestral.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Año y nombre empresa */}
@@ -140,7 +140,7 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
             <div className="flex-1">
               <Label htmlFor="year">Año</Label>
               <Select value={year.toString()} onValueChange={(v) => setYear(Number(v))}>
-                <SelectTrigger id="year" className="mt-1">
+                <SelectTrigger id="year" className="mt-1 dark:bg-slate-800 dark:border-slate-700 dark:text-white">
                   <SelectValue placeholder="Año" />
                 </SelectTrigger>
                 <SelectContent>
@@ -152,14 +152,14 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
             </div>
             <div className="flex-1">
               <Label htmlFor="companyName">Nombre de la empresa (opcional)</Label>
-              <Input
-                id="companyName"
-                maxLength={200}
-                placeholder="Ej: Empresa de Acueducto S.A."
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                className="mt-1"
-              />
+                <Input
+                  id="companyName"
+                  maxLength={200}
+                  placeholder="Ej: Empresa de Acueducto S.A."
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="mt-1 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                />
             </div>
           </div>
 
@@ -176,7 +176,7 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
                   step={1}
                   value={percentages.q1}
                   onChange={(e) => handlePercentageChange("q1", e.target.value)}
-                  className="w-24"
+                  className="w-24 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                 />
                 <span className="text-sm font-medium">%</span>
               </div>
@@ -193,7 +193,7 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
                   step={1}
                   value={percentages.q2}
                   onChange={(e) => handlePercentageChange("q2", e.target.value)}
-                  className="w-24"
+                  className="w-24 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                 />
                 <span className="text-sm font-medium">%</span>
               </div>
@@ -210,7 +210,7 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
                   step={1}
                   value={percentages.q3}
                   onChange={(e) => handlePercentageChange("q3", e.target.value)}
-                  className="w-24"
+                  className="w-24 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                 />
                 <span className="text-sm font-medium">%</span>
               </div>
@@ -227,7 +227,7 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
                   step={1}
                   value={percentages.q4}
                   onChange={(e) => handlePercentageChange("q4", e.target.value)}
-                  className="w-24"
+                  className="w-24 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                 />
                 <span className="text-sm font-medium">%</span>
               </div>
@@ -235,10 +235,10 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
             </div>
           </div>
           {percentageErrors && (
-            <p className="text-sm text-red-600 font-medium mt-2">Todos los porcentajes deben estar entre 0 y 100.</p>
+            <p className="text-sm text-red-600 dark:text-red-400 font-medium mt-2">Todos los porcentajes deben estar entre 0 y 100.</p>
           )}
           {q4Warning && !percentageErrors && (
-            <p className="text-sm text-amber-600 font-medium mt-2">Q4 generalmente es 100% (balance anual completo)</p>
+            <p className="text-sm text-amber-600 dark:text-amber-400 font-medium mt-2">Q4 generalmente es 100% (balance anual completo)</p>
           )}
         </CardContent>
         <CardFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between items-center">
@@ -266,15 +266,15 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
 
       {/* Vista previa */}
       {previewData && (
-        <Card className="shadow-md">
+        <Card className="shadow-md dark:bg-slate-900 dark:border-slate-800">
           <CardHeader>
-            <CardTitle className="text-lg font-bold">Vista Previa de Proyección</CardTitle>
+            <CardTitle className="text-lg font-bold dark:text-slate-100">Vista Previa de Proyección</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm border rounded-md">
+              <table className="min-w-full text-sm border dark:border-slate-700 rounded-md">
                 <thead>
-                  <tr className="bg-gradient-to-r from-indigo-100 to-blue-100">
+                  <tr className="bg-gradient-to-r from-indigo-100 to-blue-100 dark:from-indigo-900/40 dark:to-blue-900/30">
                     <th className="px-2 py-2 font-semibold text-left">Trimestre</th>
                     <th className="px-2 py-2 font-semibold text-left">Porcentaje</th>
                     <th className="px-2 py-2 font-semibold text-left">Activos</th>
@@ -286,7 +286,7 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
                 </thead>
                 <tbody>
                   {previewData.map((proj, idx) => (
-                    <tr key={proj.quarter} className="border-b last:border-b-0">
+                    <tr key={proj.quarter} className="border-b dark:border-slate-700 last:border-b-0">
                       <td className="px-2 py-1 whitespace-nowrap">{proj.label}</td>
                       <td className="px-2 py-1 whitespace-nowrap">{proj.percentage}%</td>
                       <td className="px-2 py-1 whitespace-nowrap">{formatCurrency(proj.totals.activos)}</td>
@@ -294,16 +294,16 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
                       <td className="px-2 py-1 whitespace-nowrap">{formatCurrency(proj.totals.patrimonio)}</td>
                       <td className="px-2 py-1 text-center">
                         {proj.balanceValidation.difference === 0 ? (
-                          <CheckCircle2 className="w-5 h-5 text-green-600 inline" />
+                          <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 inline" />
                         ) : (
-                          <AlertCircle className="w-5 h-5 text-red-600 inline" />
+                          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 inline" />
                         )}
                       </td>
                       <td className="px-2 py-1 text-center">
                         {proj.balanceValidation.difference === 0 ? (
-                          <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-medium">Balanceado</span>
+                          <span className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded text-xs font-medium">Balanceado</span>
                         ) : (
-                          <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-medium">{formatCurrency(proj.balanceValidation.difference)}</span>
+                          <span className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-2 py-0.5 rounded text-xs font-medium">{formatCurrency(proj.balanceValidation.difference)}</span>
                         )}
                       </td>
                     </tr>
@@ -313,7 +313,7 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
             </div>
             {/* Info de ajuste ER→Patrimonio */}
             {previewData.some((p) => p.balanceValidation.adjustedAccount) && (
-              <div className="mt-3 text-xs text-blue-700 bg-blue-50 rounded px-3 py-2">
+              <div className="mt-3 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 rounded px-3 py-2">
                 <div className="font-semibold mb-1">Ajuste por Estado de Resultados → Patrimonio:</div>
                 {previewData.map(
                   (p, i) =>

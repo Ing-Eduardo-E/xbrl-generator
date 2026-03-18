@@ -1,6 +1,8 @@
+
 import './globals.css';
 import { TRPCProvider } from '@/lib/trpc';
 import { Toaster } from 'sonner';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 export const metadata = {
   title: 'Generador XBRL - SSPD',
@@ -14,11 +16,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body suppressHydrationWarning>
-        <TRPCProvider>
-          {children}
-          <Toaster richColors position="top-right" />
-        </TRPCProvider>
+      <body>
+        <ThemeProvider>
+          <TRPCProvider>
+            {children}
+            <Toaster richColors position="top-right" />
+          </TRPCProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

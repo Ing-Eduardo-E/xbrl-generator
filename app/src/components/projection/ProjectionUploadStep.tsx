@@ -79,12 +79,12 @@ export function ProjectionUploadStep({ onSuccess }: ProjectionUploadStepProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="bg-gradient-to-br from-blue-100 to-indigo-100 border-0 shadow-none">
+      <Card className="bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-950/40 dark:to-indigo-950/30 border-0 shadow-none dark:border-slate-800">
         <CardHeader className="flex flex-row items-center gap-3 pb-2">
-          <AlertCircle className="text-blue-600 w-6 h-6" />
+          <AlertCircle className="text-blue-600 dark:text-blue-300 w-6 h-6" />
           <div>
-            <CardTitle className="text-blue-800 text-base">Sube tu balance anual consolidado</CardTitle>
-            <CardContent className="p-0 text-slate-700 text-sm">
+            <CardTitle className="text-blue-800 dark:text-blue-200 text-base">Sube tu balance anual consolidado</CardTitle>
+            <CardContent className="p-0 text-slate-700 dark:text-slate-200 text-sm">
               <ul className="list-disc pl-5 mt-1 space-y-0.5">
                 <li>Archivo Excel (.xlsx o .xls) con columnas: <b>CÓDIGO</b>, <b>DENOMINACIÓN</b>, <b>Total</b></li>
                 <li>Debe incluir los códigos PUC</li>
@@ -98,7 +98,9 @@ export function ProjectionUploadStep({ onSuccess }: ProjectionUploadStepProps) {
       <div
         className={
           'flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-8 transition-colors cursor-pointer select-none ' +
-          (isDragging ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-white hover:border-blue-400')
+          (isDragging
+            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-700'
+            : 'border-slate-300 bg-white hover:border-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500')
         }
         onDragOver={e => {
           e.preventDefault();
@@ -114,9 +116,9 @@ export function ProjectionUploadStep({ onSuccess }: ProjectionUploadStepProps) {
         role="button"
         aria-label="Zona de carga de archivo"
       >
-        <Upload className="w-10 h-10 text-blue-500 mb-2" />
-        <span className="text-slate-700 text-sm mb-1">Arrastra tu archivo aquí o haz clic para seleccionar</span>
-        <span className="text-xs text-slate-400">Solo .xlsx o .xls, máximo 10MB</span>
+        <Upload className="w-10 h-10 text-blue-500 dark:text-blue-300 mb-2" />
+        <span className="text-slate-700 dark:text-slate-200 text-sm mb-1">Arrastra tu archivo aquí o haz clic para seleccionar</span>
+        <span className="text-xs text-slate-400 dark:text-slate-500">Solo .xlsx o .xls, máximo 10MB</span>
         <input
           ref={inputRef}
           type="file"
@@ -129,7 +131,7 @@ export function ProjectionUploadStep({ onSuccess }: ProjectionUploadStepProps) {
           }}
         />
         {file && (
-          <div className="mt-3 text-blue-700 text-xs font-medium flex items-center gap-2">
+          <div className="mt-3 text-blue-700 dark:text-blue-300 text-xs font-medium flex items-center gap-2">
             <span className="truncate max-w-xs">{file.name}</span>
           </div>
         )}
@@ -137,7 +139,7 @@ export function ProjectionUploadStep({ onSuccess }: ProjectionUploadStepProps) {
 
       <div className="flex justify-end">
         <Button
-          className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white"
+          className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white hover:opacity-90 dark:from-blue-700 dark:to-indigo-700"
           disabled={!file || uploadMutation.isPending}
           onClick={handleUpload}
         >
