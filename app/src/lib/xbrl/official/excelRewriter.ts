@@ -20,6 +20,7 @@ import {
   R414_OTRAS_PROVISIONES_MAPPINGS,
   R414_BENEFICIOS_EMPLEADOS_MAPPINGS,
 } from '../r414/mappings';
+import { rewriteGrupoData } from '../grupos';
 
 // ─── (Índice de secciones del body — ver marcadores ═══ abajo) ──────────
 // ─── Sección 1: Función principal + helpers de init (~L29-76)   ─────────
@@ -1631,6 +1632,13 @@ export async function rewriteFinancialDataWithExcelJS(
 
       console.log('[ExcelJS] Hoja35 completada.');
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECCIÓN GRUPO1/2/3 — NIIF Sector Privado (Plenas, PYMES, Microempresas)
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (options.niifGroup === 'grupo1' || options.niifGroup === 'grupo2' || options.niifGroup === 'grupo3') {
+    rewriteGrupoData(workbook, options);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

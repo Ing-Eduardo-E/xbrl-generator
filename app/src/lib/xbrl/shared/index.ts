@@ -54,3 +54,18 @@ export {
 } from './pucUtils';
 
 export * from './dateUtils';
+
+// Helpers de reescritura ExcelJS (compartidos entre R414 y grupos NIIF)
+export {
+  matchesPrefixes,
+  sumAccountsByPrefixes,
+  fillExpenseColumnE,
+  fillExpenseColumnF,
+  calculateColumnG,
+  fillCxCByEstrato,
+  ESTRATOS_RESIDENCIALES,
+  ESTRATOS_NO_RESIDENCIALES,
+  RANGOS_VENCIMIENTO_STANDARD,
+  DISTRIBUCION_TIPICA,
+} from './rewriterHelpers';
+export type { EstratoConfig, RangoVencimiento } from './rewriterHelpers';

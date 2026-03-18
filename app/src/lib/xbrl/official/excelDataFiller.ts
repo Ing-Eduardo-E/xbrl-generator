@@ -25,111 +25,13 @@ import {
   R414_SERVICE_COLUMNS,
   R414_ESF_MAPPINGS as _R414_ESF_MAPPINGS,
 } from '../r414/mappings';
+import { SHEET_MAPPING } from './templatePaths';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SECCIÓN 1 — Constantes de mapeo y configuración (~L25-185)
-// Candidato de extracción: official/mappings/sheetMappings.ts + official/mappings/columnMappings.ts
 // ═══════════════════════════════════════════════════════════════════════════
 
-// -----------------------------------------------------------------------
-// Constantes copiadas del monolito (L97–L592)
-// DEUDA: SHEET_MAPPING está duplicado del monolito (L97). Mover a official/mappings/ e importar directamente en Fase 7.
-// -----------------------------------------------------------------------
-
-const SHEET_MAPPING: Record<NiifGroup, Record<string, string>> = {
-  grupo1: {
-    '110000': 'Hoja1',
-    '210000': 'Hoja2',
-    '310000': 'Hoja3',
-    '410000': 'Hoja4',
-    '510000': 'Hoja5',
-    '610000': 'Hoja6',
-    '710000': 'Hoja7',
-    '800100': 'Hoja8',
-    '800200': 'Hoja9',
-    '800300': 'Hoja10',
-    '800400': 'Hoja11',
-    '800500': 'Hoja9',
-    '800600': 'Hoja10',
-    '810000': 'Hoja11',
-    '900017a': 'Hoja12',
-    '900017b': 'Hoja13',
-    '900017c': 'Hoja14',
-    '900017g': 'Hoja15',
-    '900019': 'Hoja16',
-    '900021': 'Hoja17',
-    '900022': 'Hoja18',
-    '900023': 'Hoja19',
-    '900028b': 'Hoja20',
-  },
-  grupo2: {
-    '110000': 'Hoja1',
-    '210000': 'Hoja2',
-    '310000': 'Hoja3',
-    '410000': 'Hoja4',
-    '510000': 'Hoja5',
-    '800500': 'Hoja9',
-    '800600': 'Hoja10',
-    '810000': 'Hoja11',
-    '900017a': 'Hoja12',
-    '900017b': 'Hoja13',
-    '900017c': 'Hoja14',
-    '900017g': 'Hoja15',
-    '900019': 'Hoja16',
-    '900021': 'Hoja17',
-    '900022': 'Hoja18',
-    '900023': 'Hoja19',
-    '900028b': 'Hoja20',
-  },
-  grupo3: {
-    '110000': 'Hoja1',
-    '210000': 'Hoja2',
-    '310000': 'Hoja3',
-    '800500': 'Hoja9',
-    '800600': 'Hoja10',
-    '810000': 'Hoja11',
-    '900017a': 'Hoja12',
-    '900017b': 'Hoja13',
-    '900017c': 'Hoja14',
-    '900017g': 'Hoja15',
-    '900019': 'Hoja16',
-    '900021': 'Hoja17',
-    '900022': 'Hoja18',
-    '900023': 'Hoja19',
-    '900028b': 'Hoja20',
-  },
-  r414: {
-    '110000': 'Hoja1',
-    '210000': 'Hoja2',
-    '310000': 'Hoja3',
-    '800500': 'Hoja9',
-    '800600': 'Hoja10',
-    '810000': 'Hoja11',
-    '900017a': 'Hoja12',
-    '900017b': 'Hoja13',
-    '900017c': 'Hoja14',
-    '900017g': 'Hoja15',
-    '900019': 'Hoja16',
-    '900021': 'Hoja17',
-    '900022': 'Hoja18',
-    '900023': 'Hoja19',
-    '900028b': 'Hoja20',
-  },
-  r533: {
-    '110000': 'Hoja1',
-    '210000': 'Hoja2',
-    '310000': 'Hoja3',
-  },
-  ife: {
-    '110000': 'Hoja1',
-    '210000t': 'Hoja3',
-    '310000t': 'Hoja4',
-    '900020t': 'Hoja5',
-    '900028t': 'Hoja6',
-    '900050t': 'Hoja7',
-    '900060t': 'Hoja8',
-  },
-};
+// SHEET_MAPPING importado desde templatePaths.ts (fuente canónica).
 
 // DEUDA: SERVICE_COLUMNS está duplicado del monolito (L170). Mover a official/mappings/ e importar directamente en Fase 7.
 const SERVICE_COLUMNS: Record<string, string> = {

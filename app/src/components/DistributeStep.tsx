@@ -30,9 +30,14 @@ export function DistributeStep({ onSuccess, onBack }: DistributeStepProps) {
   const [subsidioAlcantarillado, setSubsidioAlcantarillado] = useState<number>(0);
   const [subsidioAseo, setSubsidioAseo] = useState<number>(0);
 
-  // Obtener información de sesión para saber si es IFE
+  // Obtener información de sesión para adaptar UI según grupo
   const sessionQuery = trpc.balance.getSessionInfo.useQuery();
-  const isIFE = sessionQuery.data?.niifGroup === 'ife';
+  const niifGroup = sessionQuery.data?.niifGroup;
+  const isIFE = niifGroup === 'ife';
+  // grupo3 no tiene FC03 (CxC por estrato) → no necesita usuarios por estrato
+  const needsUsuariosEstrato = !isIFE && niifGroup !== 'grupo3';
+  // Subsidios solo se usan en R414 (Hoja30)
+  const needsSubsidios = niifGroup === 'r414';
 
   const totalsQuery = trpc.balance.getTotals.useQuery();
   const distributeMutation = trpc.balance.distributeBalance.useMutation({
@@ -57,8 +62,8 @@ export function DistributeStep({ onSuccess, onBack }: DistributeStepProps) {
       return;
     }
 
-    // Validar que usuarios por estrato estén definidos (solo para reportes anuales, NO para IFE)
-    if (!isIFE && !usuariosEstrato) {
+    // Validar que usuarios por estrato estén definidos (solo para grupos con FC03)
+    if (needsUsuariosEstrato && !usuariosEstrato) {
       toast.error('Debes ingresar el número de usuarios por estrato y servicio.');
       return;
     }
@@ -324,16 +329,16 @@ export function DistributeStep({ onSuccess, onBack }: DistributeStepProps) {
         </div>
       </Card>
 
-      {/* Usuarios por Estrato y Servicio - Solo para reportes anuales, NO para IFE */}
-      {!isIFE && (
+      {/* Usuarios por Estrato y Servicio - Solo para grupos con FC03 (grupo1, grupo2, r414) */}
+      {needsUsuariosEstrato && (
         <UsuariosEstratoForm
           initialValue={usuariosEstrato ?? undefined}
           onSubmit={setUsuariosEstrato}
         />
       )}
 
-      {/* Subsidios por Servicio - Solo para reportes anuales, NO para IFE */}
-      {!isIFE && (
+      {/* Subsidios por Servicio - Solo para R414 */}
+      {needsSubsidios && (
         <Card className="p-6 mt-8">
           <h3 className="text-lg font-semibold mb-4">Subsidios Recibidos por Servicio</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -369,6 +374,24 @@ export function DistributeStep({ onSuccess, onBack }: DistributeStepProps) {
                 onChange={(e) => setSubsidioAseo(Number(e.target.value) || 0)}
                 className="mt-2"
               />
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Nota informativa para grupo3 - no requiere usuarios ni subsidios */}
+      {niifGroup === 'grupo3' && (
+        <Card className="p-6 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+          <div className="flex gap-3">
+            <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <div className="space-y-2 text-sm">
+              <p className="font-medium text-blue-900 dark:text-blue-100">
+                Grupo 3 - Microempresas
+              </p>
+              <p className="text-blue-800 dark:text-blue-200">
+                Para Microempresas (Grupo 3) no se requiere información de usuarios por estrato
+                ni subsidios. La taxonomía simplificada solo incluye ESF, ER, FC01 y FC02.
+              </p>
             </div>
           </div>
         </Card>
