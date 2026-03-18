@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, CalendarDays, LayoutList, Layers } from 'lucide-react';
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/lib/safe-toast';
@@ -22,20 +22,13 @@ type IFETrimestre = '1T' | '2T' | '3T' | '4T';
 
 interface UploadStepProps {
   onSuccess: (niifGroup: NIIFGroup, metadata?: { year: string; trimestre: IFETrimestre }) => void;
-  onBatchModeChange?: (isBatch: boolean) => void;
 }
 
-export function UploadStep({ onSuccess, onBatchModeChange }: UploadStepProps) {
+export function UploadStep({ onSuccess }: UploadStepProps) {
   const [file, setFile] = useState<File | null>(null);
   const [niifGroup, setNiifGroup] = useState<NIIFGroup>('grupo1');
   const [ifeTrimestre, setIfeTrimestre] = useState<IFETrimestre>('2T');
-  const [batchMode, setBatchMode] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-
-  const handleBatchModeChange = (isBatch: boolean) => {
-    setBatchMode(isBatch);
-    onBatchModeChange?.(isBatch);
-  };
 
   const uploadMutation = trpc.balance.uploadBalance.useMutation({
     onSuccess: (data) => {
@@ -151,11 +144,7 @@ export function UploadStep({ onSuccess, onBatchModeChange }: UploadStepProps) {
           Grupo NIIF / Tipo de Taxonomía
         </Label>
         <Select value={niifGroup} onValueChange={(v) => {
-          const next = v as NIIFGroup;
-          setNiifGroup(next);
-          if (next !== 'ife' && batchMode) {
-            handleBatchModeChange(false);
-          }
+          setNiifGroup(v as NIIFGroup);
         }}>
           <SelectTrigger id="niif-group" className="w-full max-w-md">
             <SelectValue />
@@ -176,60 +165,8 @@ export function UploadStep({ onSuccess, onBatchModeChange }: UploadStepProps) {
         </p>
       </div>
 
-      {/* Modo de generación IFE - solo visible cuando se selecciona IFE */}
+      {/* IFE Trimestre Selection - solo visible cuando se selecciona IFE */}
       {niifGroup === 'ife' && (
-        <div className="space-y-3">
-          <Label className="text-base font-medium">¿Cómo deseas generar el reporte IFE?</Label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl">
-            {/* Opción: trimestre individual */}
-            <button
-              type="button"
-              onClick={() => handleBatchModeChange(false)}
-              className={cn(
-                'flex items-start gap-3 p-4 rounded-lg border-2 text-left transition-colors',
-                !batchMode
-                  ? 'border-primary bg-primary/5'
-                  : 'border-muted-foreground/25 hover:border-primary/50 bg-background'
-              )}
-            >
-              <LayoutList className={cn('w-5 h-5 mt-0.5 flex-shrink-0', !batchMode ? 'text-primary' : 'text-muted-foreground')} />
-              <div>
-                <p className={cn('font-medium text-sm', !batchMode ? 'text-primary' : '')}>
-                  Trimestre individual
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Selecciona T1, T2, T3 o T4
-                </p>
-              </div>
-            </button>
-
-            {/* Opción: batch — los 4 trimestres */}
-            <button
-              type="button"
-              onClick={() => handleBatchModeChange(true)}
-              className={cn(
-                'flex items-start gap-3 p-4 rounded-lg border-2 text-left transition-colors',
-                batchMode
-                  ? 'border-primary bg-primary/5'
-                  : 'border-muted-foreground/25 hover:border-primary/50 bg-background'
-              )}
-            >
-              <Layers className={cn('w-5 h-5 mt-0.5 flex-shrink-0', batchMode ? 'text-primary' : 'text-muted-foreground')} />
-              <div>
-                <p className={cn('font-medium text-sm', batchMode ? 'text-primary' : '')}>
-                  Batch: los 4 trimestres de un año
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Genera T1, T2, T3 y T4 en un solo ZIP
-                </p>
-              </div>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* IFE Trimestre Selection - solo visible cuando se selecciona IFE en modo individual */}
-      {niifGroup === 'ife' && !batchMode && (
         <div className="space-y-3">
           <Label htmlFor="ife-trimestre" className="text-base font-medium flex items-center gap-2">
             <CalendarDays className="w-4 h-4" />

@@ -6,4 +6,3 @@ export * from './taxonomyConfig';
 export * from './xbrlGenerator';
 export * from './officialTemplateService';
 export * from './shared/dateUtils';
-export * from './shared/quarterlyDerivation';
