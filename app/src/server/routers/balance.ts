@@ -6,6 +6,7 @@ import { workingAccounts, serviceBalances, balanceSessions } from '@/db/schema';
 import { parseExcelFile } from '@/lib/services/excelParser';
 import { generateExcelWithDistribution, generateConsolidatedExcel } from '@/lib/services/excelGenerator';
 import { generateXBRLCompatibleExcel } from '@/lib/services/xbrlExcelGenerator';
+import { distributeLargestRemainder, balanceAccountingEquation } from '@/lib/services/distributionUtils';
 import {
   generateOfficialTemplatePackageWithData,
   hasOfficialTemplates,
@@ -179,23 +180,28 @@ export const balanceRouter = router({
 
         const distributedAccounts: { service: string; code: string; name: string; value: number; isLeaf: boolean; level: number; class: string }[] = [];
 
-        for (const service of services) {
-          for (const account of accounts) {
-            const distributedValue = Math.round(
-              account.value * (service.percentage / 100)
-            );
+        // Distribución con Largest Remainder Method para evitar errores de redondeo
+        for (const account of accounts) {
+          const distributed = distributeLargestRemainder(account.value, services);
 
+          for (const service of services) {
             distributedAccounts.push({
               service: service.name,
               code: account.code,
               name: account.name,
-              value: distributedValue,
+              value: distributed[service.name],
               isLeaf: account.isLeaf,
               level: account.level,
               class: account.class,
             });
           }
         }
+
+        // Balancear ecuación contable (Activos = Pasivos + Patrimonio) por servicio
+        balanceAccountingEquation(
+          distributedAccounts,
+          services.map((s) => s.name)
+        );
 
         // Insert en transacción para garantizar atomicidad
         await db.transaction(async (tx) => {
