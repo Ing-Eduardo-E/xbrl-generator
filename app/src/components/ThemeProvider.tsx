@@ -50,11 +50,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('xbrl-theme', newTheme)
   }
 
-  // Prevent flash of wrong theme
-  if (!mounted) {
-    return <>{children}</>
-  }
-
   return (
     <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
       {children}
