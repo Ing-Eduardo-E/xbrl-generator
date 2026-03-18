@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { trpc } from '@/lib/trpc';
-import { toast } from 'sonner';
+import { toast } from '@/lib/safe-toast';
 import type { IFECompanyData } from '@/components/IFECompanyInfoForm';
 
 type IFETrimestre = '1T' | '2T' | '3T' | '4T';

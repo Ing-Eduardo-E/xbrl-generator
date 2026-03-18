@@ -15,7 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, CalendarDays, LayoutList, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { trpc } from '@/lib/trpc';
-import { toast } from 'sonner';
+import { toast } from '@/lib/safe-toast';
 
 type NIIFGroup = 'grupo1' | 'grupo2' | 'grupo3' | 'r414' | 'ife';
 type IFETrimestre = '1T' | '2T' | '3T' | '4T';

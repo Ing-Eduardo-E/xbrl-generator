@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, FileSpreadsheet, Download } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from '@/lib/safe-toast';
 
 interface ProjectionResultStepProps {
   files: Array<{ fileName: string; base64: string; quarter: string }>;

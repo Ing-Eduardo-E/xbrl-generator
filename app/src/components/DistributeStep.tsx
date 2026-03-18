@@ -10,7 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { AlertCircle, CheckCircle2, Droplets, Waves, Trash2, Info } from 'lucide-react';
 import { cn, formatCurrency, validateDistribution } from '@/lib/utils';
 import { trpc } from '@/lib/trpc';
-import { toast } from 'sonner';
+import { toast } from '@/lib/safe-toast';
 
 interface DistributeStepProps {
   onSuccess: () => void;

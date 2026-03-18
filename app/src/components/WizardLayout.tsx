@@ -118,6 +118,21 @@ export function WizardLayout({ currentStep, children, steps = defaultSteps }: Wi
             </div>
             <div className="flex items-center gap-2">
               <Link
+                href="/convertir"
+                className={
+                  cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-300',
+                    'bg-violet-50 border-violet-200 text-violet-700 hover:bg-violet-100',
+                    'dark:bg-violet-950/50 dark:border-violet-800 dark:text-violet-400 dark:hover:bg-violet-900/50'
+                  )
+                }
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                <span className="hidden sm:inline">Conversor</span>
+              </Link>
+              <Link
                 href="/proyeccion-trimestral"
                 className={
                   cn(

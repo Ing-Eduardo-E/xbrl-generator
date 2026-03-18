@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AlertCircle, Upload } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/safe-toast';
 import { trpc } from '@/lib/trpc';
 
 interface ParsedAccount {

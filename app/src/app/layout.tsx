@@ -16,7 +16,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('xbrl-theme');var d=document.documentElement;if(t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme:dark)').matches))d.classList.add('dark');else d.classList.remove('dark')}catch(e){}})()`,
+          }}
+        />
+      </head>
+      <body suppressHydrationWarning>
         <ThemeProvider>
           <TRPCProvider>
             {children}

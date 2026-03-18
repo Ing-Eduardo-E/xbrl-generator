@@ -16,7 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { trpc } from "@/lib/trpc";
 import { cn, formatCurrency } from "@/lib/utils";
 import { CheckCircle2, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from '@/lib/safe-toast';
 
 interface ParsedAccount {
   code: string;

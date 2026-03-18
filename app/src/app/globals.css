@@ -24,6 +24,23 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+
+    /* Agente 1 - Analizador (Blue) */
+    --agent-analyzer: 217 91% 60%;
+    --agent-analyzer-foreground: 213 94% 20%;
+    --agent-analyzer-muted: 214 95% 93%;
+    /* Agente 2 - Mapeador (Violet) */
+    --agent-mapper: 263 70% 58%;
+    --agent-mapper-foreground: 263 70% 20%;
+    --agent-mapper-muted: 263 85% 93%;
+    /* Agente 3 - Transformador (Emerald) */
+    --agent-transformer: 160 84% 39%;
+    --agent-transformer-foreground: 160 84% 15%;
+    --agent-transformer-muted: 152 76% 91%;
+    /* Agente 4 - Validador (Amber) */
+    --agent-validator: 38 92% 50%;
+    --agent-validator-foreground: 32 95% 20%;
+    --agent-validator-muted: 48 96% 89%;
   }
 
   .dark {
@@ -46,6 +63,23 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
+
+    /* Agente 1 - Analizador (Blue) Dark */
+    --agent-analyzer: 217 91% 65%;
+    --agent-analyzer-foreground: 213 94% 93%;
+    --agent-analyzer-muted: 217 50% 15%;
+    /* Agente 2 - Mapeador (Violet) Dark */
+    --agent-mapper: 263 70% 68%;
+    --agent-mapper-foreground: 263 85% 93%;
+    --agent-mapper-muted: 263 40% 15%;
+    /* Agente 3 - Transformador (Emerald) Dark */
+    --agent-transformer: 160 84% 45%;
+    --agent-transformer-foreground: 152 76% 91%;
+    --agent-transformer-muted: 160 40% 12%;
+    /* Agente 4 - Validador (Amber) Dark */
+    --agent-validator: 38 92% 55%;
+    --agent-validator-foreground: 48 96% 89%;
+    --agent-validator-muted: 38 50% 12%;
   }
 
   * {

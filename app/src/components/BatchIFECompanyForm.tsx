@@ -25,7 +25,7 @@ import {
   Package,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { toast } from 'sonner';
+import { toast } from '@/lib/safe-toast';
 
 interface BatchIFECompanyFormProps {
   onBack: () => void;
