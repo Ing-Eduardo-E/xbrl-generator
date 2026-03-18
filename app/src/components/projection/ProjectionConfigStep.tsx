@@ -311,14 +311,15 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
                 </tbody>
               </table>
             </div>
-            {/* Info de ajuste */}
+            {/* Info de ajuste ER→Patrimonio */}
             {previewData.some((p) => p.balanceValidation.adjustedAccount) && (
               <div className="mt-3 text-xs text-blue-700 bg-blue-50 rounded px-3 py-2">
+                <div className="font-semibold mb-1">Ajuste por Estado de Resultados → Patrimonio:</div>
                 {previewData.map(
                   (p, i) =>
                     p.balanceValidation.adjustedAccount ? (
                       <div key={i}>
-                        Se ajustó la cuenta <span className="font-semibold">{p.balanceValidation.adjustedAccount}</span> en {formatCurrency(p.balanceValidation.adjustmentAmount)} para cumplir la ecuación contable
+                        {p.label}: Cuenta <span className="font-semibold">{p.balanceValidation.adjustedAccount}</span> ajustada en {formatCurrency(p.balanceValidation.adjustmentAmount)} (Resultado del ejercicio al {p.percentage}%)
                       </div>
                     ) : null
                 )}
