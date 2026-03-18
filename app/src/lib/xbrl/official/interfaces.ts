@@ -44,6 +44,8 @@ export interface TemplateCustomization {
   hasRestatedInfo?: string;
   /** Período de reexpresión */
   restatedPeriod?: string;
+  /** Trimestre para IFE */
+  trimestre?: import('../types').IFETrimestre;
 }
 
 // TemplateWithDataOptions local extiende la TemplateCustomization local con campos distintos
@@ -59,4 +61,27 @@ export interface TemplateWithDataOptions extends TemplateCustomization {
   usuariosEstrato?: UsuariosEstrato;
   /** Subsidios recibidos por servicio */
   subsidios?: import('../types').SubsidiosPorServicio;
+  /** Trimestre para IFE */
+  trimestre?: import('../types').IFETrimestre;
+  /** Datos específicos de compañía para IFE */
+  ifeCompanyData?: {
+    address?: string;
+    city?: string;
+    phone?: string;
+    cellphone?: string;
+    email?: string;
+    employeesStart?: number;
+    employeesEnd?: number;
+    employeesAverage?: number;
+    representativeDocType?: string;
+    representativeDocNumber?: string;
+    representativeFirstName?: string;
+    representativeLastName?: string;
+    normativeGroup?: string;
+    complianceDeclaration?: boolean;
+    goingConcernUncertainty?: boolean;
+    goingConcernExplanation?: string;
+    servicesTermination?: boolean;
+    servicesTerminationExplanation?: string;
+  };
 }

@@ -28,6 +28,7 @@ export function UploadStep({ onSuccess }: UploadStepProps) {
   const [file, setFile] = useState<File | null>(null);
   const [niifGroup, setNiifGroup] = useState<NIIFGroup>('grupo1');
   const [ifeTrimestre, setIfeTrimestre] = useState<IFETrimestre>('2T');
+  const [ifeYear, setIfeYear] = useState<string>(new Date().getFullYear().toString());
   const [isDragging, setIsDragging] = useState(false);
 
   const uploadMutation = trpc.balance.uploadBalance.useMutation({
@@ -35,7 +36,7 @@ export function UploadStep({ onSuccess }: UploadStepProps) {
       toast.success('Balance cargado exitosamente', {
         description: `Archivo: ${data.fileName}`,
       });
-      const metadata = niifGroup === 'ife' ? { year: new Date().getFullYear().toString(), trimestre: ifeTrimestre } : undefined;
+      const metadata = niifGroup === 'ife' ? { year: ifeYear, trimestre: ifeTrimestre } : undefined;
       onSuccess(niifGroup, metadata);
     },
     onError: (error) => {
@@ -165,24 +166,49 @@ export function UploadStep({ onSuccess }: UploadStepProps) {
         </p>
       </div>
 
-      {/* IFE Trimestre Selection - solo visible cuando se selecciona IFE */}
+      {/* IFE Year and Trimestre Selection - solo visible cuando se selecciona IFE */}
       {niifGroup === 'ife' && (
         <div className="space-y-3">
-          <Label htmlFor="ife-trimestre" className="text-base font-medium flex items-center gap-2">
-            <CalendarDays className="w-4 h-4" />
-            Trimestre a reportar
-          </Label>
-          <Select value={ifeTrimestre} onValueChange={(v) => setIfeTrimestre(v as IFETrimestre)}>
-            <SelectTrigger id="ife-trimestre" className="w-full max-w-md">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1T">1er Trimestre (Enero - Marzo)</SelectItem>
-              <SelectItem value="2T">2do Trimestre (Abril - Junio)</SelectItem>
-              <SelectItem value="3T">3er Trimestre (Julio - Septiembre)</SelectItem>
-              <SelectItem value="4T">4to Trimestre (Octubre - Diciembre)</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="ife-year" className="text-base font-medium flex items-center gap-2">
+                <CalendarDays className="w-4 h-4" />
+                Año del reporte
+              </Label>
+              <Select value={ifeYear} onValueChange={(v) => setIfeYear(v)}>
+                <SelectTrigger id="ife-year" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 5 }, (_, i) => {
+                    const y = new Date().getFullYear() - i;
+                    return (
+                      <SelectItem key={y} value={y.toString()}>
+                        {y}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ife-trimestre" className="text-base font-medium flex items-center gap-2">
+                <CalendarDays className="w-4 h-4" />
+                Trimestre a reportar
+              </Label>
+              <Select value={ifeTrimestre} onValueChange={(v) => setIfeTrimestre(v as IFETrimestre)}>
+                <SelectTrigger id="ife-trimestre" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1T">1er Trimestre (Enero - Marzo)</SelectItem>
+                  <SelectItem value="2T">2do Trimestre (Abril - Junio)</SelectItem>
+                  <SelectItem value="3T">3er Trimestre (Julio - Septiembre)</SelectItem>
+                  <SelectItem value="4T">4to Trimestre (Octubre - Diciembre)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
             <p className="text-sm text-amber-800 dark:text-amber-200">
               <strong>Nota:</strong> El IFE usa el mismo balance consolidado pero con estructura diferente.

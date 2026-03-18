@@ -1633,6 +1633,385 @@ export async function rewriteFinancialDataWithExcelJS(
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECCIÓN IFE — Reescritura de datos para IFE (Informe Financiero Especial)
+  // Hoja1 (110000t), Hoja3 (210000t), Hoja4 (310000t), Hoja5 (900020t),
+  // Hoja6 (900028t), Hoja7 (900050t)
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (options.niifGroup === 'ife') {
+    console.log('[ExcelJS-IFE] Inicio reescritura datos IFE...');
+
+    // Columnas de servicio ESF (Hoja3): I-P
+    const IFE_ESF_COLS: Record<string, string> = {
+      acueducto: 'I', alcantarillado: 'J', aseo: 'K',
+      energia: 'L', gas: 'M', glp: 'N', xm: 'O', otras: 'P',
+    };
+    // Columnas de servicio ER (Hoja4): E-L
+    const IFE_ER_COLS: Record<string, string> = {
+      acueducto: 'E', alcantarillado: 'F', aseo: 'G',
+      energia: 'H', gas: 'I', glp: 'J', xm: 'K', otras: 'L',
+    };
+
+    // ---------------------------------------------------------------
+    // HOJA1 IFE (110000t): Información general — reescribir con ExcelJS
+    // ---------------------------------------------------------------
+    const ifeSheet1 = workbook.getWorksheet('Hoja1');
+    if (ifeSheet1) {
+      console.log('[ExcelJS-IFE] Reescribiendo Hoja1 (110000t)...');
+      ifeSheet1.getCell('E13').value = options.nit || '';
+      ifeSheet1.getCell('E14').value = options.companyId;
+      ifeSheet1.getCell('E15').value = options.companyName;
+      ifeSheet1.getCell('E16').value = options.reportDate;
+
+      const ife = options.ifeCompanyData;
+      if (ife) {
+        ifeSheet1.getCell('E18').value = ife.address || '';
+        ifeSheet1.getCell('E19').value = ife.city || '';
+        ifeSheet1.getCell('E20').value = ife.phone || '';
+        ifeSheet1.getCell('E21').value = ife.cellphone || ife.phone || '';
+        ifeSheet1.getCell('E22').value = ife.email || '';
+        if (ife.employeesStart !== undefined) ifeSheet1.getCell('E24').value = ife.employeesStart;
+        if (ife.employeesEnd !== undefined) ifeSheet1.getCell('E25').value = ife.employeesEnd;
+        if (ife.employeesAverage !== undefined) ifeSheet1.getCell('E26').value = ife.employeesAverage;
+        if (ife.representativeDocType) {
+          const dtMap: Record<string, string> = {
+            '01': '01 - CÉDULA DE CIUDADANÍA', '02': '02 - CÉDULA DE EXTRANJERÍA', '03': '03 - PASAPORTE',
+          };
+          ifeSheet1.getCell('E28').value = dtMap[ife.representativeDocType] || ife.representativeDocType;
+        }
+        ifeSheet1.getCell('E29').value = ife.representativeDocNumber || '';
+        ifeSheet1.getCell('E30').value = ife.representativeFirstName || '';
+        ifeSheet1.getCell('E31').value = ife.representativeLastName || '';
+        if (ife.normativeGroup) {
+          const gMap: Record<string, string> = {
+            'R414': 'R. 414', 'NIIF1': 'Grupo 1 - NIIF Plenas',
+            'NIIF2': 'Grupo 2 - NIIF PYMES', 'NIIF3': 'Grupo 3 - Microempresas',
+          };
+          ifeSheet1.getCell('E33').value = gMap[ife.normativeGroup] || ife.normativeGroup;
+        } else {
+          ifeSheet1.getCell('E33').value = 'R. 414';
+        }
+        ifeSheet1.getCell('E34').value = ife.complianceDeclaration ? '1. Si cumple' : '2. No cumple';
+        ifeSheet1.getCell('E35').value = ife.goingConcernUncertainty ? '1. Si' : '2. No';
+        ifeSheet1.getCell('E36').value = ife.goingConcernExplanation || 'NA';
+        ifeSheet1.getCell('E38').value = '2. No';
+        ifeSheet1.getCell('E39').value = ife.servicesTermination ? '1. Si' : '2. No';
+        ifeSheet1.getCell('E40').value = ife.servicesTerminationExplanation || 'NA';
+      } else {
+        ifeSheet1.getCell('E33').value = 'R. 414';
+        ifeSheet1.getCell('E34').value = '1. Si cumple';
+        ifeSheet1.getCell('E35').value = '2. No';
+        ifeSheet1.getCell('E36').value = 'NA';
+        ifeSheet1.getCell('E38').value = '2. No';
+        ifeSheet1.getCell('E39').value = '2. No';
+        ifeSheet1.getCell('E40').value = 'NA';
+      }
+      console.log('[ExcelJS-IFE] Hoja1 completada.');
+    }
+
+    // ---------------------------------------------------------------
+    // HOJA3 IFE (210000t): Estado de Situación Financiera
+    // Columnas I-P servicios, Q total
+    // ---------------------------------------------------------------
+    const ifeSheet3 = workbook.getWorksheet('Hoja3');
+    if (ifeSheet3) {
+      console.log('[ExcelJS-IFE] Reescribiendo Hoja3 (ESF)...');
+
+      const IFE_ESF_MAP = [
+        { row: 15, puc: ['11'], label: 'Efectivo y equivalentes' },
+        { row: 16, puc: ['1115'], label: 'Efectivo de uso restringido' },
+        { row: 19, puc: ['1305', '1310'], ex: ['130580', '130585'], label: 'CXC comerciales' },
+        { row: 20, puc: ['130580', '130585', '1315'], label: 'CXC por subsidios' },
+        { row: 23, puc: ['1305', '1310', '130580', '130585', '1315'], label: 'CXC servicios públicos' },
+        { row: 24, puc: ['1325', '1330'], label: 'CXC venta de bienes' },
+        { row: 25, puc: ['1335', '1340', '1345', '1350', '1355', '1360', '1365', '1370', '1380', '1385'], label: 'Otras CXC corrientes' },
+        { row: 27, puc: ['14'], label: 'Inventarios corrientes' },
+        { row: 29, puc: ['1905', '1910'], label: 'Activos por impuestos corrientes' },
+        { row: 30, puc: ['1705', '1710'], label: 'Pagos anticipados' },
+        { row: 31, puc: ['17', '19'], ex: ['1905', '1910', '1705', '1710'], label: 'Otros activos corrientes' },
+        { row: 35, puc: ['12'], label: 'CXC no corrientes' },
+        { row: 36, puc: ['120505', '120510', '120515'], label: 'Inversiones subsidiarias' },
+        { row: 37, puc: ['1205'], ex: ['120505', '120510', '120515'], label: 'Otras inversiones' },
+        { row: 38, puc: ['16'], label: 'PPE' },
+        { row: 39, puc: ['1968'], label: 'Propiedades de inversión' },
+        { row: 40, puc: ['1960'], label: 'Plusvalía' },
+        { row: 41, puc: ['197'], label: 'Intangibles' },
+        { row: 44, puc: ['1610'], label: 'Activos biológicos' },
+        { row: 45, puc: ['1910'], label: 'Activo impuesto diferido' },
+        { row: 46, puc: ['18', '19'], ex: ['1910'], label: 'Otros activos no corrientes' },
+        { row: 51, puc: ['21', '22'], label: 'Obligaciones financieras corrientes' },
+        { row: 52, puc: ['23', '24'], label: 'Proveedores corrientes' },
+        { row: 53, puc: ['25'], label: 'Otras CxP corrientes' },
+        { row: 54, puc: ['27'], label: 'Provisiones corrientes' },
+        { row: 55, puc: ['2405', '2410'], label: 'Pasivo impuestos corrientes' },
+        { row: 56, puc: ['26', '29'], ex: ['2905'], label: 'Otros pasivos corrientes' },
+        { row: 60, puc: ['21', '22'], label: 'Obligaciones financieras no corrientes' },
+        { row: 61, puc: ['27'], label: 'Provisiones no corrientes' },
+        { row: 62, puc: ['2905'], label: 'Pasivo impuesto diferido' },
+        { row: 63, puc: ['28', '29'], ex: ['2905'], label: 'Otros pasivos no corrientes' },
+        { row: 67, puc: ['32'], label: 'Capital' },
+        { row: 68, puc: ['3205'], label: 'Prima de emisión' },
+        { row: 69, puc: ['33'], label: 'Reservas' },
+        { row: 70, puc: ['36', '37'], label: 'Resultados acumulados' },
+        { row: 71, puc: ['35'], label: 'Resultado del ejercicio' },
+        { row: 72, puc: ['34', '38'], label: 'Otros componentes patrimonio' },
+      ];
+
+      for (const m of IFE_ESF_MAP) {
+        let totalValue = 0;
+        for (const acc of options.consolidatedAccounts!) {
+          if (!acc.isLeaf) continue;
+          if (matchesPrefixes(acc.code, m.puc, m.ex)) {
+            totalValue += acc.value;
+          }
+        }
+        if (totalValue !== 0) {
+          ifeSheet3.getCell(`Q${m.row}`).value = totalValue;
+        }
+        for (const svc of activeServices) {
+          const col = IFE_ESF_COLS[svc];
+          if (!col) continue;
+          let svcValue = 0;
+          const svcAccounts = accountsByService[svc] || [];
+          for (const acc of svcAccounts) {
+            if (!acc.isLeaf) continue;
+            if (matchesPrefixes(acc.code, m.puc, m.ex)) {
+              svcValue += acc.value;
+            }
+          }
+          if (svcValue !== 0) {
+            ifeSheet3.getCell(`${col}${m.row}`).value = svcValue;
+          }
+        }
+      }
+      console.log('[ExcelJS-IFE] Hoja3 (ESF) completada.');
+    }
+
+    // ---------------------------------------------------------------
+    // HOJA4 IFE (310000t): Estado de Resultados
+    // Columnas E-L servicios, M total
+    // ---------------------------------------------------------------
+    const ifeSheet4 = workbook.getWorksheet('Hoja4');
+    if (ifeSheet4) {
+      console.log('[ExcelJS-IFE] Reescribiendo Hoja4 (ER)...');
+
+      const IFE_ER_MAP = [
+        { row: 14, puc: ['43'], label: 'Ingresos ordinarios' },
+        { row: 15, puc: ['6', '62', '63'], label: 'Costo de ventas' },
+        { row: 17, puc: ['41', '42', '44', '47', '48'], ex: ['4802', '4807', '4808', '4810', '4815'], label: 'Otros ingresos' },
+        { row: 18, puc: ['51', '52'], label: 'Gastos admin y ventas' },
+        { row: 19, puc: ['4802', '4807', '4808', '4810', '4815'], label: 'Ingresos financieros' },
+        { row: 20, puc: ['5802', '5803', '5807'], label: 'Costos financieros' },
+        { row: 21, puc: ['4815', '5815'], label: 'Participación asociadas' },
+        { row: 22, puc: ['53', '54', '56', '58'], ex: ['5802', '5803', '5807', '5815'], label: 'Otros gastos' },
+        { row: 25, puc: ['540101'], label: 'Impuesto corriente' },
+        { row: 26, puc: ['5410'], label: 'Impuesto diferido' },
+      ];
+
+      for (const m of IFE_ER_MAP) {
+        let totalValue = 0;
+        for (const acc of options.consolidatedAccounts!) {
+          if (!acc.isLeaf) continue;
+          if (matchesPrefixes(acc.code, m.puc, m.ex)) {
+            totalValue += acc.value;
+          }
+        }
+        if (totalValue !== 0) {
+          ifeSheet4.getCell(`M${m.row}`).value = totalValue;
+        }
+        for (const svc of activeServices) {
+          const col = IFE_ER_COLS[svc];
+          if (!col) continue;
+          let svcValue = 0;
+          const svcAccounts = accountsByService[svc] || [];
+          for (const acc of svcAccounts) {
+            if (!acc.isLeaf) continue;
+            if (matchesPrefixes(acc.code, m.puc, m.ex)) {
+              svcValue += acc.value;
+            }
+          }
+          if (svcValue !== 0) {
+            ifeSheet4.getCell(`${col}${m.row}`).value = svcValue;
+          }
+        }
+      }
+      console.log('[ExcelJS-IFE] Hoja4 (ER) completada.');
+    }
+
+    // ---------------------------------------------------------------
+    // HOJA5 IFE (900020t): CxC por rangos de vencimiento
+    // Filas: 17-23 (servicios), 24 (deterioro), 25 (total)
+    // Columnas: F-J rangos, K total vencidas, L total general
+    // ---------------------------------------------------------------
+    const ifeSheet5 = workbook.getWorksheet('Hoja5');
+    if (ifeSheet5) {
+      console.log('[ExcelJS-IFE] Reescribiendo Hoja5 (CxC)...');
+
+      const CXC_SVC_ROWS: Record<string, number> = {
+        acueducto: 17, alcantarillado: 18, aseo: 19,
+        energia: 20, gas: 21, glp: 22, xm: 23,
+      };
+      const CXC_PCTS = [
+        { col: 'F', pct: 0.55 }, // No vencidas
+        { col: 'G', pct: 0.25 }, // 1-90 días
+        { col: 'H', pct: 0.20 }, // 91-180 días
+        { col: 'I', pct: 0.00 }, // 181-360 días
+        { col: 'J', pct: 0.00 }, // >360 días
+      ];
+
+      for (const svc of activeServices) {
+        const row = CXC_SVC_ROWS[svc];
+        if (!row) continue;
+
+        let totalCXC = 0;
+        const svcAccounts = accountsByService[svc] || [];
+        for (const acc of svcAccounts) {
+          if (!acc.isLeaf) continue;
+          if (matchesPrefixes(acc.code, ['1305', '1310', '1315'])) {
+            totalCXC += acc.value;
+          }
+        }
+
+        if (totalCXC !== 0) {
+          for (const r of CXC_PCTS) {
+            const val = Math.round(totalCXC * r.pct);
+            ifeSheet5.getCell(`${r.col}${row}`).value = val;
+          }
+          // K = total vencidas (G:J)
+          ifeSheet5.getCell(`K${row}`).value = { formula: `SUM(G${row}:J${row})` };
+          // L = total general (F + K)
+          ifeSheet5.getCell(`L${row}`).value = { formula: `F${row}+K${row}` };
+        }
+      }
+
+      // Fila 25: totales verticales
+      for (const col of ['F', 'G', 'H', 'I', 'J', 'K', 'L']) {
+        ifeSheet5.getCell(`${col}25`).value = { formula: `SUM(${col}17:${col}24)` };
+      }
+      console.log('[ExcelJS-IFE] Hoja5 (CxC) completada.');
+    }
+
+    // ---------------------------------------------------------------
+    // HOJA6 IFE (900028t): CxP por rangos de vencimiento
+    // Filas: 15 (CxP comerciales), 16 (Otras CxP), 17 (subtotal),
+    //        18 (Obligaciones financieras), 19 (Obligaciones laborales), 20 (total)
+    // Columnas: D-H rangos, I total vencidas, J total general
+    // ---------------------------------------------------------------
+    const ifeSheet6 = workbook.getWorksheet('Hoja6');
+    if (ifeSheet6) {
+      console.log('[ExcelJS-IFE] Reescribiendo Hoja6 (CxP)...');
+
+      const CXP_ROWS = [
+        { row: 15, puc: ['22'], label: 'CxP comerciales' },
+        { row: 16, puc: ['23', '24', '28'], label: 'Otras CxP' },
+        { row: 18, puc: ['21'], label: 'Obligaciones financieras' },
+        { row: 19, puc: ['25'], label: 'Obligaciones laborales' },
+      ];
+      const CXP_PCTS = [
+        { col: 'D', pct: 0.40 },
+        { col: 'E', pct: 0.50 },
+        { col: 'F', pct: 0.10 },
+        { col: 'G', pct: 0.00 },
+        { col: 'H', pct: 0.00 },
+      ];
+
+      for (const m of CXP_ROWS) {
+        let total = 0;
+        for (const acc of options.consolidatedAccounts!) {
+          if (!acc.isLeaf) continue;
+          if (matchesPrefixes(acc.code, m.puc)) {
+            total += Math.abs(acc.value);
+          }
+        }
+        if (total !== 0) {
+          for (const r of CXP_PCTS) {
+            ifeSheet6.getCell(`${r.col}${m.row}`).value = Math.round(total * r.pct);
+          }
+          ifeSheet6.getCell(`I${m.row}`).value = { formula: `SUM(E${m.row}:H${m.row})` };
+          ifeSheet6.getCell(`J${m.row}`).value = { formula: `D${m.row}+I${m.row}` };
+        }
+      }
+
+      // Fila 17: subtotal CxP (15+16)
+      for (const col of ['D', 'E', 'F', 'G', 'H']) {
+        ifeSheet6.getCell(`${col}17`).value = { formula: `SUM(${col}15:${col}16)` };
+      }
+      ifeSheet6.getCell('I17').value = { formula: 'SUM(E17:H17)' };
+      ifeSheet6.getCell('J17').value = { formula: 'D17+I17' };
+
+      // Fila 20: total general (17+18+19)
+      for (const col of ['D', 'E', 'F', 'G', 'H']) {
+        ifeSheet6.getCell(`${col}20`).value = { formula: `${col}17+${col}18+${col}19` };
+      }
+      ifeSheet6.getCell('I20').value = { formula: 'SUM(E20:H20)' };
+      ifeSheet6.getCell('J20').value = { formula: 'D20+I20' };
+
+      console.log('[ExcelJS-IFE] Hoja6 (CxP) completada.');
+    }
+
+    // ---------------------------------------------------------------
+    // HOJA7 IFE (900050t): Detalle ingresos y gastos
+    // Columnas F-M servicios (diferente a Hoja4), N total
+    // Referencias cruzadas a Hoja4
+    // ---------------------------------------------------------------
+    const ifeSheet7 = workbook.getWorksheet('Hoja7');
+    if (ifeSheet7) {
+      console.log('[ExcelJS-IFE] Reescribiendo Hoja7 (Ingresos y Gastos)...');
+
+      // Mapeo Hoja7 col → Hoja4 col por servicio
+      const H7_MAP = [
+        { h7: 'F', h4: 'E', svc: 'acueducto' },
+        { h7: 'G', h4: 'F', svc: 'alcantarillado' },
+        { h7: 'H', h4: 'G', svc: 'aseo' },
+        { h7: 'I', h4: 'H', svc: 'energia' },
+        { h7: 'J', h4: 'I', svc: 'gas' },
+        { h7: 'K', h4: 'J', svc: 'glp' },
+        { h7: 'L', h4: 'K', svc: 'xmm' },
+        { h7: 'M', h4: 'L', svc: 'otras' },
+      ];
+      const svcCols = ['F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
+
+      // Fila 14: Ingresos de actividades ordinarias = Hoja4!fila14
+      for (const m of H7_MAP) {
+        ifeSheet7.getCell(`${m.h7}14`).value = { formula: `Hoja4!${m.h4}14` };
+      }
+      // Fila 15: Todos los demás ingresos = Hoja4!(fila17 + fila19) [Otros ingresos + Ingresos financieros]
+      for (const m of H7_MAP) {
+        ifeSheet7.getCell(`${m.h7}15`).value = { formula: `Hoja4!${m.h4}17+Hoja4!${m.h4}19` };
+      }
+      // Fila 16: Total ingresos (autosuma 14+15)
+      for (const c of svcCols) {
+        ifeSheet7.getCell(`${c}16`).value = { formula: `${c}14+${c}15` };
+      }
+      // Fila 18: Costos y gastos totales = Hoja4!(fila15+fila18+fila22+fila20) [Costo ventas + Gastos admin + Otros gastos + Costos financieros]
+      for (const m of H7_MAP) {
+        ifeSheet7.getCell(`${m.h7}18`).value = { formula: `Hoja4!${m.h4}15+Hoja4!${m.h4}18+Hoja4!${m.h4}22+Hoja4!${m.h4}20` };
+      }
+      // Filas 19-24: Detalle de gastos (referencias a Hoja4)
+      const detailRows = [
+        { h7Row: 19, h4Row: 25 }, // Impuestos
+        { h7Row: 20, h4Row: 20 }, // Gastos financieros
+        { h7Row: 21, h4Row: 22 }, // Deterioro (parte de otros gastos)
+        { h7Row: 22, h4Row: 22 }, // Depreciación (parte de otros gastos)
+        { h7Row: 23, h4Row: 22 }, // Amortización (parte de otros gastos)
+        { h7Row: 24, h4Row: 22 }, // Provisiones (parte de otros gastos)
+      ];
+      for (const d of detailRows) {
+        for (const m of H7_MAP) {
+          ifeSheet7.getCell(`${m.h7}${d.h7Row}`).value = { formula: `Hoja4!${m.h4}${d.h4Row}` };
+        }
+      }
+      // Columna N: Total = SUM(F:M) para cada fila
+      for (const row of [14, 15, 16, 18, 19, 20, 21, 22, 23, 24]) {
+        ifeSheet7.getCell(`N${row}`).value = { formula: `SUM(F${row}:M${row})` };
+      }
+
+      console.log('[ExcelJS-IFE] Hoja7 (Ingresos y Gastos) completada.');
+    }
+
+    console.log('[ExcelJS-IFE] Reescritura IFE completada.');
+  }
+
   // Escribir el buffer con ExcelJS
   const outputBuffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(outputBuffer);

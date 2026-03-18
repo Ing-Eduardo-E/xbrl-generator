@@ -65,7 +65,7 @@ function downloadBase64File(base64Data: string, fileName: string, mimeType: stri
   }, 100);
 }
 
-export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
+export function GenerateStep({ onBack, onReset, ifeCompanyData, ifeMetadata }: GenerateStepProps) {
   const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
   const [isDownloadingOfficial, setIsDownloadingOfficial] = useState(false);
   
@@ -77,8 +77,8 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
     const year = new Date().getFullYear();
     return `${year}-12-31`;
   });
-  // Trimestre para IFE
-  const [ifeTrimestre, setIfeTrimestre] = useState<'1T' | '2T' | '3T' | '4T'>('2T');
+  // Trimestre para IFE - usar ifeMetadata si disponible
+  const [ifeTrimestre, setIfeTrimestre] = useState<'1T' | '2T' | '3T' | '4T'>(ifeMetadata?.trimestre || '2T');
   const [nit, setNit] = useState('');
   const [businessNature, setBusinessNature] = useState('Servicios publicos domiciliarios');
   const [startDate, setStartDate] = useState('');
@@ -104,8 +104,9 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
   };
 
   // Obtener la fecha efectiva del reporte (considera si es IFE o no)
+  const ifeYear = ifeMetadata?.year ? parseInt(ifeMetadata.year, 10) : new Date().getFullYear();
   const effectiveReportDate = sessionQuery.data?.niifGroup === 'ife' 
-    ? getIFEReportDate(ifeTrimestre, new Date().getFullYear())
+    ? getIFEReportDate(ifeTrimestre, ifeYear)
     : reportDate;
 
   const downloadOfficialMutation = trpc.balance.downloadOfficialTemplates.useMutation({
@@ -165,6 +166,30 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
     
     setIsDownloadingOfficial(true);
     try {
+      // Construir datos IFE si aplica
+      const ifeFields = sessionQuery.data?.niifGroup === 'ife' ? {
+        trimestre: ifeTrimestre as '1T' | '2T' | '3T' | '4T',
+        ifeCompanyData: ifeCompanyData ? {
+          address: ifeCompanyData.address || undefined,
+          city: ifeCompanyData.city || undefined,
+          phone: ifeCompanyData.phone || undefined,
+          email: ifeCompanyData.email || undefined,
+          employeesStart: ifeCompanyData.employeesStart || undefined,
+          employeesEnd: ifeCompanyData.employeesEnd || undefined,
+          employeesAverage: ifeCompanyData.employeesAverage || undefined,
+          representativeDocType: ifeCompanyData.representativeDocType || undefined,
+          representativeDocNumber: ifeCompanyData.representativeDocNumber || undefined,
+          representativeFirstName: ifeCompanyData.representativeFirstName || undefined,
+          representativeLastName: ifeCompanyData.representativeLastName || undefined,
+          normativeGroup: ifeCompanyData.normativeGroup || undefined,
+          complianceDeclaration: ifeCompanyData.complianceDeclaration,
+          goingConcernUncertainty: ifeCompanyData.goingConcernUncertainty,
+          goingConcernExplanation: ifeCompanyData.goingConcernExplanation || undefined,
+          servicesTermination: ifeCompanyData.servicesTermination,
+          servicesTerminationExplanation: ifeCompanyData.servicesTerminationExplanation || undefined,
+        } : undefined,
+      } : {};
+
       await downloadOfficialMutation.mutateAsync({
         companyId: companyId.trim(),
         companyName: companyName.trim(),
@@ -175,6 +200,7 @@ export function GenerateStep({ onBack, onReset }: GenerateStepProps) {
         roundingDegree: roundingDegree || undefined,
         hasRestatedInfo: hasRestatedInfo || undefined,
         restatedPeriod: restatedPeriod.trim() || undefined,
+        ...ifeFields,
       });
     } finally {
       setIsDownloadingOfficial(false);

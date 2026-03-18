@@ -445,6 +445,29 @@ export const balanceRouter = router({
         hasRestatedInfo: z.string().max(255).optional(),
         restatedPeriod: z.string().max(255).optional(),
         includeFinancialData: z.boolean().optional().default(true),
+        // Trimestre para IFE
+        trimestre: z.enum(['1T', '2T', '3T', '4T']).optional(),
+        // Datos específicos de compañía IFE
+        ifeCompanyData: z.object({
+          address: z.string().max(500).optional(),
+          city: z.string().max(255).optional(),
+          phone: z.string().max(50).optional(),
+          cellphone: z.string().max(50).optional(),
+          email: z.string().max(255).optional(),
+          employeesStart: z.number().optional(),
+          employeesEnd: z.number().optional(),
+          employeesAverage: z.number().optional(),
+          representativeDocType: z.string().max(10).optional(),
+          representativeDocNumber: z.string().max(50).optional(),
+          representativeFirstName: z.string().max(255).optional(),
+          representativeLastName: z.string().max(255).optional(),
+          normativeGroup: z.string().max(50).optional(),
+          complianceDeclaration: z.boolean().optional(),
+          goingConcernUncertainty: z.boolean().optional(),
+          goingConcernExplanation: z.string().max(2000).optional(),
+          servicesTermination: z.boolean().optional(),
+          servicesTerminationExplanation: z.string().max(2000).optional(),
+        }).optional(),
         // Usuarios por estrato y servicio para distribución proporcional
         usuariosEstrato: z.object({
           acueducto: z.record(z.string(), z.number()),
@@ -539,6 +562,8 @@ export const balanceRouter = router({
           activeServices: activeServices.length > 0 ? activeServices : undefined,
           usuariosEstrato,
           subsidios,
+          trimestre: input.trimestre,
+          ifeCompanyData: input.ifeCompanyData,
         });
 
         return {

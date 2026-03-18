@@ -303,13 +303,68 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
       setTextCell(sheet1, 'E14', options.companyId);
       setTextCell(sheet1, 'E15', options.companyName);
       setTextCell(sheet1, 'E16', options.reportDate);
-      // Campos adicionales que pueden llenarse con valores por defecto o dejarse vacíos
-      // El usuario puede completarlos manualmente en Excel antes de generar el XBRL
-      setTextCell(sheet1, 'E33', '1'); // Grupo de clasificación - asumimos Grupo 1
-      setTextCell(sheet1, 'E34', '1. Sí'); // Declaración de cumplimiento
-      setTextCell(sheet1, 'E35', '2. No'); // Incertidumbres negocio en marcha
-      setTextCell(sheet1, 'E38', '2. No'); // Incertidumbres servicios RUPS
-      setTextCell(sheet1, 'E39', '2. No'); // Finalizó prestación servicios
+
+      // Datos de la empresa IFE si están disponibles
+      const ife = options.ifeCompanyData;
+      if (ife) {
+        setTextCell(sheet1, 'E18', ife.address);
+        setTextCell(sheet1, 'E19', ife.city);
+        setTextCell(sheet1, 'E20', ife.phone);
+        setTextCell(sheet1, 'E21', ife.cellphone || ife.phone);
+        setTextCell(sheet1, 'E22', ife.email);
+        if (ife.employeesStart !== undefined) {
+          sheet1['E24'] = { t: 'n', v: ife.employeesStart };
+        }
+        if (ife.employeesEnd !== undefined) {
+          sheet1['E25'] = { t: 'n', v: ife.employeesEnd };
+        }
+        if (ife.employeesAverage !== undefined) {
+          sheet1['E26'] = { t: 'n', v: ife.employeesAverage };
+        }
+        // Representante legal
+        if (ife.representativeDocType) {
+          const docTypeMap: Record<string, string> = {
+            '01': '01 - CÉDULA DE CIUDADANÍA',
+            '02': '02 - CÉDULA DE EXTRANJERÍA',
+            '03': '03 - PASAPORTE',
+          };
+          setTextCell(sheet1, 'E28', docTypeMap[ife.representativeDocType] || ife.representativeDocType);
+        }
+        setTextCell(sheet1, 'E29', ife.representativeDocNumber);
+        setTextCell(sheet1, 'E30', ife.representativeFirstName);
+        setTextCell(sheet1, 'E31', ife.representativeLastName);
+        // Marco normativo
+        if (ife.normativeGroup) {
+          const groupMap: Record<string, string> = {
+            'R414': 'R. 414',
+            'NIIF1': 'Grupo 1 - NIIF Plenas',
+            'NIIF2': 'Grupo 2 - NIIF PYMES',
+            'NIIF3': 'Grupo 3 - Microempresas',
+          };
+          setTextCell(sheet1, 'E33', groupMap[ife.normativeGroup] || ife.normativeGroup);
+        } else {
+          setTextCell(sheet1, 'E33', 'R. 414');
+        }
+        // Declaración de cumplimiento - XBRL schema: "1. Si cumple" / "2. No cumple"
+        setTextCell(sheet1, 'E34', ife.complianceDeclaration ? '1. Si cumple' : '2. No cumple');
+        // Incertidumbres negocio en marcha - XBRL schema: "1. Si" / "2. No"
+        setTextCell(sheet1, 'E35', ife.goingConcernUncertainty ? '1. Si' : '2. No');
+        setTextCell(sheet1, 'E36', ife.goingConcernExplanation || 'NA');
+        // Continuidad servicios RUPS
+        setTextCell(sheet1, 'E38', '2. No');
+        setTextCell(sheet1, 'E39', ife.servicesTermination ? '1. Si' : '2. No');
+        setTextCell(sheet1, 'E40', ife.servicesTerminationExplanation || 'NA');
+      } else {
+        // Valores por defecto cuando no hay datos de empresa IFE
+        setTextCell(sheet1, 'E33', 'R. 414');
+        // XBRL schema: "1. Si cumple" / "2. No cumple"
+        setTextCell(sheet1, 'E34', '1. Si cumple');
+        setTextCell(sheet1, 'E35', '2. No');
+        setTextCell(sheet1, 'E36', 'NA');
+        setTextCell(sheet1, 'E38', '2. No');
+        setTextCell(sheet1, 'E39', '2. No');
+        setTextCell(sheet1, 'E40', 'NA');
+      }
     } else {
       // Orden para Grupo 1, 2, 3 (puede variar ligeramente)
       setTextCell(sheet1, 'E13', options.companyName);
@@ -1424,9 +1479,24 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
 
     // ===============================================
     // HOJA4 IFE (310000t): Estado de Resultados
+    // COLUMNAS ER: E=Acueducto, F=Alcantarillado, G=Aseo, H=Energía, I=Gas, J=GLP, K=XM, L=Otras, M=Total
+    // (Diferente a ESF que usa I-P)
     // ===============================================
     const sheet4IFE = workbook.Sheets['Hoja4'];
     if (sheet4IFE) {
+      // Columnas de servicio específicas para Hoja4 (ER) - DIFERENTES a Hoja3 (ESF)
+      const IFE_ER_COLUMNS: Record<string, string> = {
+        acueducto: 'E',
+        alcantarillado: 'F',
+        aseo: 'G',
+        energia: 'H',
+        gas: 'I',
+        glp: 'J',
+        xm: 'K',
+        otras: 'L',
+        total: 'M',
+      };
+
       // Mapeos del Estado de Resultados para IFE
       const IFE_ER_MAPPINGS = [
         { row: 14, label: 'Ingresos de actividades ordinarias', pucPrefixes: ['43'] },
@@ -1451,14 +1521,14 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
           }
         }
 
-        // Escribir valor total
+        // Escribir valor total en columna M (total ER)
         if (totalValue !== 0) {
-          setNumericCellIFE(sheet4IFE, `${IFE_SERVICE_COLUMNS.total}${mapping.row}`, totalValue);
+          setNumericCellIFE(sheet4IFE, `${IFE_ER_COLUMNS.total}${mapping.row}`, totalValue);
         }
 
-        // Escribir valores por servicio
+        // Escribir valores por servicio usando columnas ER (E-L)
         for (const service of activeServices) {
-          const serviceColumn = IFE_SERVICE_COLUMNS[service];
+          const serviceColumn = IFE_ER_COLUMNS[service];
           if (!serviceColumn) continue;
 
           let serviceValue = 0;
