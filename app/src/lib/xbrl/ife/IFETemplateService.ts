@@ -290,7 +290,7 @@ export class IFETemplateService extends BaseTemplateService {
    * - Columna K: Total vencidas =SUM(G:J)
    * - Columna L: Total general =F+K (No vencidas + Total vencidas)
    * 
-   * Distribución por defecto: 40% no vencidas, 50% 1-90 días, 10% 91-180 días
+   * Distribución por defecto: 55% no vencidas, 25% 1-90 días, 20% 91-180 días
    */
   fillCxCSheet(
     worksheet: ExcelJS.Worksheet,
@@ -309,11 +309,11 @@ export class IFETemplateService extends BaseTemplateService {
     };
 
     // Rangos de vencimiento con distribución por defecto
-    // 40% no vencidas, 50% 1-90 días, 10% 91-180 días
+    // 55% no vencidas, 25% 1-90 días, 20% 91-180 días
     const agingRanges = [
-      { column: 'F', percentage: 0.40 }, // No vencidas
-      { column: 'G', percentage: 0.50 }, // 1-90 días
-      { column: 'H', percentage: 0.10 }, // 91-180 días
+      { column: 'F', percentage: 0.55 }, // No vencidas
+      { column: 'G', percentage: 0.25 }, // 1-90 días
+      { column: 'H', percentage: 0.20 }, // 91-180 días
       { column: 'I', percentage: 0.00 }, // 181-360 días
       { column: 'J', percentage: 0.00 }, // >360 días
     ];
@@ -410,7 +410,7 @@ export class IFETemplateService extends BaseTemplateService {
     worksheet: ExcelJS.Worksheet,
     accounts: AccountData[]
   ): void {
-    // Rangos de vencimiento con distribución por defecto (igual que CxC)
+    // Rangos de vencimiento con distribución por defecto
     // 40% no vencidas, 50% 1-90 días, 10% 91-180 días
     const agingRanges = [
       { column: 'D', percentage: 0.40 }, // No vencidas

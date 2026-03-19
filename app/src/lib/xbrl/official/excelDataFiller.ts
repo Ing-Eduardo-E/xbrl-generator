@@ -1510,7 +1510,7 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
         const serviceAccounts = accountsByServiceIFE[service] || [];
         for (const account of serviceAccounts) {
           if (!account.isLeaf) continue;
-          if (matchesPrefixesIFE(account.code, ['1305', '1310', '1315'])) {
+          if (matchesPrefixesIFE(account.code, ['13'], ['1399'])) {
             totalCXC += account.value;
           }
         }

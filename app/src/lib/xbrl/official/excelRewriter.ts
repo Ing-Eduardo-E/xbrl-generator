@@ -1909,7 +1909,7 @@ export async function rewriteFinancialDataWithExcelJS(
         const svcAccounts = accountsByService[svc] || [];
         for (const acc of svcAccounts) {
           if (!acc.isLeaf) continue;
-          if (matchesPrefixes(acc.code, ['1305', '1310', '1315'])) {
+          if (matchesPrefixes(acc.code, ['13'], ['1399'])) {
             totalCXC += acc.value;
           }
         }
