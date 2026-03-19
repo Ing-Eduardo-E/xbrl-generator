@@ -1725,44 +1725,42 @@ export async function rewriteFinancialDataWithExcelJS(
     if (ifeSheet3) {
       console.log('[ExcelJS-IFE] Reescribiendo Hoja3 (ESF)...');
 
-      const IFE_ESF_MAP = [
-        { row: 15, puc: ['11'], label: 'Efectivo y equivalentes' },
-        { row: 16, puc: ['1115'], label: 'Efectivo de uso restringido' },
-        { row: 19, puc: ['1305', '1310'], ex: ['130580', '130585'], label: 'CXC comerciales' },
-        { row: 20, puc: ['130580', '130585', '1315'], label: 'CXC por subsidios' },
-        { row: 23, puc: ['1305', '1310', '130580', '130585', '1315'], label: 'CXC servicios públicos' },
-        { row: 24, puc: ['1325', '1330'], label: 'CXC venta de bienes' },
-        { row: 25, puc: ['1335', '1340', '1345', '1350', '1355', '1360', '1365', '1370', '1380', '1385'], label: 'Otras CXC corrientes' },
-        { row: 27, puc: ['14'], label: 'Inventarios corrientes' },
-        { row: 29, puc: ['1905', '1910'], label: 'Activos por impuestos corrientes' },
-        { row: 30, puc: ['1705', '1710'], label: 'Pagos anticipados' },
-        { row: 31, puc: ['17', '19'], ex: ['1905', '1910', '1705', '1710'], label: 'Otros activos corrientes' },
-        { row: 35, puc: ['12'], label: 'CXC no corrientes' },
-        { row: 36, puc: ['120505', '120510', '120515'], label: 'Inversiones subsidiarias' },
-        { row: 37, puc: ['1205'], ex: ['120505', '120510', '120515'], label: 'Otras inversiones' },
-        { row: 38, puc: ['16'], label: 'PPE' },
-        { row: 39, puc: ['1968'], label: 'Propiedades de inversión' },
-        { row: 40, puc: ['1960'], label: 'Plusvalía' },
-        { row: 41, puc: ['197'], label: 'Intangibles' },
-        { row: 44, puc: ['1610'], label: 'Activos biológicos' },
-        { row: 45, puc: ['1910'], label: 'Activo impuesto diferido' },
-        { row: 46, puc: ['18', '19'], ex: ['1910'], label: 'Otros activos no corrientes' },
-        { row: 51, puc: ['21', '22'], label: 'Obligaciones financieras corrientes' },
-        { row: 52, puc: ['23', '24'], label: 'Proveedores corrientes' },
-        { row: 53, puc: ['25'], label: 'Otras CxP corrientes' },
-        { row: 54, puc: ['27'], label: 'Provisiones corrientes' },
-        { row: 55, puc: ['2405', '2410'], label: 'Pasivo impuestos corrientes' },
-        { row: 56, puc: ['26', '29'], ex: ['2905'], label: 'Otros pasivos corrientes' },
-        { row: 60, puc: ['21', '22'], label: 'Obligaciones financieras no corrientes' },
-        { row: 61, puc: ['27'], label: 'Provisiones no corrientes' },
-        { row: 62, puc: ['2905'], label: 'Pasivo impuesto diferido' },
-        { row: 63, puc: ['28', '29'], ex: ['2905'], label: 'Otros pasivos no corrientes' },
-        { row: 67, puc: ['32'], label: 'Capital' },
-        { row: 68, puc: ['3205'], label: 'Prima de emisión' },
-        { row: 69, puc: ['33'], label: 'Reservas' },
-        { row: 70, puc: ['36', '37'], label: 'Resultados acumulados' },
-        { row: 71, puc: ['35'], label: 'Resultado del ejercicio' },
-        { row: 72, puc: ['34', '38'], label: 'Otros componentes patrimonio' },
+      // Mapeo ESF alineado con esfMappings.ts — PUC CGN Resolución 414
+      // abs: true → usar Math.abs (pasivos y patrimonio tienen saldo crédito negativo)
+      const IFE_ESF_MAP: Array<{row: number; puc: string[]; ex?: string[]; label: string; abs?: boolean}> = [
+        // === ACTIVOS CORRIENTES (Filas 15-31) ===
+        { row: 15, puc: ['11'], ex: ['1132'], label: 'Efectivo y equivalentes' },
+        { row: 16, puc: ['1132'], label: 'Efectivo de uso restringido' },
+        { row: 19, puc: ['131801', '131802', '131803', '131804', '131805', '131806'], label: 'CXC servicios públicos' },
+        { row: 20, puc: ['131807', '131808', '131809', '131810', '131811', '131812'], label: 'CXC por subsidios' },
+        { row: 22, puc: ['138424'], label: 'CXC por aprovechamiento' },
+        { row: 24, puc: ['1316'], label: 'CXC venta de bienes' },
+        { row: 25, puc: ['1311', '1317', '1319', '1322', '1324', '1333', '1384', '1385', '1387'], ex: ['138401', '138414', '138424'], label: 'Otras CXC corrientes' },
+        { row: 27, puc: ['15'], ex: ['1580'], label: 'Inventarios corrientes' },
+        { row: 28, puc: ['12'], ex: ['1280'], label: 'Inversiones corrientes' },
+        { row: 30, puc: ['19'], label: 'Otros activos financieros corrientes' },
+        { row: 31, puc: ['17', '18'], label: 'Otros activos no financieros corrientes' },
+        // === ACTIVOS NO CORRIENTES (Filas 34-50) ===
+        { row: 34, puc: ['16'], label: 'PPE' },
+        { row: 36, puc: ['1970', '1971', '1972', '1973', '1974', '1975'], label: 'Intangibles' },
+        { row: 37, puc: ['1227', '1230', '1233'], label: 'Inversiones no corrientes' },
+        { row: 49, puc: ['14'], label: 'Otros activos financieros no corrientes' },
+        // === PASIVOS CORRIENTES (Filas 56-63) ===
+        { row: 56, puc: ['25'], label: 'Provisiones corrientes', abs: true },
+        { row: 57, puc: ['23'], label: 'CxP corrientes', abs: true },
+        { row: 60, puc: ['21', '22'], label: 'Obligaciones financieras corrientes', abs: true },
+        { row: 61, puc: ['24'], label: 'Obligaciones laborales corrientes', abs: true },
+        { row: 62, puc: ['27'], label: 'Pasivo por impuestos corrientes', abs: true },
+        { row: 63, puc: ['26'], label: 'Otros pasivos corrientes', abs: true },
+        // === PASIVOS NO CORRIENTES (Filas 66-73) — sin mapear, el usuario completa manualmente ===
+        // === PATRIMONIO (Filas 77-83) ===
+        { row: 77, puc: ['3105'], label: 'Capital', abs: true },
+        { row: 78, puc: ['3109'], label: 'Inversión suplementaria', abs: true },
+        { row: 79, puc: ['3125', '3110'], label: 'Otras participaciones', abs: true },
+        { row: 80, puc: ['3115', '3120'], label: 'Superávit por revaluación', abs: true },
+        { row: 81, puc: ['3130'], label: 'Reservas', abs: true },
+        { row: 82, puc: ['32'], label: 'Ganancias acumuladas' },
+        { row: 83, puc: ['3145'], label: 'Efectos adopción NIF', abs: true },
       ];
 
       for (const m of IFE_ESF_MAP) {
@@ -1770,7 +1768,7 @@ export async function rewriteFinancialDataWithExcelJS(
         for (const acc of options.consolidatedAccounts!) {
           if (!acc.isLeaf) continue;
           if (matchesPrefixes(acc.code, m.puc, m.ex)) {
-            totalValue += acc.value;
+            totalValue += m.abs ? Math.abs(acc.value) : acc.value;
           }
         }
         if (totalValue !== 0) {
@@ -1784,7 +1782,7 @@ export async function rewriteFinancialDataWithExcelJS(
           for (const acc of svcAccounts) {
             if (!acc.isLeaf) continue;
             if (matchesPrefixes(acc.code, m.puc, m.ex)) {
-              svcValue += acc.value;
+              svcValue += m.abs ? Math.abs(acc.value) : acc.value;
             }
           }
           if (svcValue !== 0) {
@@ -1792,6 +1790,38 @@ export async function rewriteFinancialDataWithExcelJS(
           }
         }
       }
+
+      // --- Ganancias acumuladas (fila 82): si PUC 32 dio 0, calcular desde ER ---
+      // En reportes trimestrales la cuenta 3210 puede no existir aún;
+      // en ese caso derivamos el resultado neto de clases 4, 5 y 6.
+      const currentRow82 = ifeSheet3.getCell('Q82').value;
+      const row82IsEmpty = currentRow82 === null || currentRow82 === undefined || currentRow82 === 0;
+      if (row82IsEmpty) {
+        const calcERNet = (accs: {code: string; value: number; isLeaf: boolean}[]): number => {
+          let ing = 0, gas = 0, cos = 0;
+          for (const a of accs) {
+            if (!a.isLeaf) continue;
+            if (a.code.startsWith('4')) ing += Math.abs(a.value);
+            if (a.code.startsWith('5')) gas += Math.abs(a.value);
+            if (a.code.startsWith('6')) cos += Math.abs(a.value);
+          }
+          return ing - gas - cos;
+        };
+        const erTotal = calcERNet(options.consolidatedAccounts!);
+        if (erTotal !== 0) {
+          ifeSheet3.getCell('Q82').value = erTotal;
+        }
+        for (const svc of activeServices) {
+          const col = IFE_ESF_COLS[svc];
+          if (!col) continue;
+          const svcAccounts = accountsByService[svc] || [];
+          const svcER = calcERNet(svcAccounts);
+          if (svcER !== 0) {
+            ifeSheet3.getCell(`${col}82`).value = svcER;
+          }
+        }
+      }
+
       console.log('[ExcelJS-IFE] Hoja3 (ESF) completada.');
     }
 
@@ -1803,17 +1833,19 @@ export async function rewriteFinancialDataWithExcelJS(
     if (ifeSheet4) {
       console.log('[ExcelJS-IFE] Reescribiendo Hoja4 (ER)...');
 
-      const IFE_ER_MAP = [
-        { row: 14, puc: ['43'], label: 'Ingresos ordinarios' },
-        { row: 15, puc: ['6', '62', '63'], label: 'Costo de ventas' },
-        { row: 17, puc: ['41', '42', '44', '47', '48'], ex: ['4802', '4807', '4808', '4810', '4815'], label: 'Otros ingresos' },
-        { row: 18, puc: ['51', '52'], label: 'Gastos admin y ventas' },
-        { row: 19, puc: ['4802', '4807', '4808', '4810', '4815'], label: 'Ingresos financieros' },
-        { row: 20, puc: ['5802', '5803', '5807'], label: 'Costos financieros' },
-        { row: 21, puc: ['4815', '5815'], label: 'Participación asociadas' },
-        { row: 22, puc: ['53', '54', '56', '58'], ex: ['5802', '5803', '5807', '5815'], label: 'Otros gastos' },
-        { row: 25, puc: ['540101'], label: 'Impuesto corriente' },
-        { row: 26, puc: ['5410'], label: 'Impuesto diferido' },
+      // Mapeo ER alineado con erMappings.ts — PUC CGN Resolución 414
+      // abs: true → las autosumas del template ya manejan los signos
+      const IFE_ER_MAP: Array<{row: number; puc: string[]; ex?: string[]; label: string; abs?: boolean}> = [
+        { row: 14, puc: ['41', '42', '43'], label: 'Ingresos ordinarios', abs: true },
+        { row: 15, puc: ['62', '63'], label: 'Costo de ventas', abs: true },
+        { row: 17, puc: ['51', '52', '56'], label: 'Gastos admin y ventas', abs: true },
+        { row: 18, puc: ['44', '48'], ex: ['4802', '4803'], label: 'Otros ingresos', abs: true },
+        { row: 19, puc: ['53', '58'], label: 'Otros gastos', abs: true },
+        { row: 21, puc: ['4802', '4803'], label: 'Ingresos financieros', abs: true },
+        { row: 22, puc: ['5802', '5803'], label: 'Costos financieros', abs: true },
+        { row: 23, puc: ['4808', '5808'], label: 'Otras ganancias/pérdidas', abs: true },
+        { row: 25, puc: ['54'], label: 'Gasto por impuesto', abs: true },
+        { row: 27, puc: ['59'], label: 'Operaciones discontinuadas', abs: true },
       ];
 
       for (const m of IFE_ER_MAP) {
@@ -1821,7 +1853,7 @@ export async function rewriteFinancialDataWithExcelJS(
         for (const acc of options.consolidatedAccounts!) {
           if (!acc.isLeaf) continue;
           if (matchesPrefixes(acc.code, m.puc, m.ex)) {
-            totalValue += acc.value;
+            totalValue += m.abs ? Math.abs(acc.value) : acc.value;
           }
         }
         if (totalValue !== 0) {
@@ -1835,7 +1867,7 @@ export async function rewriteFinancialDataWithExcelJS(
           for (const acc of svcAccounts) {
             if (!acc.isLeaf) continue;
             if (matchesPrefixes(acc.code, m.puc, m.ex)) {
-              svcValue += acc.value;
+              svcValue += m.abs ? Math.abs(acc.value) : acc.value;
             }
           }
           if (svcValue !== 0) {

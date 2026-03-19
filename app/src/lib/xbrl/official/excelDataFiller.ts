@@ -1297,50 +1297,42 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
     // ===============================================
     const sheet3IFE = workbook.Sheets['Hoja3'];
     if (sheet3IFE) {
-      // Mapeos del ESF para IFE - período actual (columnas I-Q fila de datos)
-      const IFE_ESF_MAPPINGS = [
+      // Mapeos ESF alineados con esfMappings.ts — PUC CGN Resolución 414
+      // abs: true → usar Math.abs (pasivos y patrimonio tienen saldo crédito negativo)
+      const IFE_ESF_MAPPINGS: Array<{row: number; label: string; pucPrefixes: string[]; excludePrefixes?: string[]; abs?: boolean}> = [
         // === ACTIVOS CORRIENTES ===
-        { row: 15, label: 'Efectivo y equivalentes', pucPrefixes: ['11'] },
-        { row: 16, label: 'Efectivo de uso restringido', pucPrefixes: ['1115'] },
-        { row: 19, label: 'CXC comerciales (diferentes subsidios)', pucPrefixes: ['1305', '1310'], excludePrefixes: ['130580', '130585'] },
-        { row: 20, label: 'CXC por subsidios', pucPrefixes: ['130580', '130585', '1315'] },
-        { row: 23, label: 'CXC servicios públicos', pucPrefixes: ['1305', '1310', '130580', '130585', '1315'] },
-        { row: 24, label: 'CXC venta de bienes', pucPrefixes: ['1325', '1330'] },
-        { row: 25, label: 'Otras CXC corrientes', pucPrefixes: ['1335', '1340', '1345', '1350', '1355', '1360', '1365', '1370', '1380', '1385'] },
-        { row: 27, label: 'Inventarios corrientes', pucPrefixes: ['14'] },
-        { row: 29, label: 'Activos por impuestos corrientes', pucPrefixes: ['1905', '1910'] },
-        { row: 30, label: 'Pagos anticipados', pucPrefixes: ['1705', '1710'] },
-        { row: 31, label: 'Otros activos corrientes', pucPrefixes: ['17', '19'], excludePrefixes: ['1905', '1910', '1705', '1710'] },
+        { row: 15, label: 'Efectivo y equivalentes', pucPrefixes: ['11'], excludePrefixes: ['1132'] },
+        { row: 16, label: 'Efectivo de uso restringido', pucPrefixes: ['1132'] },
+        { row: 19, label: 'CXC servicios públicos', pucPrefixes: ['131801', '131802', '131803', '131804', '131805', '131806'] },
+        { row: 20, label: 'CXC por subsidios', pucPrefixes: ['131807', '131808', '131809', '131810', '131811', '131812'] },
+        { row: 22, label: 'CXC por aprovechamiento', pucPrefixes: ['138424'] },
+        { row: 24, label: 'CXC venta de bienes', pucPrefixes: ['1316'] },
+        { row: 25, label: 'Otras CXC corrientes', pucPrefixes: ['1311', '1317', '1319', '1322', '1324', '1333', '1384', '1385', '1387'], excludePrefixes: ['138401', '138414', '138424'] },
+        { row: 27, label: 'Inventarios corrientes', pucPrefixes: ['15'], excludePrefixes: ['1580'] },
+        { row: 28, label: 'Inversiones corrientes', pucPrefixes: ['12'], excludePrefixes: ['1280'] },
+        { row: 30, label: 'Otros activos financieros corrientes', pucPrefixes: ['19'] },
+        { row: 31, label: 'Otros activos no financieros corrientes', pucPrefixes: ['17', '18'] },
         // === ACTIVOS NO CORRIENTES ===
-        { row: 35, label: 'CXC no corrientes', pucPrefixes: ['12'] },
-        { row: 36, label: 'Inversiones en subsidiarias/asociadas', pucPrefixes: ['120505', '120510', '120515'] },
-        { row: 37, label: 'Otras inversiones', pucPrefixes: ['1205'], excludePrefixes: ['120505', '120510', '120515'] },
-        { row: 38, label: 'PPE', pucPrefixes: ['16'] },
-        { row: 39, label: 'Propiedades de inversión', pucPrefixes: ['1968'] },
-        { row: 40, label: 'Plusvalía', pucPrefixes: ['1960'] },
-        { row: 41, label: 'Intangibles', pucPrefixes: ['197'] },
-        { row: 44, label: 'Activos biológicos', pucPrefixes: ['1610'] },
-        { row: 45, label: 'Activo por impuesto diferido', pucPrefixes: ['1910'] },
-        { row: 46, label: 'Otros activos no corrientes', pucPrefixes: ['18', '19'], excludePrefixes: ['1910'] },
+        { row: 34, label: 'PPE', pucPrefixes: ['16'] },
+        { row: 36, label: 'Intangibles', pucPrefixes: ['1970', '1971', '1972', '1973', '1974', '1975'] },
+        { row: 37, label: 'Inversiones no corrientes', pucPrefixes: ['1227', '1230', '1233'] },
+        { row: 49, label: 'Otros activos financieros no corrientes', pucPrefixes: ['14'] },
         // === PASIVOS CORRIENTES ===
-        { row: 51, label: 'Obligaciones financieras corrientes', pucPrefixes: ['21', '22'] },
-        { row: 52, label: 'Proveedores corrientes', pucPrefixes: ['23', '24'] },
-        { row: 53, label: 'Otras cuentas por pagar corrientes', pucPrefixes: ['25'] },
-        { row: 54, label: 'Provisiones corrientes', pucPrefixes: ['27'] },
-        { row: 55, label: 'Pasivo por impuestos corrientes', pucPrefixes: ['2405', '2410'] },
-        { row: 56, label: 'Otros pasivos corrientes', pucPrefixes: ['26', '29'], excludePrefixes: ['2905'] },
-        // === PASIVOS NO CORRIENTES ===
-        { row: 60, label: 'Obligaciones financieras no corrientes', pucPrefixes: ['21', '22'] },
-        { row: 61, label: 'Provisiones no corrientes', pucPrefixes: ['27'] },
-        { row: 62, label: 'Pasivo por impuesto diferido', pucPrefixes: ['2905'] },
-        { row: 63, label: 'Otros pasivos no corrientes', pucPrefixes: ['28', '29'], excludePrefixes: ['2905'] },
+        { row: 56, label: 'Provisiones corrientes', pucPrefixes: ['25'], abs: true },
+        { row: 57, label: 'CxP corrientes', pucPrefixes: ['23'], abs: true },
+        { row: 60, label: 'Obligaciones financieras corrientes', pucPrefixes: ['21', '22'], abs: true },
+        { row: 61, label: 'Obligaciones laborales corrientes', pucPrefixes: ['24'], abs: true },
+        { row: 62, label: 'Pasivo por impuestos corrientes', pucPrefixes: ['27'], abs: true },
+        { row: 63, label: 'Otros pasivos corrientes', pucPrefixes: ['26'], abs: true },
+        // === PASIVOS NO CORRIENTES — sin mapear, el usuario completa manualmente ===
         // === PATRIMONIO ===
-        { row: 67, label: 'Capital', pucPrefixes: ['32'] },
-        { row: 68, label: 'Prima de emisión', pucPrefixes: ['3205'] },
-        { row: 69, label: 'Reservas', pucPrefixes: ['33'] },
-        { row: 70, label: 'Resultados acumulados', pucPrefixes: ['36', '37'] },
-        { row: 71, label: 'Resultado del ejercicio', pucPrefixes: ['35'] },
-        { row: 72, label: 'Otros componentes patrimonio', pucPrefixes: ['34', '38'] },
+        { row: 77, label: 'Capital', pucPrefixes: ['3105'], abs: true },
+        { row: 78, label: 'Inversión suplementaria', pucPrefixes: ['3109'], abs: true },
+        { row: 79, label: 'Otras participaciones', pucPrefixes: ['3125', '3110'], abs: true },
+        { row: 80, label: 'Superávit por revaluación', pucPrefixes: ['3115', '3120'], abs: true },
+        { row: 81, label: 'Reservas', pucPrefixes: ['3130'], abs: true },
+        { row: 82, label: 'Ganancias acumuladas', pucPrefixes: ['32'] },
+        { row: 83, label: 'Efectos adopción NIF', pucPrefixes: ['3145'], abs: true },
       ];
 
       for (const mapping of IFE_ESF_MAPPINGS) {
@@ -1349,7 +1341,7 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
         for (const account of options.consolidatedAccounts) {
           if (!account.isLeaf) continue;
           if (matchesPrefixesIFE(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
-            totalValue += account.value;
+            totalValue += mapping.abs ? Math.abs(account.value) : account.value;
           }
         }
 
@@ -1368,12 +1360,41 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
           for (const account of serviceAccounts) {
             if (!account.isLeaf) continue;
             if (matchesPrefixesIFE(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
-              serviceValue += account.value;
+              serviceValue += mapping.abs ? Math.abs(account.value) : account.value;
             }
           }
 
           if (serviceValue !== 0) {
             setNumericCellIFE(sheet3IFE, `${serviceColumn}${mapping.row}`, serviceValue);
+          }
+        }
+      }
+
+      // --- Ganancias acumuladas (fila 82): si PUC 32 dio 0, calcular desde ER ---
+      const cell82 = sheet3IFE[`${IFE_SERVICE_COLUMNS.total}82`];
+      const val82 = cell82 ? (typeof cell82.v === 'number' ? cell82.v : 0) : 0;
+      if (val82 === 0) {
+        const calcERNetSheetJS = (accs: {code: string; value: number; isLeaf: boolean}[]): number => {
+          let ing = 0, gas = 0, cos = 0;
+          for (const a of accs) {
+            if (!a.isLeaf) continue;
+            if (a.code.startsWith('4')) ing += Math.abs(a.value);
+            if (a.code.startsWith('5')) gas += Math.abs(a.value);
+            if (a.code.startsWith('6')) cos += Math.abs(a.value);
+          }
+          return ing - gas - cos;
+        };
+        const erTotalSJ = calcERNetSheetJS(options.consolidatedAccounts);
+        if (erTotalSJ !== 0) {
+          setNumericCellIFE(sheet3IFE, `${IFE_SERVICE_COLUMNS.total}82`, erTotalSJ);
+        }
+        for (const service of activeServices) {
+          const serviceColumn = IFE_SERVICE_COLUMNS[service];
+          if (!serviceColumn) continue;
+          const svcAccounts = accountsByServiceIFE[service] || [];
+          const svcERVal = calcERNetSheetJS(svcAccounts);
+          if (svcERVal !== 0) {
+            setNumericCellIFE(sheet3IFE, `${serviceColumn}82`, svcERVal);
           }
         }
       }
@@ -1399,18 +1420,19 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
         total: 'M',
       };
 
-      // Mapeos del Estado de Resultados para IFE
-      const IFE_ER_MAPPINGS = [
-        { row: 14, label: 'Ingresos de actividades ordinarias', pucPrefixes: ['43'] },
-        { row: 15, label: 'Costo de ventas', pucPrefixes: ['6', '62', '63'] },
-        { row: 17, label: 'Otros ingresos', pucPrefixes: ['41', '42', '44', '47', '48'], excludePrefixes: ['4802', '4807', '4808', '4810', '4815'] },
-        { row: 18, label: 'Gastos de administración y ventas', pucPrefixes: ['51', '52'] },
-        { row: 19, label: 'Ingresos financieros', pucPrefixes: ['4802', '4807', '4808', '4810', '4815'] },
-        { row: 20, label: 'Costos financieros', pucPrefixes: ['5802', '5803', '5807'] },
-        { row: 21, label: 'Participación asociadas', pucPrefixes: ['4815', '5815'] },
-        { row: 22, label: 'Otros gastos', pucPrefixes: ['53', '54', '56', '58'], excludePrefixes: ['5802', '5803', '5807', '5815'] },
-        { row: 25, label: 'Impuesto corriente', pucPrefixes: ['540101'] },
-        { row: 26, label: 'Impuesto diferido', pucPrefixes: ['5410'] },
+      // Mapeos ER alineados con erMappings.ts — PUC CGN Resolución 414
+      // abs: true → las autosumas del template manejan los signos
+      const IFE_ER_MAPPINGS: Array<{row: number; label: string; pucPrefixes: string[]; excludePrefixes?: string[]; abs?: boolean}> = [
+        { row: 14, label: 'Ingresos ordinarios', pucPrefixes: ['41', '42', '43'], abs: true },
+        { row: 15, label: 'Costo de ventas', pucPrefixes: ['62', '63'], abs: true },
+        { row: 17, label: 'Gastos admin y ventas', pucPrefixes: ['51', '52', '56'], abs: true },
+        { row: 18, label: 'Otros ingresos', pucPrefixes: ['44', '48'], excludePrefixes: ['4802', '4803'], abs: true },
+        { row: 19, label: 'Otros gastos', pucPrefixes: ['53', '58'], abs: true },
+        { row: 21, label: 'Ingresos financieros', pucPrefixes: ['4802', '4803'], abs: true },
+        { row: 22, label: 'Costos financieros', pucPrefixes: ['5802', '5803'], abs: true },
+        { row: 23, label: 'Otras ganancias/pérdidas', pucPrefixes: ['4808', '5808'], abs: true },
+        { row: 25, label: 'Gasto por impuesto', pucPrefixes: ['54'], abs: true },
+        { row: 27, label: 'Operaciones discontinuadas', pucPrefixes: ['59'], abs: true },
       ];
 
       for (const mapping of IFE_ER_MAPPINGS) {
@@ -1419,7 +1441,7 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
         for (const account of options.consolidatedAccounts) {
           if (!account.isLeaf) continue;
           if (matchesPrefixesIFE(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
-            totalValue += account.value;
+            totalValue += mapping.abs ? Math.abs(account.value) : account.value;
           }
         }
 
@@ -1438,7 +1460,7 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
           for (const account of serviceAccounts) {
             if (!account.isLeaf) continue;
             if (matchesPrefixesIFE(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
-              serviceValue += account.value;
+              serviceValue += mapping.abs ? Math.abs(account.value) : account.value;
             }
           }
 
