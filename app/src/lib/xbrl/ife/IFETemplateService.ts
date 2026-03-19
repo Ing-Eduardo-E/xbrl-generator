@@ -328,9 +328,19 @@ export class IFETemplateService extends BaseTemplateService {
    * Llena la Hoja5 (FC03t - 900020t - Cuentas comerciales por cobrar por rangos de vencimiento).
    * 
    * Estructura:
-   * - Filas 17-23: Servicios (Acueducto, Alcantarillado, Aseo, Energía, Gas, GLP, XM)
-   * - Fila 24: Deterioro de CxC (cuenta 1399 - valor negativo)
-   * - Fila 25: Total (AUTOSUMA vertical)
+   * - Sección 1: CXC por prestación de servicios públicos
+   *   - Filas 17-23: Servicios (Acueducto, Alcantarillado, Aseo, Energía, Gas, GLP, XM)
+   *   - Fila 24: Deterioro de CxC (cuenta 1399 - valor negativo)
+   *   - Fila 25: Total CXC servicios públicos (AUTOSUMA vertical)
+   * - Sección 2: CXC por venta de bienes
+   *   - Fila 27: CXC brutas por venta de bienes (PUC 1316)
+   *   - Fila 28: Deterioro CXC por venta de bienes
+   *   - Fila 29: Total CXC por venta de bienes
+   * - Sección 3: Otras CXC corrientes
+   *   - Fila 31: Otras CXC brutas (PUC 1311,1317,1319,1322,1324,1333,1384,1385,1387)
+   *   - Fila 32: Deterioro otras CXC
+   *   - Fila 33: Total Otras CXC corrientes
+   * - Fila 34: Gran total CXC y Otras CXC corrientes
    * - Columnas F-J: Rangos de vencimiento (No vencidas, 1-90, 91-180, 181-360, >360 días)
    * - Columna K: Total vencidas =SUM(G:J)
    * - Columna L: Total general =F+K (No vencidas + Total vencidas)
@@ -354,7 +364,6 @@ export class IFETemplateService extends BaseTemplateService {
     };
 
     // Rangos de vencimiento con distribución por defecto
-    // 55% no vencidas, 25% 1-90 días, 20% 91-180 días
     const agingRanges = [
       { column: 'F', percentage: 0.55 }, // No vencidas
       { column: 'G', percentage: 0.25 }, // 1-90 días
@@ -363,70 +372,87 @@ export class IFETemplateService extends BaseTemplateService {
       { column: 'J', percentage: 0.00 }, // >360 días
     ];
 
-    // Columnas de datos de rangos (F-J)
-    const rangeColumns = ['F', 'G', 'H', 'I', 'J'];
-    
-    // Filas de servicios (17-23) + deterioro (24)
-    const allDataRows = [17, 18, 19, 20, 21, 22, 23, 24];
+    const allCols = ['F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
-    // Limpiar todas las celdas de datos (F-J)
-    for (const row of allDataRows) {
-      for (const col of rangeColumns) {
+    // Limpiar todas las celdas de datos (rows 17-34, cols F-L)
+    for (let row = 17; row <= 34; row++) {
+      for (const col of allCols) {
         this.writeCell(worksheet, `${col}${row}`, 0);
       }
     }
 
-    // Prefijos PUC para CxC por servicios públicos (cuenta 13, excluyendo deterioro 1399)
-    const cxcPrefixes = ['13'];
-    const excludePrefixes = ['1399']; // Deterioro se maneja por separado
+    // PUC "Otras CXC" = ESF Row 25: 1311,1317,1319,1322,1324,1333,1384,1385,1387
+    //   excluyendo 138401, 138414, 138424 (van a servicios)
+    const OTRAS_PUC = ['1311', '1317', '1319', '1322', '1324', '1333', '1384', '1385', '1387'];
+    const OTRAS_EXCL = ['138401', '138414', '138424'];
 
-    // Llenar datos por servicio
+    // PUC "Servicios" = PUC 13 minus bienes (1316), minus otras, minus deterioro (1399)
+    // Incluye: 1305, 1310, 1318, 138424, y todo lo demás que no sea bienes/otras/deterioro
+    const SERV_EXCL = ['1316', '1311', '1317', '1319', '1322', '1324', '1333', '1384', '1385', '1387', '1399'];
+
+    // --- SECCIÓN 1: CXC por prestación de servicios públicos (rows 17-25) ---
     for (const [service, row] of Object.entries(serviceRows)) {
-      // Obtener CxC total del servicio
+      // Servicios = PUC 13 excl bienes/otras/deterioro + re-incluir 138401,138414,138424
       const serviceCxC = this.sumServiceAccountsByPrefix(
-        serviceBalances,
-        service,
-        cxcPrefixes,
-        excludePrefixes,
-        false
+        serviceBalances, service, ['13'], SERV_EXCL, false
+      ) + this.sumServiceAccountsByPrefix(
+        serviceBalances, service, ['138401', '138414', '138424'], [], false
       );
 
-      // Distribuir por rangos de vencimiento
       for (const range of agingRanges) {
         const value = Math.round(serviceCxC * range.percentage);
         this.writeCell(worksheet, `${range.column}${row}`, value);
       }
-
-      // Columna K: Fórmula suma de vencidas (G:J)
       worksheet.getCell(`K${row}`).value = { formula: `SUM(G${row}:J${row})` };
-      
-      // Columna L: Fórmula total (No vencidas + Total vencidas = F + K)
       worksheet.getCell(`L${row}`).value = { formula: `F${row}+K${row}` };
     }
 
-    // Fila 24: Deterioro de CxC (cuenta 1399 - debe ser negativo)
-    // Obtener deterioro de todos los servicios
+    // Fila 24: Deterioro de CxC (cuenta 1399 - valor negativo)
     const deterioroTotal = this.sumAccountsByPrefix(accounts, ['1399'], [], true);
-    // El deterioro se muestra como valor negativo
     const deterioroValue = -Math.abs(deterioroTotal);
-    
-    // El deterioro se distribuye en la misma proporción que las CxC
     for (const range of agingRanges) {
-      const value = Math.round(deterioroValue * range.percentage);
-      this.writeCell(worksheet, `${range.column}24`, value);
+      this.writeCell(worksheet, `${range.column}24`, Math.round(deterioroValue * range.percentage));
     }
-    
-    // Fórmulas para deterioro (fila 24)
     worksheet.getCell('K24').value = { formula: 'SUM(G24:J24)' };
     worksheet.getCell('L24').value = { formula: 'F24+K24' };
 
-    // Fila 25: Fórmulas SUM verticales para totales
-    for (const col of rangeColumns) {
+    // Fila 25: Total CXC por prestación de servicios públicos
+    for (const col of allCols) {
       worksheet.getCell(`${col}25`).value = { formula: `SUM(${col}17:${col}24)` };
     }
-    // Totales para columnas K y L
-    worksheet.getCell('K25').value = { formula: 'SUM(K17:K24)' };
-    worksheet.getCell('L25').value = { formula: 'SUM(L17:L24)' };
+
+    // --- SECCIÓN 2: CXC por venta de bienes (rows 27-29) ---
+    const totalBienes = this.sumAccountsByPrefix(accounts, ['1316'], [], false);
+    if (totalBienes !== 0) {
+      for (const range of agingRanges) {
+        this.writeCell(worksheet, `${range.column}27`, Math.round(totalBienes * range.percentage));
+      }
+      worksheet.getCell('K27').value = { formula: 'SUM(G27:J27)' };
+      worksheet.getCell('L27').value = { formula: 'F27+K27' };
+    }
+    // Row 28: Deterioro = 0, Row 29: Total = 27 + 28
+    for (const col of allCols) {
+      worksheet.getCell(`${col}29`).value = { formula: `${col}27+${col}28` };
+    }
+
+    // --- SECCIÓN 3: Otras CXC corrientes (rows 31-33) ---
+    const totalOtras = this.sumAccountsByPrefix(accounts, OTRAS_PUC, OTRAS_EXCL, false);
+    if (totalOtras !== 0) {
+      for (const range of agingRanges) {
+        this.writeCell(worksheet, `${range.column}31`, Math.round(totalOtras * range.percentage));
+      }
+      worksheet.getCell('K31').value = { formula: 'SUM(G31:J31)' };
+      worksheet.getCell('L31').value = { formula: 'F31+K31' };
+    }
+    // Row 32: Deterioro = 0, Row 33: Total = 31 + 32
+    for (const col of allCols) {
+      worksheet.getCell(`${col}33`).value = { formula: `${col}31+${col}32` };
+    }
+
+    // --- FILA 34: Gran total CXC y Otras CXC corrientes ---
+    for (const col of allCols) {
+      worksheet.getCell(`${col}34`).value = { formula: `${col}25+${col}29+${col}33` };
+    }
   }
 
   /**

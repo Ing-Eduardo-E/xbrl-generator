@@ -2028,7 +2028,10 @@ export async function rewriteFinancialDataWithExcelJS(
 
     // ---------------------------------------------------------------
     // HOJA5 IFE (900020t): CxC por rangos de vencimiento
-    // Filas: 17-23 (servicios), 24 (deterioro), 25 (total)
+    // Sección 1: Filas 17-23 (CXC servicios públicos por servicio), 24 (deterioro), 25 (total)
+    // Sección 2: Filas 27 (bienes brutas), 28 (deterioro bienes), 29 (total bienes)
+    // Sección 3: Filas 31 (otras brutas), 32 (deterioro otras), 33 (total otras)
+    // Fila 34: Gran total CXC corrientes
     // Columnas: F-J rangos, K total vencidas, L total general
     // ---------------------------------------------------------------
     const ifeSheet5 = workbook.getWorksheet('Hoja5');
@@ -2046,37 +2049,113 @@ export async function rewriteFinancialDataWithExcelJS(
         { col: 'I', pct: 0.00 }, // 181-360 días
         { col: 'J', pct: 0.00 }, // >360 días
       ];
+      const CXC_ALL_COLS = ['F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
+      // Clasificación de cuentas PUC 13:
+      // - "Otras CXC" = PUC del ESF Row 25 (1311,1317,1319,1322,1324,1333,1384,1385,1387 excl 138401,138414,138424)
+      // - "Venta de bienes" = PUC 1316 (ESF Row 24)
+      // - "Deterioro" = PUC 1399
+      // - Todo lo demás en PUC 13 = "Servicios públicos"
+      const isOtrasCXC = (code: string) =>
+        matchesPrefixes(code, ['1311', '1317', '1319', '1322', '1324', '1333', '1384', '1385', '1387'],
+          ['138401', '138414', '138424']);
+
+      // Limpiar todas las celdas de datos (rows 17-34, cols F-L) para evitar datos del template
+      for (let r = 17; r <= 34; r++) {
+        for (const c of CXC_ALL_COLS) {
+          ifeSheet5.getCell(`${c}${r}`).value = 0;
+        }
+      }
+
+      // Acumular totales para secciones que NO son por servicio
+      let totalBienes = 0;    // PUC 1316 (todos los servicios)
+      let totalOtras = 0;     // "Otras CXC" (todos los servicios)
+      let totalDeterioro = 0; // PUC 1399 (todos los servicios)
+
+      // --- SECCIÓN 1: CXC por prestación de servicios públicos (rows 17-25) ---
       for (const svc of activeServices) {
         const row = CXC_SVC_ROWS[svc];
         if (!row) continue;
 
-        let totalCXC = 0;
+        let svcServicios = 0;
+        let svcDeterioro = 0;
         const svcAccounts = accountsByService[svc] || [];
         for (const acc of svcAccounts) {
           if (!acc.isLeaf) continue;
-          if (matchesPrefixes(acc.code, ['13'], ['1399'])) {
-            totalCXC += acc.value;
+          if (!acc.code.startsWith('13')) continue;
+          if (acc.code.startsWith('1399')) {
+            svcDeterioro += acc.value;
+            continue;
+          }
+          if (acc.code.startsWith('1316')) {
+            totalBienes += acc.value;
+          } else if (isOtrasCXC(acc.code)) {
+            totalOtras += acc.value;
+          } else {
+            svcServicios += acc.value;
           }
         }
+        totalDeterioro += svcDeterioro;
 
-        if (totalCXC !== 0) {
-          for (const r of CXC_PCTS) {
-            const val = Math.round(totalCXC * r.pct);
-            ifeSheet5.getCell(`${r.col}${row}`).value = val;
+        // Escribir CXC servicios en la fila del servicio
+        if (svcServicios !== 0) {
+          for (const p of CXC_PCTS) {
+            ifeSheet5.getCell(`${p.col}${row}`).value = Math.round(svcServicios * p.pct);
           }
-          // K = total vencidas (G:J)
           ifeSheet5.getCell(`K${row}`).value = { formula: `SUM(G${row}:J${row})` };
-          // L = total general (F + K)
           ifeSheet5.getCell(`L${row}`).value = { formula: `F${row}+K${row}` };
         }
       }
 
-      // Fila 25: totales verticales
-      for (const col of ['F', 'G', 'H', 'I', 'J', 'K', 'L']) {
+      // Fila 24: Deterioro de CXC por prestación de servicios públicos (PUC 1399)
+      if (totalDeterioro !== 0) {
+        const detValue = -Math.abs(totalDeterioro);
+        for (const p of CXC_PCTS) {
+          ifeSheet5.getCell(`${p.col}24`).value = Math.round(detValue * p.pct);
+        }
+        ifeSheet5.getCell('K24').value = { formula: 'SUM(G24:J24)' };
+        ifeSheet5.getCell('L24').value = { formula: 'F24+K24' };
+      }
+
+      // Fila 25: Total CXC por prestación de servicios públicos
+      for (const col of CXC_ALL_COLS) {
         ifeSheet5.getCell(`${col}25`).value = { formula: `SUM(${col}17:${col}24)` };
       }
-      console.log('[ExcelJS-IFE] Hoja5 (CxC) completada.');
+
+      // --- SECCIÓN 2: CXC por venta de bienes (rows 27-29) ---
+      if (totalBienes !== 0) {
+        for (const p of CXC_PCTS) {
+          ifeSheet5.getCell(`${p.col}27`).value = Math.round(totalBienes * p.pct);
+        }
+        ifeSheet5.getCell('K27').value = { formula: 'SUM(G27:J27)' };
+        ifeSheet5.getCell('L27').value = { formula: 'F27+K27' };
+      }
+      // Row 28: Deterioro venta bienes = 0 (ya limpio)
+      // Row 29: Total CXC por venta de bienes = Row 27 + Row 28
+      for (const col of CXC_ALL_COLS) {
+        ifeSheet5.getCell(`${col}29`).value = { formula: `${col}27+${col}28` };
+      }
+
+      // --- SECCIÓN 3: Otras CXC corrientes (rows 31-33) ---
+      if (totalOtras !== 0) {
+        for (const p of CXC_PCTS) {
+          ifeSheet5.getCell(`${p.col}31`).value = Math.round(totalOtras * p.pct);
+        }
+        ifeSheet5.getCell('K31').value = { formula: 'SUM(G31:J31)' };
+        ifeSheet5.getCell('L31').value = { formula: 'F31+K31' };
+      }
+      // Row 32: Deterioro otras CXC = 0 (ya limpio)
+      // Row 33: Total Otras CXC corrientes = Row 31 + Row 32
+      for (const col of CXC_ALL_COLS) {
+        ifeSheet5.getCell(`${col}33`).value = { formula: `${col}31+${col}32` };
+      }
+
+      // --- FILA 34: Gran total CXC y Otras CXC corrientes ---
+      for (const col of CXC_ALL_COLS) {
+        ifeSheet5.getCell(`${col}34`).value = { formula: `${col}25+${col}29+${col}33` };
+      }
+
+      console.log('[ExcelJS-IFE] Hoja5 (CxC) completada con 3 secciones: servicios/bienes/otras.');
     }
 
     // ---------------------------------------------------------------
