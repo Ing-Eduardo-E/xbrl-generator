@@ -161,8 +161,6 @@ export class IFETemplateService extends BaseTemplateService {
 
     // Llenar filas mapeadas con valores reales desde PUC
     for (const mapping of IFE_ESF_MAPPINGS) {
-      let rowTotal = 0;
-      
       for (const service of activeServices) {
         const serviceColumn = columns[service as keyof ServiceColumnMapping];
         if (!serviceColumn || serviceColumn === 'Q') continue;
@@ -180,19 +178,15 @@ export class IFETemplateService extends BaseTemplateService {
           `${serviceColumn}${mapping.row}`,
           serviceValue
         );
-        
-        rowTotal += serviceValue;
       }
-      
-      // Escribir total en columna Q para filas de datos
-      this.writeCell(worksheet, `Q${mapping.row}`, rowTotal);
+      // Q será fórmula =SUM(I:P), no valor
     }
 
     // ================================================================
-    // ESCRIBIR FÓRMULAS DE AUTOSUMA para todas las columnas (I-P y Q)
+    // ESCRIBIR FÓRMULAS DE AUTOSUMA para columnas I-P (verticales)
     // El template NO tiene fórmulas - debemos escribirlas explícitamente
     // ================================================================
-    const formulaColumns = [...allServiceColumns, 'Q'];
+    const formulaColumns = allServiceColumns;
     
     for (const C of formulaColumns) {
       // --- Subtotales CxC corrientes ---
@@ -252,6 +246,12 @@ export class IFETemplateService extends BaseTemplateService {
       worksheet.getCell(`${C}55`).value = { formula: `${C}64` };   // Pasivos corrientes resumen
       worksheet.getCell(`${C}65`).value = { formula: `${C}74` };   // Pasivos no corrientes resumen
       worksheet.getCell(`${C}76`).value = { formula: `${C}84` };   // Patrimonio resumen
+    }
+
+    // Columna Q: fórmulas horizontales =SUM(I{row}:P{row}) para TODAS las filas
+    // Q = total de servicios por fila, ecuación contable se cumple automáticamente
+    for (let row = 13; row <= 85; row++) {
+      worksheet.getCell(`Q${row}`).value = { formula: `SUM(I${row}:P${row})` };
     }
   }
 

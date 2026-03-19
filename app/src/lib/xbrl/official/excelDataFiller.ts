@@ -1335,19 +1335,8 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
       ];
 
       for (const mapping of IFE_ESF_MAPPINGS) {
-        // Calcular total consolidado
-        let totalValue = 0;
-        for (const account of options.consolidatedAccounts) {
-          if (!account.isLeaf) continue;
-          if (matchesPrefixesIFE(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
-            totalValue += mapping.abs ? Math.abs(account.value) : account.value;
-          }
-        }
-
-        // Escribir valor total en columna Q
-        if (totalValue !== 0) {
-          setNumericCellIFE(sheet3IFE, `${IFE_SERVICE_COLUMNS.total}${mapping.row}`, totalValue);
-        }
+        // Solo escribir valores en columnas de servicio (I-P)
+        // La columna Q será fórmula =SUM(I:P) escrita al final
 
         // Escribir valores por servicio
         for (const service of activeServices) {
@@ -1370,9 +1359,14 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
       }
 
       // --- Ganancias acumuladas (fila 82): si PUC 32 dio 0, calcular desde ER ---
-      const cell82 = sheet3IFE[`${IFE_SERVICE_COLUMNS.total}82`];
-      const val82 = cell82 ? (typeof cell82.v === 'number' ? cell82.v : 0) : 0;
-      if (val82 === 0) {
+      // Verificar en columnas de servicio (Q será fórmula =SUM(I:P))
+      const row82HasServiceData = activeServices.some(svc => {
+        const svcCol = IFE_SERVICE_COLUMNS[svc];
+        if (!svcCol) return false;
+        const cell = sheet3IFE[`${svcCol}82`];
+        return cell && typeof cell.v === 'number' && cell.v !== 0;
+      });
+      if (!row82HasServiceData) {
         const calcERNetSheetJS = (accs: {code: string; value: number; isLeaf: boolean}[]): number => {
           let ing = 0, gas = 0, cos = 0;
           for (const a of accs) {
@@ -1383,10 +1377,7 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
           }
           return ing - gas - cos;
         };
-        const erTotalSJ = calcERNetSheetJS(options.consolidatedAccounts);
-        if (erTotalSJ !== 0) {
-          setNumericCellIFE(sheet3IFE, `${IFE_SERVICE_COLUMNS.total}82`, erTotalSJ);
-        }
+        // Solo escribir a columnas de servicio (I-P), Q será fórmula
         for (const service of activeServices) {
           const serviceColumn = IFE_SERVICE_COLUMNS[service];
           if (!serviceColumn) continue;
@@ -1401,10 +1392,11 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
       // ================================================================
       // ESCRIBIR FÓRMULAS DE AUTOSUMA para Hoja3 IFE (ESF)
       // El template NO tiene fórmulas - escribirlas con SheetJS
-      // Columnas: I-P (servicios) y Q (total)
+      // Columnas I-P: fórmulas verticales (subtotales dentro de cada servicio)
+      // Columna Q: fórmulas horizontales =SUM(I:P) para totalizar servicios
       // ================================================================
-      const esfFormulaCols = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'];
-      for (const C of esfFormulaCols) {
+      const esfServiceCols = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
+      for (const C of esfServiceCols) {
         const setFormula = (cell: string, formula: string) => {
           sheet3IFE[cell] = { t: 'n', v: 0, f: formula };
         };
@@ -1443,6 +1435,12 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
         setFormula(`${C}55`, `${C}64`);
         setFormula(`${C}65`, `${C}74`);
         setFormula(`${C}76`, `${C}84`);
+      }
+
+      // Columna Q: fórmulas horizontales =SUM(I{row}:P{row}) para TODAS las filas
+      // Q = total de servicios por fila, garantiza ecuación contable si cada servicio la cumple
+      for (let row = 13; row <= 85; row++) {
+        sheet3IFE[`Q${row}`] = { t: 'n', v: 0, f: `SUM(I${row}:P${row})` };
       }
     }
 

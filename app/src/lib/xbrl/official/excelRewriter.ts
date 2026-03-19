@@ -1766,16 +1766,8 @@ export async function rewriteFinancialDataWithExcelJS(
       ];
 
       for (const m of IFE_ESF_MAP) {
-        let totalValue = 0;
-        for (const acc of options.consolidatedAccounts!) {
-          if (!acc.isLeaf) continue;
-          if (matchesPrefixes(acc.code, m.puc, m.ex)) {
-            totalValue += m.abs ? Math.abs(acc.value) : acc.value;
-          }
-        }
-        if (totalValue !== 0) {
-          ifeSheet3.getCell(`Q${m.row}`).value = totalValue;
-        }
+        // Solo escribir valores en columnas de servicio (I-P)
+        // La columna Q será fórmula =SUM(I:P) escrita al final
         for (const svc of activeServices) {
           const col = IFE_ESF_COLS[svc];
           if (!col) continue;
@@ -1796,9 +1788,14 @@ export async function rewriteFinancialDataWithExcelJS(
       // --- Ganancias acumuladas (fila 82): si PUC 32 dio 0, calcular desde ER ---
       // En reportes trimestrales la cuenta 3210 puede no existir aún;
       // en ese caso derivamos el resultado neto de clases 4, 5 y 6.
-      const currentRow82 = ifeSheet3.getCell('Q82').value;
-      const row82IsEmpty = currentRow82 === null || currentRow82 === undefined || currentRow82 === 0;
-      if (row82IsEmpty) {
+      // Verificar en columnas de servicio (Q será fórmula =SUM(I:P))
+      const row82HasServiceData = activeServices.some(svc => {
+        const col = IFE_ESF_COLS[svc];
+        if (!col) return false;
+        const v = ifeSheet3.getCell(`${col}82`).value;
+        return v !== null && v !== undefined && v !== 0;
+      });
+      if (!row82HasServiceData) {
         const calcERNet = (accs: {code: string; value: number; isLeaf: boolean}[]): number => {
           let ing = 0, gas = 0, cos = 0;
           for (const a of accs) {
@@ -1809,10 +1806,7 @@ export async function rewriteFinancialDataWithExcelJS(
           }
           return ing - gas - cos;
         };
-        const erTotal = calcERNet(options.consolidatedAccounts!);
-        if (erTotal !== 0) {
-          ifeSheet3.getCell('Q82').value = erTotal;
-        }
+        // Solo escribir a columnas de servicio (I-P), Q será fórmula
         for (const svc of activeServices) {
           const col = IFE_ESF_COLS[svc];
           if (!col) continue;
@@ -1828,10 +1822,11 @@ export async function rewriteFinancialDataWithExcelJS(
       // ESCRIBIR FÓRMULAS DE AUTOSUMA para Hoja3 (ESF)
       // El template NO tiene fórmulas - debemos escribirlas explícitamente
       // para que los subtotales y totales se calculen correctamente.
-      // Columnas: I-P (servicios) y Q (total)
+      // Columnas I-P: fórmulas verticales (subtotales dentro de cada servicio)
+      // Columna Q: fórmulas horizontales =SUM(I:P) para totalizar servicios
       // ================================================================
-      const esfFormulaCols = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'];
-      for (const C of esfFormulaCols) {
+      const esfServiceCols = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
+      for (const C of esfServiceCols) {
         // Subtotales CxC corrientes
         ifeSheet3.getCell(`${C}23`).value = { formula: `${C}19+${C}20+${C}21+${C}22` };
         ifeSheet3.getCell(`${C}26`).value = { formula: `${C}23+${C}24+${C}25` };
@@ -1867,6 +1862,13 @@ export async function rewriteFinancialDataWithExcelJS(
         ifeSheet3.getCell(`${C}55`).value = { formula: `${C}64` };
         ifeSheet3.getCell(`${C}65`).value = { formula: `${C}74` };
         ifeSheet3.getCell(`${C}76`).value = { formula: `${C}84` };
+      }
+
+      // Columna Q: fórmulas horizontales =SUM(I{row}:P{row}) para TODAS las filas
+      // Esto garantiza que Q = sum de servicios y la ecuación contable se cumple
+      // automáticamente porque cada columna de servicio ya está balanceada (A=P+Pt)
+      for (let row = 13; row <= 85; row++) {
+        ifeSheet3.getCell(`Q${row}`).value = { formula: `SUM(I${row}:P${row})` };
       }
 
       console.log('[ExcelJS-IFE] Hoja3 (ESF) completada.');
