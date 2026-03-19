@@ -1310,7 +1310,7 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
         { row: 25, label: 'Otras CXC corrientes', pucPrefixes: ['1311', '1317', '1319', '1322', '1324', '1333', '1384', '1385', '1387'], excludePrefixes: ['138401', '138414', '138424'] },
         { row: 27, label: 'Inventarios corrientes', pucPrefixes: ['15'], excludePrefixes: ['1580'] },
         { row: 28, label: 'Inversiones corrientes', pucPrefixes: ['12'], excludePrefixes: ['1280'] },
-        { row: 30, label: 'Otros activos financieros corrientes', pucPrefixes: ['19'] },
+        { row: 30, label: 'Otros activos financieros corrientes', pucPrefixes: ['19'], excludePrefixes: ['1970', '1971', '1972', '1973', '1974', '1975'] },
         { row: 31, label: 'Otros activos no financieros corrientes', pucPrefixes: ['17', '18'] },
         // === ACTIVOS NO CORRIENTES ===
         { row: 34, label: 'PPE', pucPrefixes: ['16'] },
@@ -1327,12 +1327,12 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
         // === PASIVOS NO CORRIENTES — sin mapear, el usuario completa manualmente ===
         // === PATRIMONIO ===
         // '31' como fallback para balances que reportan patrimonio a nivel de grupo
-        { row: 77, label: 'Capital', pucPrefixes: ['3105', '31'], excludePrefixes: ['3109', '3110', '3115', '3120', '3125', '3130', '3145'], abs: true },
+        { row: 77, label: 'Capital', pucPrefixes: ['3105', '3205', '3208', '3210', '3215', '31'], excludePrefixes: ['3109', '3110', '3115', '3120', '3125', '3130', '3145'], abs: true },
         { row: 78, label: 'Inversión suplementaria', pucPrefixes: ['3109'], abs: true },
-        { row: 79, label: 'Otras participaciones', pucPrefixes: ['3125', '3110'], abs: true },
-        { row: 80, label: 'Superávit por revaluación', pucPrefixes: ['3115', '3120'], abs: true },
-        { row: 81, label: 'Reservas', pucPrefixes: ['3130'], abs: true },
-        { row: 82, label: 'Ganancias acumuladas', pucPrefixes: ['32'] },
+        { row: 79, label: 'Otras participaciones', pucPrefixes: ['3125', '3110', '3270'], abs: true },
+        { row: 80, label: 'Superávit por revaluación', pucPrefixes: ['3115', '3120', '3240', '3245', '3255'], abs: true },
+        { row: 81, label: 'Reservas', pucPrefixes: ['3130', '3260'], abs: true },
+        { row: 82, label: 'Ganancias acumuladas', pucPrefixes: ['3225', '3230', '32'], excludePrefixes: ['3205', '3208', '3210', '3215', '3240', '3245', '3250', '3255', '3260', '3270'] },
         { row: 83, label: 'Efectos adopción NIF', pucPrefixes: ['3145'], abs: true },
       ];
 
@@ -1427,8 +1427,8 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
         { row: 14, label: 'Ingresos ordinarios', pucPrefixes: ['41', '42', '43'], abs: true },
         { row: 15, label: 'Costo de ventas', pucPrefixes: ['62', '63'], abs: true },
         { row: 17, label: 'Gastos admin y ventas', pucPrefixes: ['51', '52', '56'], abs: true },
-        { row: 18, label: 'Otros ingresos', pucPrefixes: ['44', '48'], excludePrefixes: ['4802', '4803'], abs: true },
-        { row: 19, label: 'Otros gastos', pucPrefixes: ['53', '58'], abs: true },
+        { row: 18, label: 'Otros ingresos', pucPrefixes: ['44', '48'], excludePrefixes: ['4802', '4803', '4808'], abs: true },
+        { row: 19, label: 'Otros gastos', pucPrefixes: ['53', '58'], excludePrefixes: ['5802', '5803', '5808'], abs: true },
         { row: 21, label: 'Ingresos financieros', pucPrefixes: ['4802', '4803'], abs: true },
         { row: 22, label: 'Costos financieros', pucPrefixes: ['5802', '5803'], abs: true },
         { row: 23, label: 'Otras ganancias/pérdidas', pucPrefixes: ['4808', '5808'], abs: true },

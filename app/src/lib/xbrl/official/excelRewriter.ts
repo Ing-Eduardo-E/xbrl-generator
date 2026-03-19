@@ -1738,7 +1738,7 @@ export async function rewriteFinancialDataWithExcelJS(
         { row: 25, puc: ['1311', '1317', '1319', '1322', '1324', '1333', '1384', '1385', '1387'], ex: ['138401', '138414', '138424'], label: 'Otras CXC corrientes' },
         { row: 27, puc: ['15'], ex: ['1580'], label: 'Inventarios corrientes' },
         { row: 28, puc: ['12'], ex: ['1280'], label: 'Inversiones corrientes' },
-        { row: 30, puc: ['19'], label: 'Otros activos financieros corrientes' },
+        { row: 30, puc: ['19'], ex: ['1970', '1971', '1972', '1973', '1974', '1975'], label: 'Otros activos financieros corrientes' },
         { row: 31, puc: ['17', '18'], label: 'Otros activos no financieros corrientes' },
         // === ACTIVOS NO CORRIENTES (Filas 34-50) ===
         { row: 34, puc: ['16'], label: 'PPE' },
@@ -1756,12 +1756,12 @@ export async function rewriteFinancialDataWithExcelJS(
         // === PATRIMONIO (Filas 77-83) ===
         // '31' como fallback para balances que reportan patrimonio a nivel de grupo (código 31)
         // en vez de subcuentas detalladas (3105, 3109, etc.)
-        { row: 77, puc: ['3105', '31'], ex: ['3109', '3110', '3115', '3120', '3125', '3130', '3145'], label: 'Capital', abs: true },
+        { row: 77, puc: ['3105', '3205', '3208', '3210', '3215', '31'], ex: ['3109', '3110', '3115', '3120', '3125', '3130', '3145'], label: 'Capital', abs: true },
         { row: 78, puc: ['3109'], label: 'Inversión suplementaria', abs: true },
-        { row: 79, puc: ['3125', '3110'], label: 'Otras participaciones', abs: true },
-        { row: 80, puc: ['3115', '3120'], label: 'Superávit por revaluación', abs: true },
-        { row: 81, puc: ['3130'], label: 'Reservas', abs: true },
-        { row: 82, puc: ['32'], label: 'Ganancias acumuladas' },
+        { row: 79, puc: ['3125', '3110', '3270'], label: 'Otras participaciones', abs: true },
+        { row: 80, puc: ['3115', '3120', '3240', '3245', '3255'], label: 'Superávit por revaluación', abs: true },
+        { row: 81, puc: ['3130', '3260'], label: 'Reservas', abs: true },
+        { row: 82, puc: ['3225', '3230', '32'], ex: ['3205', '3208', '3210', '3215', '3240', '3245', '3250', '3255', '3260', '3270'], label: 'Ganancias acumuladas' },
         { row: 83, puc: ['3145'], label: 'Efectos adopción NIF', abs: true },
       ];
 
@@ -1841,8 +1841,8 @@ export async function rewriteFinancialDataWithExcelJS(
         { row: 14, puc: ['41', '42', '43'], label: 'Ingresos ordinarios', abs: true },
         { row: 15, puc: ['62', '63'], label: 'Costo de ventas', abs: true },
         { row: 17, puc: ['51', '52', '56'], label: 'Gastos admin y ventas', abs: true },
-        { row: 18, puc: ['44', '48'], ex: ['4802', '4803'], label: 'Otros ingresos', abs: true },
-        { row: 19, puc: ['53', '58'], label: 'Otros gastos', abs: true },
+        { row: 18, puc: ['44', '48'], ex: ['4802', '4803', '4808'], label: 'Otros ingresos', abs: true },
+        { row: 19, puc: ['53', '58'], ex: ['5802', '5803', '5808'], label: 'Otros gastos', abs: true },
         { row: 21, puc: ['4802', '4803'], label: 'Ingresos financieros', abs: true },
         { row: 22, puc: ['5802', '5803'], label: 'Costos financieros', abs: true },
         { row: 23, puc: ['4808', '5808'], label: 'Otras ganancias/pérdidas', abs: true },

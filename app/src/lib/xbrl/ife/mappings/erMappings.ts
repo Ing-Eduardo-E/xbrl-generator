@@ -93,19 +93,24 @@ export const IFE_ER_MAPPINGS: ESFMapping[] = [
   
   // Fila 18: Otros ingresos
   // CGN 44 - Transferencias + 48 - Otros ingresos
+  // Excluir subcuentas financieras y de participación (4802, 4803, 4808)
+  // que van en filas 21 y 23 respectivamente
   {
     row: 18,
     pucPrefixes: ['44', '48'],
+    excludePrefixes: ['4802', '4803', '4808'],
     description: 'Otros ingresos',
     useAbsoluteValue: true,
   },
   
   // Fila 19: Otros gastos
   // CGN 53 - Deterioro/depreciación + 58 - Otros gastos
-  // Excluir costos financieros si están en subcuenta específica
+  // Excluir subcuentas financieras y de participación (5802, 5803, 5808)
+  // que van en filas 22 y 23 respectivamente
   {
     row: 19,
     pucPrefixes: ['53', '58'],
+    excludePrefixes: ['5802', '5803', '5808'],
     description: 'Otros gastos',
     useAbsoluteValue: true,
   },

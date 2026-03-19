@@ -35,8 +35,8 @@
  *   - 26: Otros pasivos
  *   - 27: Pasivos por impuestos
  * - Clase 3: PATRIMONIO
- *   - 31: Patrimonio de las empresas
- *   - 32: Resultados
+ *   - 31: Patrimonio de las entidades de gobierno
+ *   - 32: Patrimonio de las empresas
  * ============================================================================
  *
  * @module ife/mappings/esfMappings
@@ -157,9 +157,11 @@ export const IFE_ESF_ACTIVOS_CORRIENTES: ESFMapping[] = [
 
   // Fila 30: Otros activos financieros corrientes
   // CGN 19 - Otros activos (parte financiera)
+  // Excluir intangibles 1970-1975 que van en fila 36
   {
     row: 30,
     pucPrefixes: ['19'],
+    excludePrefixes: ['1970', '1971', '1972', '1973', '1974', '1975'],
     description: 'Otros activos financieros corrientes',
   },
 
@@ -341,11 +343,13 @@ export const IFE_ESF_PASIVOS_NO_CORRIENTES: ESFMapping[] = [
 // =====================================================
 export const IFE_ESF_PATRIMONIO: ESFMapping[] = [
   // Fila 77: Capital
-  // CGN 3105 - Capital fiscal/social
-  // Incluye '31' como fallback para balances con patrimonio a nivel de grupo (código 31)
+  // CGN grupo 31: 3105 - Capital fiscal/social
+  // CGN grupo 32: 3205 - Capital suscrito y pagado, 3208 - Capital fiscal,
+  //   3210 - Capital personas naturales, 3215 - Aportes sociales
+  // '31' como fallback para balances con patrimonio a nivel de grupo 31
   {
     row: 77,
-    pucPrefixes: ['3105', '31'],
+    pucPrefixes: ['3105', '3205', '3208', '3210', '3215', '31'],
     excludePrefixes: ['3109', '3110', '3115', '3120', '3125', '3130', '3145'],
     description: 'Capital',
     useAbsoluteValue: true,
@@ -361,40 +365,48 @@ export const IFE_ESF_PATRIMONIO: ESFMapping[] = [
   },
 
   // Fila 79: Otras participaciones en el patrimonio
-  // CGN 3125 - Patrimonio institucional incorporado
+  // CGN grupo 31: 3125 - Patrimonio institucional incorporado, 3110 - Capital institucional
+  // CGN grupo 32: 3270 - Patrimonio institucional
   {
     row: 79,
-    pucPrefixes: ['3125', '3110'],
+    pucPrefixes: ['3125', '3110', '3270'],
     description: 'Otras participaciones en el patrimonio',
     useAbsoluteValue: true,
   },
 
   // Fila 80: Superávit por revaluación
-  // CGN 3115 - Ganancias o pérdidas por aplicación método participación
-  // + 3120 - Ganancias o pérdidas por instrumentos financieros
+  // CGN grupo 31: 3115 - Ganancias/pérdidas método participación,
+  //   3120 - Ganancias/pérdidas instrumentos financieros
+  // CGN grupo 32: 3240 - Superávit por revaluación,
+  //   3245 - Superávit por donación, 3255 - Ganancias/pérdidas método participación
   {
     row: 80,
-    pucPrefixes: ['3115', '3120'],
+    pucPrefixes: ['3115', '3120', '3240', '3245', '3255'],
     description: 'Superávit por revaluación',
     useAbsoluteValue: true,
   },
 
   // Fila 81: Otras Reservas
-  // CGN 3130 - Reservas
+  // CGN grupo 31: 3130 - Reservas
+  // CGN grupo 32: 3260 - Reservas
   {
     row: 81,
-    pucPrefixes: ['3130'],
+    pucPrefixes: ['3130', '3260'],
     description: 'Otras Reservas',
     useAbsoluteValue: true,
   },
 
   // Fila 82: Ganancias acumuladas
-  // CGN 32 - Resultados (3205 acumulados + 3210 del ejercicio)
+  // CGN grupo 32: 3225 - Resultados de ejercicios anteriores,
+  //   3230 - Resultado del ejercicio
+  // '32' como fallback para cuentas del grupo 32 no mapeadas en otras filas,
+  //   con exclusiones para Capital (3205, 3208, 3210, 3215),
+  //   Superávit (3240, 3245, 3255), Reservas (3260), Participaciones (3270)
   // NO usar valor absoluto - las pérdidas acumuladas son negativas
-  // El formato de celda mostrará negativos entre paréntesis
   {
     row: 82,
-    pucPrefixes: ['32'],
+    pucPrefixes: ['3225', '3230', '32'],
+    excludePrefixes: ['3205', '3208', '3210', '3215', '3240', '3245', '3250', '3255', '3260', '3270'],
     description: 'Ganancias acumuladas',
     useAbsoluteValue: false,
   },
