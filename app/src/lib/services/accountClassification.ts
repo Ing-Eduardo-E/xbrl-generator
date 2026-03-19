@@ -28,6 +28,8 @@ export const CLASSIFICATION_RULES: ClassificationRule[] = [
   { prefix: '21', behavior: 'static' },
   { prefix: '25', behavior: 'static' },
   { prefix: '31', behavior: 'static' },
+  // 3230 = Resultado del ejercicio (CGN Res 414) → dinámico, refleja ER proyectado
+  { prefix: '3230', behavior: 'dynamic' },
   { prefix: '32', behavior: 'static' },
   { prefix: '33', behavior: 'static' },
   { prefix: '34', behavior: 'static' },

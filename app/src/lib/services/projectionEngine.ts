@@ -50,47 +50,53 @@ function recalculateParentAccounts(accounts: ParsedAccount[]): void {
   }
 }
 
-// Calcula el Resultado del Ejercicio proyectado y lo inyecta en la cuenta 37 (Patrimonio)
-// Regla PUC: Resultado = Ingresos(4) - Gastos(5) - Costos(6)
-// Esto afecta directamente al Patrimonio del período
+// Calcula el Resultado del Ejercicio proyectado y lo inyecta en Patrimonio
+// PUC CGN (Res 414): cuenta 3230 = Resultado del ejercicio
+// PUC privado: cuenta 37 = Resultado del ejercicio
+// Regla: Resultado = Ingresos(4) - Gastos(5) - Costos(6)
 function injectIncomeStatementResult(
   projected: ParsedAccount[],
-  originalAccounts: ParsedAccount[],
+  _originalAccounts: ParsedAccount[],
   _percentage: number
 ): { adjustedCode: string | null; adjustmentAmount: number } {
   const leafs = projected.filter(a => a.isLeaf);
+
+  // Verificar si hay cuentas de ER (clases 4, 5, 6)
+  const hasERAccounts = leafs.some(a =>
+    a.code.startsWith('4') || a.code.startsWith('5') || a.code.startsWith('6')
+  );
+
+  // Sin cuentas ER, la cuenta 3230 ya se proyectó como dinámica (* X%)
+  if (!hasERAccounts) {
+    return { adjustedCode: null, adjustmentAmount: 0 };
+  }
 
   // Calcular Resultado del Ejercicio del trimestre proyectado
   const ingresos = leafs.filter(a => a.code.startsWith('4')).reduce((s, a) => s + a.value, 0);
   const gastos = leafs.filter(a => a.code.startsWith('5')).reduce((s, a) => s + a.value, 0);
   const costos = leafs.filter(a => a.code.startsWith('6')).reduce((s, a) => s + a.value, 0);
-  const resultadoTrimestral = ingresos - gastos - costos;
+  const resultadoTrimestral = Math.round(ingresos - gastos - costos);
 
-  // Calcular Resultado del Ejercicio original (anual) desde cuentas originales
-  const origLeafs = originalAccounts.filter(a => a.isLeaf);
-  const ingresosOrig = origLeafs.filter(a => a.code.startsWith('4')).reduce((s, a) => s + a.value, 0);
-  const gastosOrig = origLeafs.filter(a => a.code.startsWith('5')).reduce((s, a) => s + a.value, 0);
-  const costosOrig = origLeafs.filter(a => a.code.startsWith('6')).reduce((s, a) => s + a.value, 0);
-  const resultadoAnual = ingresosOrig - gastosOrig - costosOrig;
+  // Buscar cuenta de Resultado del ejercicio:
+  // 1. CGN PUC (Res 414): 3230xx
+  // 2. PUC privado: 37xx
+  let targetAccount = leafs.find(a => a.code.startsWith('3230') && a.isLeaf);
+  if (!targetAccount) {
+    targetAccount = leafs.find(a => a.code.startsWith('37') && a.isLeaf);
+  }
 
-  // La diferencia que debemos ajustar en Patrimonio
-  const ajustePatrimonio = resultadoTrimestral - resultadoAnual;
-  if (ajustePatrimonio === 0) {
+  if (!targetAccount) {
     return { adjustedCode: null, adjustmentAmount: 0 };
   }
 
-  // Buscar cuenta hoja 37xx (Resultado del ejercicio) para inyectar la diferencia
-  let targetAccount = leafs.find(a => a.code.startsWith('37') && a.isLeaf);
+  // Establecer el valor de 3230/37 = resultado proyectado del ER
+  const oldValue = targetAccount.value;
+  targetAccount.value = resultadoTrimestral;
+  const adjustmentAmount = targetAccount.value - oldValue;
 
-  // Fallback: buscar cualquier hoja clase 3 que sea dinámica
-  if (!targetAccount) {
-    targetAccount = leafs.find(a => a.code.startsWith('3') && a.isLeaf);
-  }
-
-  if (targetAccount) {
-    targetAccount.value = Math.round(targetAccount.value + ajustePatrimonio);
+  if (adjustmentAmount !== 0) {
     recalculateParentAccounts(projected);
-    return { adjustedCode: targetAccount.code, adjustmentAmount: ajustePatrimonio };
+    return { adjustedCode: targetAccount.code, adjustmentAmount };
   }
 
   return { adjustedCode: null, adjustmentAmount: 0 };
