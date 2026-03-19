@@ -120,8 +120,8 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
     }
   };
 
-  // Años para el selector
-  const yearOptions = [currentYear - 1, currentYear, currentYear + 1];
+  // Años para el selector: desde 2020 hasta el año siguiente
+  const yearOptions = Array.from({ length: currentYear + 1 - 2020 + 1 }, (_, i) => 2020 + i);
 
   return (
     <div className="w-full max-w-3xl mx-auto space-y-8">
