@@ -13,7 +13,7 @@ import { toast } from '@/lib/safe-toast';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface ValidatorAgentProps { analysisData: any; transformData: any; }
 
-export function ValidatorAgent({ analysisData, transformData }: ValidatorAgentProps) {
+export function ValidatorAgent({ }: ValidatorAgentProps) {
   const [downloaded, setDownloaded] = useState(false);
 
   const validateMutation = trpc.converter.validate.useMutation({

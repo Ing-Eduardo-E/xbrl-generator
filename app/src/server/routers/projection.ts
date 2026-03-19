@@ -2,7 +2,7 @@ import { router, publicProcedure } from '../trpc';
 import { z } from 'zod';
 import { parseExcelFile } from '@/lib/services/excelParser';
 import { partitionAccounts } from '@/lib/services/accountClassification';
-import { projectQuarterly, DEFAULT_PERCENTAGES } from '@/lib/services/projectionEngine';
+import { projectQuarterly } from '@/lib/services/projectionEngine';
 import { generateQuarterlyExcelFiles } from '@/lib/services/quarterlyExcelGenerator';
 
 const accountSchema = z.object({

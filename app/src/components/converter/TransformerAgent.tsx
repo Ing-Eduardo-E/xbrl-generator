@@ -14,7 +14,7 @@ import { toast } from '@/lib/safe-toast';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface TransformerAgentProps { analysisData: any; onComplete: (data: any) => void; }
 
-export function TransformerAgent({ analysisData, onComplete }: TransformerAgentProps) {
+export function TransformerAgent({ onComplete }: TransformerAgentProps) {
   const [percentages, setPercentages] = useState({
     acueducto: 55,
     alcantarillado: 25,

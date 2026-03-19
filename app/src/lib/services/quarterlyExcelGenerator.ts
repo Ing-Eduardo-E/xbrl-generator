@@ -2,7 +2,7 @@ import * as XLSX from 'xlsx';
 import type { ParsedAccount } from './excelParser';
 import type { QuarterlyProjection } from './projectionEngine';
 
-export function generateQuarterlyExcel(accounts: ParsedAccount[], quarterLabel: string): Buffer {
+export function generateQuarterlyExcel(accounts: ParsedAccount[], _quarterLabel: string): Buffer {
   const workbook = XLSX.utils.book_new();
   // Fila de encabezado
   const data: (string | number)[][] = [['Código', 'Denominación', 'Total']];

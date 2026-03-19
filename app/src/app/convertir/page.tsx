@@ -28,7 +28,7 @@ export default function ConvertirPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [analysisData, setAnalysisData] = useState<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [mappingData, setMappingData] = useState<any>(null);
+  const [_mappingData, setMappingData] = useState<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [transformData, setTransformData] = useState<any>(null);
 

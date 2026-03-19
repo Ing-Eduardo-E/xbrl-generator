@@ -6,11 +6,9 @@
 import JSZip from 'jszip';
 import { db } from '@/lib/db';
 import { workingAccounts, serviceBalances, balanceSessions } from '@/db/schema';
-import { eq, sql, desc } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import {
   getTaxonomyConfig,
-  getXbrlConcept,
-  getConceptIdWithSuffix,
   getTaxonomyConfigForYear,
   getDecimalsFromRounding,
   getRoundingDescription,
@@ -18,7 +16,6 @@ import {
   ESF_CONCEPTS,
   INFO_CONCEPTS,
   TAXONOMY_CATALOG,
-  ROUNDING_DEGREES,
   type NiifGroup,
   type TaxonomyConfig,
   type TaxonomyYear,

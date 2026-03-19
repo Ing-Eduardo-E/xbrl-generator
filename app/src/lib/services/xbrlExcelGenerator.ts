@@ -28,10 +28,8 @@ import { workingAccounts, serviceBalances } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { 
   ESF_CONCEPTS, 
-  INFO_CONCEPTS, 
   getTaxonomyConfig,
   findESFConceptByPUC,
-  type ESFConcept,
   type TaxonomyConfig 
 } from '../xbrl/taxonomyConfig';
 
@@ -853,7 +851,7 @@ export async function generateDetailedExcel(options: XBRLExcelOptions): Promise<
   }
   
   // Calcular totales por clase
-  const totals = calculateClassTotals(consolidatedAccounts);
+  calculateClassTotals(consolidatedAccounts);
   const serviceTotals: Record<string, ReturnType<typeof calculateClassTotals>> = {};
   for (const service of services) {
     serviceTotals[service] = calculateClassTotals(serviceData[service]);
@@ -1085,12 +1083,6 @@ function createERDetailSheet(
 // ==========================================
 // Función auxiliar para obtener valores totales
 // ==========================================
-function getConceptValue(conceptValues: Map<string, Map<string, number>>, conceptId: string): number {
-  const serviceValues = conceptValues.get(conceptId);
-  return serviceValues?.get('total') || 0;
-}
-
-// ==========================================
 // FUNCIÓN: Estado de Resultados [310000]
 // ==========================================
 function createEstadoResultadosSheet(
@@ -1155,7 +1147,7 @@ function createEstadoResultadosSheet(
 function createFC01Sheet(
   service: string, 
   expenseData: Record<string, ProcessedExpenseData>,
-  options: XBRLExcelOptions
+  _options: XBRLExcelOptions
 ): XLSX.WorkSheet {
   const serviceName = service.charAt(0).toUpperCase() + service.slice(1);
   const data = expenseData[service] || {
@@ -1277,7 +1269,7 @@ function createFC02Sheet(
 function createFC03Sheet(
   service: string, 
   serviceData: Record<string, ServiceAccountData[]>,
-  options: XBRLExcelOptions
+  _options: XBRLExcelOptions
 ): XLSX.WorkSheet {
   const serviceName = service.charAt(0).toUpperCase() + service.slice(1);
   const sheetCode = service === 'acueducto' ? '900021' : service === 'alcantarillado' ? '900022' : '900023';

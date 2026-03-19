@@ -9,7 +9,7 @@
 
 import './mocks/exceljs.mock';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { mockWorksheet, mockCell, mockWorkbook } from './mocks/exceljs.mock';
+import { mockWorksheet, mockCell } from './mocks/exceljs.mock';
 import { BaseTemplateService } from '../shared/baseTemplateService';
 import type {
   NiifGroup,
@@ -344,8 +344,6 @@ describe('generateOutputPrefix', () => {
 // ============================================
 
 describe('customizeXml', () => {
-  const svc = new TestService();
-
   const baseOptions = {
     niifGroup: 'r414' as const,
     companyId: '12345',

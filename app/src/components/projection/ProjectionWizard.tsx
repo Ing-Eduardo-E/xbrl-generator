@@ -2,8 +2,6 @@
 
 
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { CheckCircle2, ArrowLeft } from 'lucide-react';
 import { ProjectionUploadStep } from './ProjectionUploadStep';
 import { ProjectionClassifyStep } from './ProjectionClassifyStep';

@@ -28,7 +28,7 @@ IFE (Informe Financiero Especial) is the quarterly taxonomy required by SSPD sin
 
 ## Technology Stack
 
-- **Framework**: Next.js 15.5.7 (App Router)
+- **Framework**: Next.js 15.5.9 (App Router)
 - **Frontend**: React 19.2.1 + TypeScript + Tailwind CSS 4 + shadcn/ui
 - **Backend**: tRPC for type-safe API
 - **Database**: SQLite with Drizzle ORM (dev), Turso for production
@@ -42,11 +42,15 @@ IFE (Informe Financiero Especial) is the quarterly taxonomy required by SSPD sin
 - **master**: Production branch (auto-deploys to Vercel)
 - Always work on `desarrollo`, merge to `master` when ready for production
 
-## Security (Last Update: 2025-06-04)
+## Security (Last Update: 2026-03-19)
 
 - ✅ **CVE-2025-55182 PATCHED** - Critical RCE vulnerability in React Server Components (CVSS 10.0)
   - Updated React 19.2.0 → 19.2.1
   - Updated Next.js 15.5.6 → 15.5.7
+- ✅ **CVE-2025-55184 PATCHED** - DoS via infinite loop in App Router (High Severity)
+- ✅ **CVE-2025-55183 PATCHED** - Source code exposure via Server Functions (Medium Severity)
+- ✅ **CVE-2025-67779 PATCHED** - Complete DoS fix (supersedes CVE-2025-55184)
+  - Updated Next.js 15.5.7 → 15.5.9
 
 ## Commands
 

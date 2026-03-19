@@ -56,7 +56,7 @@ function recalculateParentAccounts(accounts: ParsedAccount[]): void {
 function injectIncomeStatementResult(
   projected: ParsedAccount[],
   originalAccounts: ParsedAccount[],
-  percentage: number
+  _percentage: number
 ): { adjustedCode: string | null; adjustmentAmount: number } {
   const leafs = projected.filter(a => a.isLeaf);
 

@@ -12,9 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
 import { trpc } from "@/lib/trpc";
-import { cn, formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from '@/lib/safe-toast';
 
@@ -97,7 +96,7 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
         config: { percentages, year },
       });
       setPreviewData(res.projections);
-    } catch (e) {
+    } catch {
       toast.error("Error al obtener la vista previa de la proyección");
     } finally {
       setPreviewLoading(false);
@@ -114,7 +113,7 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
       });
       toast.success("¡Archivos generados exitosamente!");
       onGenerate(res.files);
-    } catch (e) {
+    } catch {
       toast.error("Error al generar los archivos Excel");
     } finally {
       setGenerateLoading(false);
@@ -285,7 +284,7 @@ export function ProjectionConfigStep({ accounts, onBack, onGenerate }: Projectio
                   </tr>
                 </thead>
                 <tbody>
-                  {previewData.map((proj, idx) => (
+                  {previewData.map((proj) => (
                     <tr key={proj.quarter} className="border-b dark:border-slate-700 last:border-b-0">
                       <td className="px-2 py-1 whitespace-nowrap">{proj.label}</td>
                       <td className="px-2 py-1 whitespace-nowrap">{proj.percentage}%</td>

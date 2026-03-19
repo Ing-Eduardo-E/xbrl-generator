@@ -131,7 +131,7 @@ const COLUMN_PATTERNS = {
 // AGENTE 1: ANALIZADOR
 // ============================================
 
-export function analyzeExcel(base64Data: string, fileName: string): AnalysisResult {
+export function analyzeExcel(base64Data: string, _fileName: string): AnalysisResult {
   const buffer = Buffer.from(base64Data, 'base64');
   const workbook = XLSX.read(buffer, { type: 'buffer' });
 
@@ -366,7 +366,7 @@ import {
 
 export function mapToTemplate(
   accounts: AnalyzedAccount[],
-  targetTaxonomy: string
+  _targetTaxonomy: string
 ): MappingResult {
   const entries: MappingEntry[] = [];
   const mappedCodes = new Set<string>();
@@ -442,9 +442,6 @@ export function mapToTemplate(
       });
     }
   }
-
-  const mapped = entries.filter(e => e.status === 'mapped').length;
-  const unmapped = entries.filter(e => e.status === 'unmapped').length;
 
   return {
     entries,
@@ -652,7 +649,6 @@ export function generateConvertedTemplate(
 
   // Recorrer las filas de la plantilla y rellenar valores
   const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:C1');
-  let filledCount = 0;
 
   for (let row = range.s.r + 1; row <= range.e.r; row++) {
     const codeCell = ws[XLSX.utils.encode_cell({ r: row, c: 0 })];
@@ -664,7 +660,6 @@ export function generateConvertedTemplate(
     if (value !== undefined) {
       const totalCellRef = XLSX.utils.encode_cell({ r: row, c: 2 });
       ws[totalCellRef] = { t: 'n', v: Math.round(value) };
-      filledCount++;
     }
   }
 

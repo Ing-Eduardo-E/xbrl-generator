@@ -19,8 +19,7 @@
  */
 import * as XLSX from 'xlsx';
 import { ESF_CONCEPTS, getTaxonomyConfig, findESFConceptByPUC } from '../taxonomyConfig';
-import type { NiifGroup } from '../taxonomyConfig';
-import type { AccountData, ServiceBalanceData, TemplateCustomization, TemplateWithDataOptions } from './interfaces';
+import type { ServiceBalanceData, TemplateWithDataOptions } from './interfaces';
 import {
   R414_SERVICE_COLUMNS,
   R414_ESF_MAPPINGS as _R414_ESF_MAPPINGS,
@@ -300,8 +299,7 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
   if (options.consolidatedAccounts && options.consolidatedAccounts.length > 0) {
     const serviceBalances = options.serviceBalances || [];
     const activeServices = options.activeServices || ['acueducto', 'alcantarillado', 'aseo'];
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _config = getTaxonomyConfig(options.niifGroup);
+    getTaxonomyConfig(options.niifGroup);
 
     // Función para establecer valor numérico en celda
     // PRUEBA: Escribir como TEXTO (t:'s') igual que los campos del 110000

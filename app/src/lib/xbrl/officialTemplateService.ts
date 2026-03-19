@@ -4,14 +4,12 @@
  */
 export * from './official';
 
-import path from 'path';
 import JSZip from 'jszip';
 import type { NiifGroup } from './taxonomyConfig';
-import { getTaxonomyConfig } from './taxonomyConfig';
 import { loadTemplate, loadBinaryTemplate } from './official/fileLoaders';
 import { customizeExcelWithData } from './official/excelDataFiller';
 import { rewriteFinancialDataWithExcelJS } from './official/excelRewriter';
-import { customizeXbrlt, customizeXml, generateReadme } from './official/templateCustomizers';
+import { customizeXbrlt, customizeXml } from './official/templateCustomizers';
 import { TEMPLATE_PATHS } from './official/templatePaths';
 import type { TemplateWithDataOptions, TemplateCustomization, OfficialTemplatePackage } from './official/interfaces';
 

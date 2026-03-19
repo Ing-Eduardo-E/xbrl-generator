@@ -2,7 +2,7 @@
 
 
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Circle, Calculator } from 'lucide-react';
+import { CheckCircle2, Calculator } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import Link from 'next/link';
 

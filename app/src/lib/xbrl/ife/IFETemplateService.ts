@@ -436,9 +436,6 @@ export class IFETemplateService extends BaseTemplateService {
     // Filas de datos (15, 16, 18, 19) - excluyendo autosum rows
     const dataRows = [15, 16, 18, 19];
     
-    // Filas de autosuma
-    const autosumaRows = [17, 20];
-
     // Limpiar todas las celdas de datos (D-H para filas de datos)
     for (const row of dataRows) {
       for (const col of rangeColumns) {

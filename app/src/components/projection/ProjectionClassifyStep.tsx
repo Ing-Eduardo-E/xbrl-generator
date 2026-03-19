@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { cn, formatCurrency, getAccountClass } from '@/lib/utils';
+import { formatCurrency, getAccountClass } from '@/lib/utils';
 
 interface ParsedAccount {
   code: string;

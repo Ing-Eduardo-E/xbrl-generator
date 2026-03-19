@@ -184,7 +184,6 @@ export abstract class BaseTemplateService implements TaxonomyProcessor {
     // En desarrollo, las plantillas están en public/templates
     // En producción (Vercel), están en .next/server/app/templates
     const devPath = path.join(process.cwd(), 'public', 'templates');
-    const prodPath = path.join(process.cwd(), '.next', 'server', 'app', 'templates');
 
     // Intentar primero el path de desarrollo
     return devPath;

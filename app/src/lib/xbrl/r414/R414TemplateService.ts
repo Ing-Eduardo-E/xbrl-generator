@@ -29,7 +29,7 @@ import {
   R414_SERVICE_COLUMNS,
   R414_ESF_MAPPINGS,
 } from './mappings/esfMappings';
-import { R414_ER_COLUMNS, R414_ER_MAPPINGS } from './mappings/erMappings';
+import { R414_ER_MAPPINGS } from './mappings/erMappings';
 import {
   R414_PPE_MAPPINGS,
   R414_INTANGIBLES_MAPPINGS,
@@ -953,7 +953,7 @@ export class R414TemplateService extends BaseTemplateService {
         const totalVencidos = hasta30 + hasta60 + hasta90 + hasta180 + hasta360 + mayor360;
 
         // Total H = noVencido + totalVencidos
-        let totalH = noVencido + totalVencidos;
+        const totalH = noVencido + totalVencidos;
 
         // Ajustar diferencia de redondeo en la columna hasta60 (mayor porcentaje)
         const diferencia = valorTotal - totalH;
