@@ -117,11 +117,11 @@ export class IFETemplateService extends BaseTemplateService {
    * Columnas I-P son servicios individuales, columna Q es el total.
    * 
    * IMPORTANTE: 
-   * - El template tiene valores de EJEMPLO hardcodeados que debemos limpiar
-   * - Columnas I-P: servicios individuales - limpiar todas las filas de datos
-   * - Columna Q: tiene VALORES en filas de datos y FÓRMULAS en subtotales
-   * - Debemos limpiar Q en filas de datos, pero NO tocar las filas con fórmulas
-   * - Filas con FÓRMULAS (NO TOCAR): 51, 52, 64, 74, 75, 84, 85
+   * - El template está VACÍO en columnas I-Q (no tiene fórmulas ni valores)
+   * - Se deben escribir TODOS los valores de datos Y las fórmulas de subtotales
+   * - Columnas I-P: servicios individuales (valores calculados desde PUC)
+   * - Columna Q: total = SUM(I:P) para cada fila
+   * - Las filas de autosuma necesitan fórmulas explícitas (el template no las tiene)
    */
   fillESFSheet(
     worksheet: ExcelJS.Worksheet,
@@ -134,55 +134,38 @@ export class IFETemplateService extends BaseTemplateService {
     );
     const columns = this.getServiceColumns();
     
-    // Todas las columnas de servicios (I-P) + columna total (Q)
+    // Todas las columnas de servicios (I-P)
     const allServiceColumns = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
     
-    // Filas de DATOS que debemos limpiar (incluye columnas I-P y Q)
-    // NOTA: El template tiene valores hardcodeados del ejemplo original
-    // Las filas 51, 52, 64, 74, 75, 84, 85 tienen FÓRMULAS - NO limpiar Q en esas
-    const dataRows = [
-      // Activos corrientes (filas 15-31)
-      15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-      // Subtotal activos corrientes: fila 32 tiene valor, no fórmula - limpiar
-      32,
-      // Activos no corrientes (filas 34-50)
-      34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
-      // Fila 51 tiene FÓRMULA - no incluir
-      // Fila 52 tiene FÓRMULA - no incluir
-      // Pasivos corrientes (filas 56-63)
-      56, 57, 58, 59, 60, 61, 62, 63,
-      // Fila 64 tiene FÓRMULA - no incluir
-      // Pasivos no corrientes (filas 66-73)
-      66, 67, 68, 69, 70, 71, 72, 73,
-      // Fila 74 tiene FÓRMULA - no incluir
-      // Fila 75 tiene FÓRMULA - no incluir
-      // Patrimonio (filas 77-83)
-      77, 78, 79, 80, 81, 82, 83,
-      // Fila 84 tiene FÓRMULA - no incluir
-      // Fila 85 tiene FÓRMULA - no incluir
+    // TODAS las filas del formulario (datos + subtotales) que debemos limpiar
+    const allRows = [
+      // Activos corrientes
+      15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+      // Activos no corrientes
+      34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52,
+      // Pasivos corrientes
+      56, 57, 58, 59, 60, 61, 62, 63, 64,
+      // Pasivos no corrientes
+      66, 67, 68, 69, 70, 71, 72, 73, 74, 75,
+      // Patrimonio
+      77, 78, 79, 80, 81, 82, 83, 84, 85,
     ];
     
-    // Limpiar TODAS las columnas de servicios (I-P) en filas de datos
-    for (const row of dataRows) {
+    // Limpiar TODAS las columnas de servicios (I-P) y total (Q) en TODAS las filas
+    for (const row of allRows) {
       for (const col of allServiceColumns) {
         this.writeCell(worksheet, `${col}${row}`, 0);
       }
-    }
-    
-    // Limpiar TAMBIÉN columna Q en filas de datos (valores hardcodeados del ejemplo)
-    // Las fórmulas de Excel en filas 51, 52, 64, 74, 75, 84, 85 se preservan
-    for (const row of dataRows) {
       this.writeCell(worksheet, `Q${row}`, 0);
     }
 
-    // Ahora llenar solo las filas mapeadas con valores reales
+    // Llenar filas mapeadas con valores reales desde PUC
     for (const mapping of IFE_ESF_MAPPINGS) {
       let rowTotal = 0;
       
-      // Escribir valores por servicio activo
       for (const service of activeServices) {
         const serviceColumn = columns[service as keyof ServiceColumnMapping];
-        if (!serviceColumn || serviceColumn === 'Q') continue; // Saltar columna total
+        if (!serviceColumn || serviceColumn === 'Q') continue;
 
         const serviceValue = this.sumServiceAccountsByPrefix(
           serviceBalances,
@@ -192,21 +175,83 @@ export class IFETemplateService extends BaseTemplateService {
           mapping.useAbsoluteValue
         );
 
-        // Escribir el valor (ya limpiamos antes, así que esto sobrescribe el 0)
         this.writeCell(
           worksheet,
           `${serviceColumn}${mapping.row}`,
           serviceValue
         );
         
-        // Acumular para el total
         rowTotal += serviceValue;
       }
       
-      // ESCRIBIR el total en columna Q
-      // El template tiene valores hardcodeados del ejemplo, no fórmulas de suma
-      // Debemos escribir el total calculado para que los subtotales funcionen
+      // Escribir total en columna Q para filas de datos
       this.writeCell(worksheet, `Q${mapping.row}`, rowTotal);
+    }
+
+    // ================================================================
+    // ESCRIBIR FÓRMULAS DE AUTOSUMA para todas las columnas (I-P y Q)
+    // El template NO tiene fórmulas - debemos escribirlas explícitamente
+    // ================================================================
+    const formulaColumns = [...allServiceColumns, 'Q'];
+    
+    for (const C of formulaColumns) {
+      // --- Subtotales CxC corrientes ---
+      // Fila 23: Total CxC servicios públicos corrientes = 19+20+21+22
+      worksheet.getCell(`${C}23`).value = { formula: `${C}19+${C}20+${C}21+${C}22` };
+      // Fila 26: Total CxC y otras CxC corrientes = 23+24+25
+      worksheet.getCell(`${C}26`).value = { formula: `${C}23+${C}24+${C}25` };
+      
+      // --- Activos corrientes totales ---
+      // Fila 32 = 15+16+26+27+28+29+30+31
+      worksheet.getCell(`${C}32`).value = { formula: `${C}15+${C}16+${C}26+${C}27+${C}28+${C}29+${C}30+${C}31` };
+      
+      // --- Subtotales CxC no corrientes ---
+      // Fila 44: Total CxC servicios públicos no corrientes = 40+41+42+43
+      worksheet.getCell(`${C}44`).value = { formula: `${C}40+${C}41+${C}42+${C}43` };
+      // Fila 47: Total CxC y otras CxC no corrientes = 44+45+46
+      worksheet.getCell(`${C}47`).value = { formula: `${C}44+${C}45+${C}46` };
+      
+      // --- Activos no corrientes totales ---
+      // Fila 51 = 34+35+36+37+47+48+49+50
+      worksheet.getCell(`${C}51`).value = { formula: `${C}34+${C}35+${C}36+${C}37+${C}47+${C}48+${C}49+${C}50` };
+      
+      // --- TOTAL DE ACTIVOS ---
+      // Fila 52 = 32+51
+      worksheet.getCell(`${C}52`).value = { formula: `${C}32+${C}51` };
+      
+      // --- Pasivos corrientes totales ---
+      // Fila 64 = 56+57+60+61+62+63 (58/59 son sub-detalle de 57, no se suman)
+      worksheet.getCell(`${C}64`).value = { formula: `${C}56+${C}57+${C}60+${C}61+${C}62+${C}63` };
+      
+      // --- Total pasivos no corrientes ---
+      // Fila 74 = 66+67+70+71+72+73 (68/69 son sub-detalle de 67)
+      worksheet.getCell(`${C}74`).value = { formula: `${C}66+${C}67+${C}70+${C}71+${C}72+${C}73` };
+      
+      // --- TOTAL PASIVOS ---
+      // Fila 75 = 64+74
+      worksheet.getCell(`${C}75`).value = { formula: `${C}64+${C}74` };
+      
+      // --- Patrimonio total ---
+      // Fila 84 = SUM(77:83)
+      worksheet.getCell(`${C}84`).value = { formula: `SUM(${C}77:${C}83)` };
+      
+      // --- TOTAL DE PATRIMONIO Y PASIVOS ---
+      // Fila 85 = 75+84
+      worksheet.getCell(`${C}85`).value = { formula: `${C}75+${C}84` };
+      
+      // --- Filas resumen (referencian sus totales) ---
+      worksheet.getCell(`${C}13`).value = { formula: `${C}52` };   // Activos = Total activos
+      worksheet.getCell(`${C}14`).value = { formula: `${C}32` };   // Activos corrientes = Total corrientes
+      worksheet.getCell(`${C}17`).value = { formula: `${C}26` };   // CxC corrientes resumen
+      worksheet.getCell(`${C}18`).value = { formula: `${C}23` };   // CxC servicios resumen
+      worksheet.getCell(`${C}33`).value = { formula: `${C}51` };   // Activos no corrientes resumen
+      worksheet.getCell(`${C}38`).value = { formula: `${C}47` };   // CxC no corrientes resumen
+      worksheet.getCell(`${C}39`).value = { formula: `${C}44` };   // CxC servicios no corrientes resumen
+      worksheet.getCell(`${C}53`).value = { formula: `${C}85` };   // Patrimonio y pasivos resumen
+      worksheet.getCell(`${C}54`).value = { formula: `${C}75` };   // Pasivos resumen
+      worksheet.getCell(`${C}55`).value = { formula: `${C}64` };   // Pasivos corrientes resumen
+      worksheet.getCell(`${C}65`).value = { formula: `${C}74` };   // Pasivos no corrientes resumen
+      worksheet.getCell(`${C}76`).value = { formula: `${C}84` };   // Patrimonio resumen
     }
   }
 

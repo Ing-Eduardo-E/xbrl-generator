@@ -1397,6 +1397,53 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
           }
         }
       }
+
+      // ================================================================
+      // ESCRIBIR FÓRMULAS DE AUTOSUMA para Hoja3 IFE (ESF)
+      // El template NO tiene fórmulas - escribirlas con SheetJS
+      // Columnas: I-P (servicios) y Q (total)
+      // ================================================================
+      const esfFormulaCols = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'];
+      for (const C of esfFormulaCols) {
+        const setFormula = (cell: string, formula: string) => {
+          sheet3IFE[cell] = { t: 'n', v: 0, f: formula };
+        };
+        // Subtotales CxC corrientes
+        setFormula(`${C}23`, `${C}19+${C}20+${C}21+${C}22`);
+        setFormula(`${C}26`, `${C}23+${C}24+${C}25`);
+        // Activos corrientes totales
+        setFormula(`${C}32`, `${C}15+${C}16+${C}26+${C}27+${C}28+${C}29+${C}30+${C}31`);
+        // Subtotales CxC no corrientes
+        setFormula(`${C}44`, `${C}40+${C}41+${C}42+${C}43`);
+        setFormula(`${C}47`, `${C}44+${C}45+${C}46`);
+        // Activos no corrientes totales
+        setFormula(`${C}51`, `${C}34+${C}35+${C}36+${C}37+${C}47+${C}48+${C}49+${C}50`);
+        // TOTAL DE ACTIVOS
+        setFormula(`${C}52`, `${C}32+${C}51`);
+        // Pasivos corrientes totales
+        setFormula(`${C}64`, `${C}56+${C}57+${C}60+${C}61+${C}62+${C}63`);
+        // Total pasivos no corrientes
+        setFormula(`${C}74`, `${C}66+${C}67+${C}70+${C}71+${C}72+${C}73`);
+        // TOTAL PASIVOS
+        setFormula(`${C}75`, `${C}64+${C}74`);
+        // Patrimonio total
+        setFormula(`${C}84`, `SUM(${C}77:${C}83)`);
+        // TOTAL DE PATRIMONIO Y PASIVOS
+        setFormula(`${C}85`, `${C}75+${C}84`);
+        // Filas resumen
+        setFormula(`${C}13`, `${C}52`);
+        setFormula(`${C}14`, `${C}32`);
+        setFormula(`${C}17`, `${C}26`);
+        setFormula(`${C}18`, `${C}23`);
+        setFormula(`${C}33`, `${C}51`);
+        setFormula(`${C}38`, `${C}47`);
+        setFormula(`${C}39`, `${C}44`);
+        setFormula(`${C}53`, `${C}85`);
+        setFormula(`${C}54`, `${C}75`);
+        setFormula(`${C}55`, `${C}64`);
+        setFormula(`${C}65`, `${C}74`);
+        setFormula(`${C}76`, `${C}84`);
+      }
     }
 
     // ===============================================

@@ -1824,6 +1824,51 @@ export async function rewriteFinancialDataWithExcelJS(
         }
       }
 
+      // ================================================================
+      // ESCRIBIR FÓRMULAS DE AUTOSUMA para Hoja3 (ESF)
+      // El template NO tiene fórmulas - debemos escribirlas explícitamente
+      // para que los subtotales y totales se calculen correctamente.
+      // Columnas: I-P (servicios) y Q (total)
+      // ================================================================
+      const esfFormulaCols = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'];
+      for (const C of esfFormulaCols) {
+        // Subtotales CxC corrientes
+        ifeSheet3.getCell(`${C}23`).value = { formula: `${C}19+${C}20+${C}21+${C}22` };
+        ifeSheet3.getCell(`${C}26`).value = { formula: `${C}23+${C}24+${C}25` };
+        // Activos corrientes totales
+        ifeSheet3.getCell(`${C}32`).value = { formula: `${C}15+${C}16+${C}26+${C}27+${C}28+${C}29+${C}30+${C}31` };
+        // Subtotales CxC no corrientes
+        ifeSheet3.getCell(`${C}44`).value = { formula: `${C}40+${C}41+${C}42+${C}43` };
+        ifeSheet3.getCell(`${C}47`).value = { formula: `${C}44+${C}45+${C}46` };
+        // Activos no corrientes totales
+        ifeSheet3.getCell(`${C}51`).value = { formula: `${C}34+${C}35+${C}36+${C}37+${C}47+${C}48+${C}49+${C}50` };
+        // TOTAL DE ACTIVOS
+        ifeSheet3.getCell(`${C}52`).value = { formula: `${C}32+${C}51` };
+        // Pasivos corrientes totales (58/59 son sub-detalle de 57)
+        ifeSheet3.getCell(`${C}64`).value = { formula: `${C}56+${C}57+${C}60+${C}61+${C}62+${C}63` };
+        // Total pasivos no corrientes (68/69 son sub-detalle de 67)
+        ifeSheet3.getCell(`${C}74`).value = { formula: `${C}66+${C}67+${C}70+${C}71+${C}72+${C}73` };
+        // TOTAL PASIVOS
+        ifeSheet3.getCell(`${C}75`).value = { formula: `${C}64+${C}74` };
+        // Patrimonio total
+        ifeSheet3.getCell(`${C}84`).value = { formula: `SUM(${C}77:${C}83)` };
+        // TOTAL DE PATRIMONIO Y PASIVOS
+        ifeSheet3.getCell(`${C}85`).value = { formula: `${C}75+${C}84` };
+        // Filas resumen (referencian sus totales)
+        ifeSheet3.getCell(`${C}13`).value = { formula: `${C}52` };
+        ifeSheet3.getCell(`${C}14`).value = { formula: `${C}32` };
+        ifeSheet3.getCell(`${C}17`).value = { formula: `${C}26` };
+        ifeSheet3.getCell(`${C}18`).value = { formula: `${C}23` };
+        ifeSheet3.getCell(`${C}33`).value = { formula: `${C}51` };
+        ifeSheet3.getCell(`${C}38`).value = { formula: `${C}47` };
+        ifeSheet3.getCell(`${C}39`).value = { formula: `${C}44` };
+        ifeSheet3.getCell(`${C}53`).value = { formula: `${C}85` };
+        ifeSheet3.getCell(`${C}54`).value = { formula: `${C}75` };
+        ifeSheet3.getCell(`${C}55`).value = { formula: `${C}64` };
+        ifeSheet3.getCell(`${C}65`).value = { formula: `${C}74` };
+        ifeSheet3.getCell(`${C}76`).value = { formula: `${C}84` };
+      }
+
       console.log('[ExcelJS-IFE] Hoja3 (ESF) completada.');
     }
 
