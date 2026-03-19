@@ -54,24 +54,30 @@ function recalculateParentAccounts(accounts: ParsedAccount[]): void {
 // PUC CGN (Res 414): cuenta 3230 = Resultado del ejercicio
 // PUC privado: cuenta 37 = Resultado del ejercicio
 // Regla: Resultado = Ingresos(4) - Gastos(5) - Costos(6)
+//
+// Caso "balance cerrado" (4-5-6 suman 0): el resultado del ejercicio ya está
+// embebido en 3230. No se inyecta nada; 3230 escala como dinámica (* X%).
+// Caso "balance abierto" (4-5-6 tienen valores): 3230 = ER proyectado al X%.
 function injectIncomeStatementResult(
   projected: ParsedAccount[],
-  _originalAccounts: ParsedAccount[],
+  originalAccounts: ParsedAccount[],
   _percentage: number
 ): { adjustedCode: string | null; adjustmentAmount: number } {
-  const leafs = projected.filter(a => a.isLeaf);
+  // Verificar si el ER anual original tiene valores (balance abierto vs cerrado)
+  const origLeafs = originalAccounts.filter(a => a.isLeaf);
+  const ingresosOrig = origLeafs.filter(a => a.code.startsWith('4')).reduce((s, a) => s + a.value, 0);
+  const gastosOrig = origLeafs.filter(a => a.code.startsWith('5')).reduce((s, a) => s + a.value, 0);
+  const costosOrig = origLeafs.filter(a => a.code.startsWith('6')).reduce((s, a) => s + a.value, 0);
+  const resultadoAnual = ingresosOrig - gastosOrig - costosOrig;
 
-  // Verificar si hay cuentas de ER (clases 4, 5, 6)
-  const hasERAccounts = leafs.some(a =>
-    a.code.startsWith('4') || a.code.startsWith('5') || a.code.startsWith('6')
-  );
-
-  // Sin cuentas ER, la cuenta 3230 ya se proyectó como dinámica (* X%)
-  if (!hasERAccounts) {
+  // Balance cerrado: ER anual = 0 → el resultado ya está en 3230/37
+  // Dejar que 3230 escale como dinámica (* X%) sin intervenir
+  if (resultadoAnual === 0) {
     return { adjustedCode: null, adjustmentAmount: 0 };
   }
 
-  // Calcular Resultado del Ejercicio del trimestre proyectado
+  // Balance abierto: calcular ER proyectado del trimestre
+  const leafs = projected.filter(a => a.isLeaf);
   const ingresos = leafs.filter(a => a.code.startsWith('4')).reduce((s, a) => s + a.value, 0);
   const gastos = leafs.filter(a => a.code.startsWith('5')).reduce((s, a) => s + a.value, 0);
   const costos = leafs.filter(a => a.code.startsWith('6')).reduce((s, a) => s + a.value, 0);
@@ -89,7 +95,7 @@ function injectIncomeStatementResult(
     return { adjustedCode: null, adjustmentAmount: 0 };
   }
 
-  // Establecer el valor de 3230/37 = resultado proyectado del ER
+  // Establecer 3230/37 = resultado proyectado del ER
   const oldValue = targetAccount.value;
   targetAccount.value = resultadoTrimestral;
   const adjustmentAmount = targetAccount.value - oldValue;
