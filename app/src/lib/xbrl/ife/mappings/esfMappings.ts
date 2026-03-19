@@ -253,7 +253,6 @@ export const IFE_ESF_PASIVOS_CORRIENTES: ESFMapping[] = [
     row: 56,
     pucPrefixes: ['25'],
     description: 'Provisiones corrientes',
-    useAbsoluteValue: true,
   },
 
   // Fila 57: Cuentas por pagar y otras cuentas por pagar corrientes
@@ -262,7 +261,6 @@ export const IFE_ESF_PASIVOS_CORRIENTES: ESFMapping[] = [
     row: 57,
     pucPrefixes: ['23'],
     description: 'Cuentas por pagar corrientes',
-    useAbsoluteValue: true,
   },
 
   // Fila 58: Cuentas por pagar para la adquisición de bienes corrientes
@@ -277,7 +275,6 @@ export const IFE_ESF_PASIVOS_CORRIENTES: ESFMapping[] = [
     row: 60,
     pucPrefixes: ['21', '22'],
     description: 'Obligaciones financieras corrientes',
-    useAbsoluteValue: true,
   },
 
   // Fila 61: Obligaciones laborales corrientes
@@ -286,7 +283,6 @@ export const IFE_ESF_PASIVOS_CORRIENTES: ESFMapping[] = [
     row: 61,
     pucPrefixes: ['24'],
     description: 'Obligaciones laborales corrientes',
-    useAbsoluteValue: true,
   },
 
   // Fila 62: Pasivo por impuestos corrientes
@@ -295,16 +291,14 @@ export const IFE_ESF_PASIVOS_CORRIENTES: ESFMapping[] = [
     row: 62,
     pucPrefixes: ['27'],
     description: 'Pasivo por impuestos corrientes',
-    useAbsoluteValue: true,
   },
 
   // Fila 63: Otros pasivos corrientes
-  // CGN 26 - Otros pasivos
+  // CGN 26 - Otros pasivos, 28 - Otros bonos/títulos, 29 - Otros pasivos/Recaudos
   {
     row: 63,
-    pucPrefixes: ['26'],
+    pucPrefixes: ['26', '28', '29'],
     description: 'Otros pasivos corrientes',
-    useAbsoluteValue: true,
   },
 
   // Fila 64: AUTOSUMA - Pasivos corrientes totales
@@ -352,7 +346,6 @@ export const IFE_ESF_PATRIMONIO: ESFMapping[] = [
     pucPrefixes: ['3105', '3205', '3208', '3210', '3215', '31'],
     excludePrefixes: ['3109', '3110', '3115', '3120', '3125', '3130', '3145'],
     description: 'Capital',
-    useAbsoluteValue: true,
   },
 
   // Fila 78: Inversión suplementaria al capital asignado
@@ -361,7 +354,6 @@ export const IFE_ESF_PATRIMONIO: ESFMapping[] = [
     row: 78,
     pucPrefixes: ['3109'],
     description: 'Inversión suplementaria al capital asignado',
-    useAbsoluteValue: true,
   },
 
   // Fila 79: Otras participaciones en el patrimonio
@@ -371,7 +363,6 @@ export const IFE_ESF_PATRIMONIO: ESFMapping[] = [
     row: 79,
     pucPrefixes: ['3125', '3110', '3270'],
     description: 'Otras participaciones en el patrimonio',
-    useAbsoluteValue: true,
   },
 
   // Fila 80: Superávit por revaluación
@@ -383,7 +374,6 @@ export const IFE_ESF_PATRIMONIO: ESFMapping[] = [
     row: 80,
     pucPrefixes: ['3115', '3120', '3240', '3245', '3255'],
     description: 'Superávit por revaluación',
-    useAbsoluteValue: true,
   },
 
   // Fila 81: Otras Reservas
@@ -393,7 +383,6 @@ export const IFE_ESF_PATRIMONIO: ESFMapping[] = [
     row: 81,
     pucPrefixes: ['3130', '3260'],
     description: 'Otras Reservas',
-    useAbsoluteValue: true,
   },
 
   // Fila 82: Ganancias acumuladas
@@ -417,7 +406,6 @@ export const IFE_ESF_PATRIMONIO: ESFMapping[] = [
     row: 83,
     pucPrefixes: ['3145'],
     description: 'Efectos por adopción NIF',
-    useAbsoluteValue: true,
   },
 
   // Fila 84: AUTOSUMA - Patrimonio total

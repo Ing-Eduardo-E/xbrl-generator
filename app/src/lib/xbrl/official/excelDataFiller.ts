@@ -1296,8 +1296,8 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
     const sheet3IFE = workbook.Sheets['Hoja3'];
     if (sheet3IFE) {
       // Mapeos ESF alineados con esfMappings.ts — PUC CGN Resolución 414
-      // abs: true → usar Math.abs (pasivos y patrimonio tienen saldo crédito negativo)
-      const IFE_ESF_MAPPINGS: Array<{row: number; label: string; pucPrefixes: string[]; excludePrefixes?: string[]; abs?: boolean}> = [
+      // Los valores se usan tal cual (sin abs) para preservar la ecuación A = P + Pt
+      const IFE_ESF_MAPPINGS: Array<{row: number; label: string; pucPrefixes: string[]; excludePrefixes?: string[]}> = [
         // === ACTIVOS CORRIENTES ===
         { row: 15, label: 'Efectivo y equivalentes', pucPrefixes: ['11'], excludePrefixes: ['1132'] },
         { row: 16, label: 'Efectivo de uso restringido', pucPrefixes: ['1132'] },
@@ -1316,22 +1316,22 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
         { row: 37, label: 'Inversiones no corrientes', pucPrefixes: ['1227', '1230', '1233'] },
         { row: 49, label: 'Otros activos financieros no corrientes', pucPrefixes: ['14'] },
         // === PASIVOS CORRIENTES ===
-        { row: 56, label: 'Provisiones corrientes', pucPrefixes: ['25'], abs: true },
-        { row: 57, label: 'CxP corrientes', pucPrefixes: ['23'], abs: true },
-        { row: 60, label: 'Obligaciones financieras corrientes', pucPrefixes: ['21', '22'], abs: true },
-        { row: 61, label: 'Obligaciones laborales corrientes', pucPrefixes: ['24'], abs: true },
-        { row: 62, label: 'Pasivo por impuestos corrientes', pucPrefixes: ['27'], abs: true },
-        { row: 63, label: 'Otros pasivos corrientes', pucPrefixes: ['26'], abs: true },
+        { row: 56, label: 'Provisiones corrientes', pucPrefixes: ['25'] },
+        { row: 57, label: 'CxP corrientes', pucPrefixes: ['23'] },
+        { row: 60, label: 'Obligaciones financieras corrientes', pucPrefixes: ['21', '22'] },
+        { row: 61, label: 'Obligaciones laborales corrientes', pucPrefixes: ['24'] },
+        { row: 62, label: 'Pasivo por impuestos corrientes', pucPrefixes: ['27'] },
+        { row: 63, label: 'Otros pasivos corrientes', pucPrefixes: ['26', '28', '29'] },
         // === PASIVOS NO CORRIENTES — sin mapear, el usuario completa manualmente ===
         // === PATRIMONIO ===
         // '31' como fallback para balances que reportan patrimonio a nivel de grupo
-        { row: 77, label: 'Capital', pucPrefixes: ['3105', '3205', '3208', '3210', '3215', '31'], excludePrefixes: ['3109', '3110', '3115', '3120', '3125', '3130', '3145'], abs: true },
-        { row: 78, label: 'Inversión suplementaria', pucPrefixes: ['3109'], abs: true },
-        { row: 79, label: 'Otras participaciones', pucPrefixes: ['3125', '3110', '3270'], abs: true },
-        { row: 80, label: 'Superávit por revaluación', pucPrefixes: ['3115', '3120', '3240', '3245', '3255'], abs: true },
-        { row: 81, label: 'Reservas', pucPrefixes: ['3130', '3260'], abs: true },
+        { row: 77, label: 'Capital', pucPrefixes: ['3105', '3205', '3208', '3210', '3215', '31'], excludePrefixes: ['3109', '3110', '3115', '3120', '3125', '3130', '3145'] },
+        { row: 78, label: 'Inversión suplementaria', pucPrefixes: ['3109'] },
+        { row: 79, label: 'Otras participaciones', pucPrefixes: ['3125', '3110', '3270'] },
+        { row: 80, label: 'Superávit por revaluación', pucPrefixes: ['3115', '3120', '3240', '3245', '3255'] },
+        { row: 81, label: 'Reservas', pucPrefixes: ['3130', '3260'] },
         { row: 82, label: 'Ganancias acumuladas', pucPrefixes: ['3225', '3230', '32'], excludePrefixes: ['3205', '3208', '3210', '3215', '3240', '3245', '3250', '3255', '3260', '3270'] },
-        { row: 83, label: 'Efectos adopción NIF', pucPrefixes: ['3145'], abs: true },
+        { row: 83, label: 'Efectos adopción NIF', pucPrefixes: ['3145'] },
       ];
 
       for (const mapping of IFE_ESF_MAPPINGS) {
@@ -1348,7 +1348,7 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
           for (const account of serviceAccounts) {
             if (!account.isLeaf) continue;
             if (matchesPrefixesIFE(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
-              serviceValue += mapping.abs ? Math.abs(account.value) : account.value;
+              serviceValue += account.value;
             }
           }
 

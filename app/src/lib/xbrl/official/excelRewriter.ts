@@ -1726,8 +1726,8 @@ export async function rewriteFinancialDataWithExcelJS(
       console.log('[ExcelJS-IFE] Reescribiendo Hoja3 (ESF)...');
 
       // Mapeo ESF alineado con esfMappings.ts — PUC CGN Resolución 414
-      // abs: true → usar Math.abs (pasivos y patrimonio tienen saldo crédito negativo)
-      const IFE_ESF_MAP: Array<{row: number; puc: string[]; ex?: string[]; label: string; abs?: boolean}> = [
+      // Los valores se usan tal cual (sin abs) para preservar la ecuación A = P + Pt
+      const IFE_ESF_MAP: Array<{row: number; puc: string[]; ex?: string[]; label: string}> = [
         // === ACTIVOS CORRIENTES (Filas 15-31) ===
         { row: 15, puc: ['11'], ex: ['1132'], label: 'Efectivo y equivalentes' },
         { row: 16, puc: ['1132'], label: 'Efectivo de uso restringido' },
@@ -1746,23 +1746,23 @@ export async function rewriteFinancialDataWithExcelJS(
         { row: 37, puc: ['1227', '1230', '1233'], label: 'Inversiones no corrientes' },
         { row: 49, puc: ['14'], label: 'Otros activos financieros no corrientes' },
         // === PASIVOS CORRIENTES (Filas 56-63) ===
-        { row: 56, puc: ['25'], label: 'Provisiones corrientes', abs: true },
-        { row: 57, puc: ['23'], label: 'CxP corrientes', abs: true },
-        { row: 60, puc: ['21', '22'], label: 'Obligaciones financieras corrientes', abs: true },
-        { row: 61, puc: ['24'], label: 'Obligaciones laborales corrientes', abs: true },
-        { row: 62, puc: ['27'], label: 'Pasivo por impuestos corrientes', abs: true },
-        { row: 63, puc: ['26'], label: 'Otros pasivos corrientes', abs: true },
+        { row: 56, puc: ['25'], label: 'Provisiones corrientes' },
+        { row: 57, puc: ['23'], label: 'CxP corrientes' },
+        { row: 60, puc: ['21', '22'], label: 'Obligaciones financieras corrientes' },
+        { row: 61, puc: ['24'], label: 'Obligaciones laborales corrientes' },
+        { row: 62, puc: ['27'], label: 'Pasivo por impuestos corrientes' },
+        { row: 63, puc: ['26', '28', '29'], label: 'Otros pasivos corrientes' },
         // === PASIVOS NO CORRIENTES (Filas 66-73) — sin mapear, el usuario completa manualmente ===
         // === PATRIMONIO (Filas 77-83) ===
         // '31' como fallback para balances que reportan patrimonio a nivel de grupo (código 31)
         // en vez de subcuentas detalladas (3105, 3109, etc.)
-        { row: 77, puc: ['3105', '3205', '3208', '3210', '3215', '31'], ex: ['3109', '3110', '3115', '3120', '3125', '3130', '3145'], label: 'Capital', abs: true },
-        { row: 78, puc: ['3109'], label: 'Inversión suplementaria', abs: true },
-        { row: 79, puc: ['3125', '3110', '3270'], label: 'Otras participaciones', abs: true },
-        { row: 80, puc: ['3115', '3120', '3240', '3245', '3255'], label: 'Superávit por revaluación', abs: true },
-        { row: 81, puc: ['3130', '3260'], label: 'Reservas', abs: true },
+        { row: 77, puc: ['3105', '3205', '3208', '3210', '3215', '31'], ex: ['3109', '3110', '3115', '3120', '3125', '3130', '3145'], label: 'Capital' },
+        { row: 78, puc: ['3109'], label: 'Inversión suplementaria' },
+        { row: 79, puc: ['3125', '3110', '3270'], label: 'Otras participaciones' },
+        { row: 80, puc: ['3115', '3120', '3240', '3245', '3255'], label: 'Superávit por revaluación' },
+        { row: 81, puc: ['3130', '3260'], label: 'Reservas' },
         { row: 82, puc: ['3225', '3230', '32'], ex: ['3205', '3208', '3210', '3215', '3240', '3245', '3250', '3255', '3260', '3270'], label: 'Ganancias acumuladas' },
-        { row: 83, puc: ['3145'], label: 'Efectos adopción NIF', abs: true },
+        { row: 83, puc: ['3145'], label: 'Efectos adopción NIF' },
       ];
 
       for (const m of IFE_ESF_MAP) {
@@ -1776,7 +1776,7 @@ export async function rewriteFinancialDataWithExcelJS(
           for (const acc of svcAccounts) {
             if (!acc.isLeaf) continue;
             if (matchesPrefixes(acc.code, m.puc, m.ex)) {
-              svcValue += m.abs ? Math.abs(acc.value) : acc.value;
+              svcValue += acc.value;
             }
           }
           if (svcValue !== 0) {
