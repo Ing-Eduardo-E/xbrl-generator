@@ -2240,11 +2240,11 @@ export async function rewriteFinancialDataWithExcelJS(
 
       // Mapeos de PUC alineados con Hoja4 (ER) para consistencia cross-form
       const H7_ING_ORD  = { puc: ['41', '42', '43'], ex: [] as string[] };  // Row 14: Ingresos ordinarios
-      const H7_OTROS_ING = { puc: ['44', '48'], ex: ['4802', '4803', '4808'] }; // Otros ingresos (excl financ)
+      const H7_OTROS_ING = { puc: ['44', '48'], ex: ['4802', '4803'] };      // Otros ingresos + Otras ganancias (4808)
       const H7_ING_FIN  = { puc: ['4802', '4803'], ex: [] as string[] };     // Ingresos financieros
       const H7_COSTO_VTA = { puc: ['62', '63'], ex: [] as string[] };        // Costo ventas
       const H7_GASTOS_AD = { puc: ['51', '52', '56'], ex: [] as string[] };  // Gastos admin
-      const H7_OTROS_GAS = { puc: ['53', '58'], ex: ['5802', '5803', '5808'] }; // Otros gastos
+      const H7_OTROS_GAS = { puc: ['53', '58'], ex: ['5802', '5803'] };      // Otros gastos + Otras pérdidas (5808)
       const H7_COSTOS_FI = { puc: ['5802', '5803'], ex: [] as string[] };    // Costos financieros
       const H7_IMPUESTOS = { puc: ['54'], ex: [] as string[] };              // Gasto por impuesto
 

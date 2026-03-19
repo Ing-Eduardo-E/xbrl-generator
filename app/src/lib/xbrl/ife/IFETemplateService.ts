@@ -614,9 +614,9 @@ export class IFETemplateService extends BaseTemplateService {
       worksheet.getCell(`${map.hoja7Col}14`).value = { formula: `Hoja4!${map.hoja4Col}14` };
     }
 
-    // Fila 15: Todos los demás ingresos = Hoja4 fila 18 (Otros ingresos) + fila 21 (Ingresos financieros)
+    // Fila 15: Todos los demás ingresos = Hoja4 fila 18 (Otros ingresos) + fila 21 (Ing financieros) + fila 23 (Otras ganancias)
     for (const map of serviceMapping) {
-      worksheet.getCell(`${map.hoja7Col}15`).value = { formula: `Hoja4!${map.hoja4Col}18+Hoja4!${map.hoja4Col}21` };
+      worksheet.getCell(`${map.hoja7Col}15`).value = { formula: `Hoja4!${map.hoja4Col}18+Hoja4!${map.hoja4Col}21+Hoja4!${map.hoja4Col}23` };
     }
 
     // Fila 16: Total ingresos (autosuma fila 14+15)
