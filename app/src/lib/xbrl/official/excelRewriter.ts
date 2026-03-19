@@ -2170,8 +2170,8 @@ export async function rewriteFinancialDataWithExcelJS(
 
       const CXP_ROWS = [
         { row: 15, puc: ['23'], label: 'CxP comerciales' },
-        { row: 16, puc: ['22', '26', '28', '29'], label: 'Otras CxP' },
-        { row: 18, puc: ['21'], label: 'Obligaciones financieras' },
+        { row: 16, puc: ['26', '28', '29'], label: 'Otras CxP' },
+        { row: 18, puc: ['21', '22'], label: 'Obligaciones financieras' },
         { row: 19, puc: ['24'], label: 'Obligaciones laborales' },
       ];
       const CXP_PCTS = [
