@@ -2017,30 +2017,48 @@ export async function rewriteFinancialDataWithExcelJS(
       for (const m of H7_MAP) {
         ifeSheet7.getCell(`${m.h7}14`).value = { formula: `Hoja4!${m.h4}14` };
       }
-      // Fila 15: Todos los demás ingresos = Hoja4!(fila17 + fila19) [Otros ingresos + Ingresos financieros]
+      // Fila 15: Todos los demás ingresos = Hoja4!(fila18 + fila21) [Otros ingresos + Ingresos financieros]
       for (const m of H7_MAP) {
-        ifeSheet7.getCell(`${m.h7}15`).value = { formula: `Hoja4!${m.h4}17+Hoja4!${m.h4}19` };
+        ifeSheet7.getCell(`${m.h7}15`).value = { formula: `Hoja4!${m.h4}18+Hoja4!${m.h4}21` };
       }
       // Fila 16: Total ingresos (autosuma 14+15)
       for (const c of svcCols) {
         ifeSheet7.getCell(`${c}16`).value = { formula: `${c}14+${c}15` };
       }
-      // Fila 18: Costos y gastos totales = Hoja4!(fila15+fila18+fila22+fila20) [Costo ventas + Gastos admin + Otros gastos + Costos financieros]
+      // Fila 18: Costos y gastos totales = Hoja4!(fila15+fila17+fila19+fila22) [Costo ventas + Gastos admin + Otros gastos + Costos financieros]
       for (const m of H7_MAP) {
-        ifeSheet7.getCell(`${m.h7}18`).value = { formula: `Hoja4!${m.h4}15+Hoja4!${m.h4}18+Hoja4!${m.h4}22+Hoja4!${m.h4}20` };
+        ifeSheet7.getCell(`${m.h7}18`).value = { formula: `Hoja4!${m.h4}15+Hoja4!${m.h4}17+Hoja4!${m.h4}19+Hoja4!${m.h4}22` };
       }
-      // Filas 19-24: Detalle de gastos (referencias a Hoja4)
-      const detailRows = [
-        { h7Row: 19, h4Row: 25 }, // Impuestos
-        { h7Row: 20, h4Row: 20 }, // Gastos financieros
-        { h7Row: 21, h4Row: 22 }, // Deterioro (parte de otros gastos)
-        { h7Row: 22, h4Row: 22 }, // Depreciación (parte de otros gastos)
-        { h7Row: 23, h4Row: 22 }, // Amortización (parte de otros gastos)
-        { h7Row: 24, h4Row: 22 }, // Provisiones (parte de otros gastos)
+      // Fila 19: Impuestos = Hoja4 fila 25 (Gasto por impuesto, PUC 54)
+      for (const m of H7_MAP) {
+        ifeSheet7.getCell(`${m.h7}19`).value = { formula: `Hoja4!${m.h4}25` };
+      }
+      // Fila 20: Gastos financieros = Hoja4 fila 22 (Costos financieros, PUC 5802/5803)
+      for (const m of H7_MAP) {
+        ifeSheet7.getCell(`${m.h7}20`).value = { formula: `Hoja4!${m.h4}22` };
+      }
+      // Filas 21-24: Detalle directo desde PUC por servicio
+      // Estos ítems NO tienen filas separadas en Hoja4 (ER); se computan desde cuentas PUC clase 53
+      // PUC CGN R414 clase 53: Deterioro, depreciaciones y amortizaciones
+      const H7_DETAIL = [
+        { row: 21, puc: ['5346'], excl: [] as string[], label: 'Deterioro' },
+        { row: 22, puc: ['5360', '5361'], excl: [] as string[], label: 'Depreciación' },
+        { row: 23, puc: ['5365', '5366'], excl: [] as string[], label: 'Amortización' },
+        { row: 24, puc: ['53'], excl: ['5346', '5360', '5361', '5365', '5366'], label: 'Provisiones' },
       ];
-      for (const d of detailRows) {
+      for (const detail of H7_DETAIL) {
         for (const m of H7_MAP) {
-          ifeSheet7.getCell(`${m.h7}${d.h7Row}`).value = { formula: `Hoja4!${m.h4}${d.h4Row}` };
+          const svcAccounts = accountsByService[m.svc] || [];
+          let val = 0;
+          for (const acc of svcAccounts) {
+            if (!acc.isLeaf) continue;
+            if (matchesPrefixes(acc.code, detail.puc, detail.excl)) {
+              val += Math.abs(acc.value);
+            }
+          }
+          if (val !== 0) {
+            ifeSheet7.getCell(`${m.h7}${detail.row}`).value = val;
+          }
         }
       }
       // Columna N: Total = SUM(F:M) para cada fila

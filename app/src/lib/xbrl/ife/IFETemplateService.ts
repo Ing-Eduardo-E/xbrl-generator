@@ -487,22 +487,27 @@ export class IFETemplateService extends BaseTemplateService {
   /**
    * Llena la Hoja7 (FC08t - 900050t - Información de ingresos y gastos de la entidad).
    * 
-   * Los datos se toman de la Hoja4 (Estado de Resultados) con las siguientes fórmulas:
+   * Datos tomados de Hoja4 (ER) donde hay filas correspondientes,
+   * y computados directamente desde PUC para subcategorías de gastos.
    * 
    * Hoja4 estructura:
    *   - Fila 14: Ingresos de actividades ordinarias
    *   - Fila 15: Costo de ventas
    *   - Fila 17: Gastos de administración, operación y ventas
    *   - Fila 18: Otros ingresos
-   *   - Fila 19: Otros gastos
+   *   - Fila 19: Otros gastos (PUC 53, 58)
    *   - Fila 21: Ingresos financieros
    *   - Fila 22: Costos financieros
+   *   - Fila 25: Gasto por impuesto (PUC 54)
    * 
    * Mapeo Hoja7 ← Hoja4:
-   *   - Fila 14 (Ingresos actividades ordinarias) = Hoja4!fila14
-   *   - Fila 15 (Todos los demás ingresos) = Hoja4!(fila18 + fila21)
-   *   - Fila 16: Total ingresos (autosuma 14+15)
-   *   - Fila 18 (Costos y gastos totales) = Hoja4!(fila15 + fila17 + fila19 + fila22)
+   *   - Fila 14 = Hoja4!fila14 (Ingresos ordinarios)
+   *   - Fila 15 = Hoja4!(fila18 + fila21) (Otros ingresos + Financieros)
+   *   - Fila 16 = autosuma 14+15
+   *   - Fila 18 = Hoja4!(fila15 + fila17 + fila19 + fila22) (Costos totales)
+   *   - Fila 19 = Hoja4!fila25 (Impuestos, PUC 54)
+   *   - Fila 20 = Hoja4!fila22 (Gastos financieros)
+   *   - Filas 21-24: Directo desde PUC clase 53 por servicio
    * 
    * Columna N: Total = SUM(F:M) para cada fila
    */
@@ -558,35 +563,41 @@ export class IFETemplateService extends BaseTemplateService {
       };
     }
 
-    // Filas 19-24: Referencias a filas específicas de Hoja4
-    // Fila 19: Impuestos, tasas y contribuciones = Hoja4 fila 23
+    // Filas 19-24: Detalle de gastos
+    // Fila 19: Impuestos, tasas y contribuciones = Hoja4 fila 25 (PUC 54)
     for (const map of serviceMapping) {
-      worksheet.getCell(`${map.hoja7Col}19`).value = { formula: `Hoja4!${map.hoja4Col}23` };
+      worksheet.getCell(`${map.hoja7Col}19`).value = { formula: `Hoja4!${map.hoja4Col}25` };
     }
 
-    // Fila 20: Gastos financieros = Hoja4 fila 24
+    // Fila 20: Gastos financieros = Hoja4 fila 22 (Costos financieros, PUC 5802/5803)
     for (const map of serviceMapping) {
-      worksheet.getCell(`${map.hoja7Col}20`).value = { formula: `Hoja4!${map.hoja4Col}24` };
+      worksheet.getCell(`${map.hoja7Col}20`).value = { formula: `Hoja4!${map.hoja4Col}22` };
     }
 
-    // Fila 21: Gasto por deterioro = Hoja4 fila 25
-    for (const map of serviceMapping) {
-      worksheet.getCell(`${map.hoja7Col}21`).value = { formula: `Hoja4!${map.hoja4Col}25` };
-    }
-
-    // Fila 22: Gasto por depreciación = Hoja4 fila 26
-    for (const map of serviceMapping) {
-      worksheet.getCell(`${map.hoja7Col}22`).value = { formula: `Hoja4!${map.hoja4Col}26` };
-    }
-
-    // Fila 23: Gasto por amortización = Hoja4 fila 27
-    for (const map of serviceMapping) {
-      worksheet.getCell(`${map.hoja7Col}23`).value = { formula: `Hoja4!${map.hoja4Col}27` };
-    }
-
-    // Fila 24: Gasto por provisiones = Hoja4 fila 28
-    for (const map of serviceMapping) {
-      worksheet.getCell(`${map.hoja7Col}24`).value = { formula: `Hoja4!${map.hoja4Col}28` };
+    // Filas 21-24: Detalle directo desde PUC por servicio
+    // Estos ítems NO tienen filas separadas en Hoja4 (ER); se computan desde cuentas PUC clase 53
+    // PUC CGN R414 clase 53: Deterioro, depreciaciones y amortizaciones
+    const detailMappings = [
+      { row: 21, puc: ['5346'], excl: [] as string[] },         // Deterioro
+      { row: 22, puc: ['5360', '5361'], excl: [] as string[] }, // Depreciación
+      { row: 23, puc: ['5365', '5366'], excl: [] as string[] }, // Amortización
+      { row: 24, puc: ['53'], excl: ['5346', '5360', '5361', '5365', '5366'] }, // Provisiones
+    ];
+    const activeServices = Object.keys(distribution).filter(s => distribution[s] > 0);
+    for (const detail of detailMappings) {
+      for (const map of serviceMapping) {
+        if (!activeServices.includes(map.service)) continue;
+        const value = this.sumServiceAccountsByPrefix(
+          serviceBalances,
+          map.service,
+          detail.puc,
+          detail.excl,
+          true // useAbsoluteValue para gastos
+        );
+        if (value !== 0) {
+          this.writeCell(worksheet, `${map.hoja7Col}${detail.row}`, value);
+        }
+      }
     }
 
     // Columna N: Total = SUM(F:M) para cada fila
