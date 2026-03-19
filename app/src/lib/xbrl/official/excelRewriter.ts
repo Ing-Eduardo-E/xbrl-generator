@@ -1754,7 +1754,9 @@ export async function rewriteFinancialDataWithExcelJS(
         { row: 63, puc: ['26'], label: 'Otros pasivos corrientes', abs: true },
         // === PASIVOS NO CORRIENTES (Filas 66-73) — sin mapear, el usuario completa manualmente ===
         // === PATRIMONIO (Filas 77-83) ===
-        { row: 77, puc: ['3105'], label: 'Capital', abs: true },
+        // '31' como fallback para balances que reportan patrimonio a nivel de grupo (código 31)
+        // en vez de subcuentas detalladas (3105, 3109, etc.)
+        { row: 77, puc: ['3105', '31'], ex: ['3109', '3110', '3115', '3120', '3125', '3130', '3145'], label: 'Capital', abs: true },
         { row: 78, puc: ['3109'], label: 'Inversión suplementaria', abs: true },
         { row: 79, puc: ['3125', '3110'], label: 'Otras participaciones', abs: true },
         { row: 80, puc: ['3115', '3120'], label: 'Superávit por revaluación', abs: true },

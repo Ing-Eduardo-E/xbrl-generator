@@ -342,9 +342,11 @@ export const IFE_ESF_PASIVOS_NO_CORRIENTES: ESFMapping[] = [
 export const IFE_ESF_PATRIMONIO: ESFMapping[] = [
   // Fila 77: Capital
   // CGN 3105 - Capital fiscal/social
+  // Incluye '31' como fallback para balances con patrimonio a nivel de grupo (código 31)
   {
     row: 77,
-    pucPrefixes: ['3105'],
+    pucPrefixes: ['3105', '31'],
+    excludePrefixes: ['3109', '3110', '3115', '3120', '3125', '3130', '3145'],
     description: 'Capital',
     useAbsoluteValue: true,
   },

@@ -1326,7 +1326,8 @@ export function customizeExcelWithData(xlsxBuffer: Buffer, options: TemplateWith
         { row: 63, label: 'Otros pasivos corrientes', pucPrefixes: ['26'], abs: true },
         // === PASIVOS NO CORRIENTES — sin mapear, el usuario completa manualmente ===
         // === PATRIMONIO ===
-        { row: 77, label: 'Capital', pucPrefixes: ['3105'], abs: true },
+        // '31' como fallback para balances que reportan patrimonio a nivel de grupo
+        { row: 77, label: 'Capital', pucPrefixes: ['3105', '31'], excludePrefixes: ['3109', '3110', '3115', '3120', '3125', '3130', '3145'], abs: true },
         { row: 78, label: 'Inversión suplementaria', pucPrefixes: ['3109'], abs: true },
         { row: 79, label: 'Otras participaciones', pucPrefixes: ['3125', '3110'], abs: true },
         { row: 80, label: 'Superávit por revaluación', pucPrefixes: ['3115', '3120'], abs: true },
