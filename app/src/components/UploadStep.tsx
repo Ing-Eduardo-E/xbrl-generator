@@ -180,7 +180,7 @@ export function UploadStep({ onSuccess }: UploadStepProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from({ length: 5 }, (_, i) => {
+                  {Array.from({ length: new Date().getFullYear() - 2020 + 1 }, (_, i) => {
                     const y = new Date().getFullYear() - i;
                     return (
                       <SelectItem key={y} value={y.toString()}>
