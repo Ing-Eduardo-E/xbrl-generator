@@ -470,11 +470,11 @@ export class IFETemplateService extends BaseTemplateService {
 
     // Mapeo de filas a cuentas PUC
     const rowMappings = [
-      { row: 15, prefixes: ['22'], excludes: [], label: 'Cuentas comerciales por pagar' },
-      { row: 16, prefixes: ['23', '24', '28'], excludes: [], label: 'Otras cuentas por pagar' },
+      { row: 15, prefixes: ['23'], excludes: [], label: 'Cuentas comerciales por pagar' },
+      { row: 16, prefixes: ['22', '26', '28', '29'], excludes: [], label: 'Otras cuentas por pagar' },
       // Fila 17 es autosuma de 15+16
       { row: 18, prefixes: ['21'], excludes: [], label: 'Obligaciones financieras' },
-      { row: 19, prefixes: ['25'], excludes: [], label: 'Obligaciones laborales' },
+      { row: 19, prefixes: ['24'], excludes: [], label: 'Obligaciones laborales' },
       // Fila 20 es autosuma total
     ];
 

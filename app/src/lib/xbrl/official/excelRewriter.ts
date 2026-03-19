@@ -1718,6 +1718,57 @@ export async function rewriteFinancialDataWithExcelJS(
     }
 
     // ---------------------------------------------------------------
+    // HOJA2 IFE (120000t): Información adicional — flujo de efectivo y notas
+    // Celdas clave: G13 (Efectivo final), G15 (Incrementos), G16 (Efectivo inicio)
+    // ---------------------------------------------------------------
+    const ifeSheet2 = workbook.getWorksheet('Hoja2');
+    if (ifeSheet2) {
+      console.log('[ExcelJS-IFE] Reescribiendo Hoja2 (120000t)...');
+
+      // G13: Efectivo y equivalentes al efectivo al final del periodo
+      // = Total PUC 11 (excluyendo 1132 restringido)
+      let efectivoFinal = 0;
+      for (const acc of options.consolidatedAccounts!) {
+        if (!acc.isLeaf) continue;
+        if (matchesPrefixes(acc.code, ['11'], ['1132'])) {
+          efectivoFinal += acc.value;
+        }
+      }
+      ifeSheet2.getCell('G13').value = efectivoFinal;
+
+      // G15: Incrementos (disminuciones) en el efectivo = 0
+      // (no tenemos balance de apertura para calcular la diferencia)
+      ifeSheet2.getCell('G15').value = 0;
+
+      // G16: Efectivo y equivalentes al efectivo al inicio del periodo = 0
+      ifeSheet2.getCell('G16').value = 0;
+
+      // G14: Información sobre variaciones de flujo de efectivo (texto obligatorio)
+      ifeSheet2.getCell('G14').value = 'Sin observaciones';
+
+      // G18-G23: Notas de revelación (texto obligatorio)
+      ifeSheet2.getCell('G18').value = 'Sin observaciones';
+      ifeSheet2.getCell('G19').value = 'Sin observaciones';
+      ifeSheet2.getCell('G20').value = 'Sin observaciones';
+      ifeSheet2.getCell('G21').value = 'Sin observaciones';
+      ifeSheet2.getCell('G22').value = 'Sin observaciones';
+      ifeSheet2.getCell('G23').value = 'Sin observaciones';
+
+      // G25-G33: Sección de ajustes a información certificada
+      ifeSheet2.getCell('G25').value = '2. No';
+      ifeSheet2.getCell('G26').value = '2. No';
+      ifeSheet2.getCell('G27').value = 'NA';
+      ifeSheet2.getCell('G28').value = '2. No';
+      ifeSheet2.getCell('G29').value = 'NA';
+      ifeSheet2.getCell('G30').value = '2. No';
+      ifeSheet2.getCell('G31').value = 'NA';
+      ifeSheet2.getCell('G32').value = '2. No';
+      ifeSheet2.getCell('G33').value = 'NA';
+
+      console.log('[ExcelJS-IFE] Hoja2 (120000t) completada.');
+    }
+
+    // ---------------------------------------------------------------
     // HOJA3 IFE (210000t): Estado de Situación Financiera
     // Columnas I-P servicios, Q total
     // ---------------------------------------------------------------
@@ -1871,6 +1922,16 @@ export async function rewriteFinancialDataWithExcelJS(
         ifeSheet3.getCell(`Q${row}`).value = { formula: `SUM(I${row}:P${row})` };
       }
 
+      // Limpiar ESF PERIODO ANTERIOR (filas 86+) — evitar datos ejemplo del template
+      // El template IFE tiene sección comparativa a partir de fila 86 (offset 78 desde fila 15)
+      // que el XBRLT lee para generar facts XBRL del periodo anterior.
+      const esfAllCols = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'];
+      for (let row = 86; row <= 163; row++) {
+        for (const C of esfAllCols) {
+          ifeSheet3.getCell(`${C}${row}`).value = 0;
+        }
+      }
+
       console.log('[ExcelJS-IFE] Hoja3 (ESF) completada.');
     }
 
@@ -1897,7 +1958,11 @@ export async function rewriteFinancialDataWithExcelJS(
         { row: 27, puc: ['59'], label: 'Operaciones discontinuadas', abs: true },
       ];
 
+      // Almacenar valores computados por fila y columna para reutilizar en autosumas y Hoja7
+      const erValues: Record<number, Record<string, number>> = {};
+
       for (const m of IFE_ER_MAP) {
+        erValues[m.row] = {};
         let totalValue = 0;
         for (const acc of options.consolidatedAccounts!) {
           if (!acc.isLeaf) continue;
@@ -1905,6 +1970,7 @@ export async function rewriteFinancialDataWithExcelJS(
             totalValue += m.abs ? Math.abs(acc.value) : acc.value;
           }
         }
+        erValues[m.row]['M'] = totalValue;
         if (totalValue !== 0) {
           ifeSheet4.getCell(`M${m.row}`).value = totalValue;
         }
@@ -1919,12 +1985,45 @@ export async function rewriteFinancialDataWithExcelJS(
               svcValue += m.abs ? Math.abs(acc.value) : acc.value;
             }
           }
+          erValues[m.row][col] = svcValue;
           if (svcValue !== 0) {
             ifeSheet4.getCell(`${col}${m.row}`).value = svcValue;
           }
         }
       }
-      console.log('[ExcelJS-IFE] Hoja4 (ER) completada.');
+
+      // Helper para obtener valor ER computado
+      const getErVal = (row: number, col: string): number => erValues[row]?.[col] ?? 0;
+
+      // ER Autosuma rows: escribir fórmulas CON resultado cacheado para XBRL Express
+      const erAllCols = ['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
+      for (const C of erAllCols) {
+        // Fila 16: Ganancia bruta = Ingresos(14) - CostoVentas(15)
+        const r16 = getErVal(14, C) - getErVal(15, C);
+        ifeSheet4.getCell(`${C}16`).value = { formula: `${C}14-${C}15`, result: r16 };
+        // Fila 20: Ganancia operacional = GananciaBruta(16) - GastosAdmin(17) + OtrosIngresos(18) - OtrosGastos(19)
+        const r20 = r16 - getErVal(17, C) + getErVal(18, C) - getErVal(19, C);
+        ifeSheet4.getCell(`${C}20`).value = { formula: `${C}16-${C}17+${C}18-${C}19`, result: r20 };
+        // Fila 24: Ganancia antes impuestos = GananciaOp(20) + IngresosFinanc(21) - CostosFinanc(22) + OtrasGanancias(23)
+        const r24 = r20 + getErVal(21, C) - getErVal(22, C) + getErVal(23, C);
+        ifeSheet4.getCell(`${C}24`).value = { formula: `${C}20+${C}21-${C}22+${C}23`, result: r24 };
+        // Fila 26: Ganancia continuadas = GananciaAntesImp(24) - GastoImpuesto(25)
+        const r26 = r24 - getErVal(25, C);
+        ifeSheet4.getCell(`${C}26`).value = { formula: `${C}24-${C}25`, result: r26 };
+        // Fila 28: Ganancia total = GananciaContinuadas(26) + Discontinuadas(27)
+        const r28 = r26 + getErVal(27, C);
+        ifeSheet4.getCell(`${C}28`).value = { formula: `${C}26+${C}27`, result: r28 };
+      }
+
+      // Limpiar ER PERIODO ANTERIOR (filas 35-49) — evitar datos ejemplo del template
+      // que generarían facts XBRL negativos (FRM_310000_008)
+      for (let row = 35; row <= 49; row++) {
+        for (const C of erAllCols) {
+          ifeSheet4.getCell(`${C}${row}`).value = 0;
+        }
+      }
+
+      console.log('[ExcelJS-IFE] Hoja4 (ER) completada con autosumas y limpieza periodo anterior.');
     }
 
     // ---------------------------------------------------------------
@@ -1991,10 +2090,10 @@ export async function rewriteFinancialDataWithExcelJS(
       console.log('[ExcelJS-IFE] Reescribiendo Hoja6 (CxP)...');
 
       const CXP_ROWS = [
-        { row: 15, puc: ['22'], label: 'CxP comerciales' },
-        { row: 16, puc: ['23', '24', '28'], label: 'Otras CxP' },
+        { row: 15, puc: ['23'], label: 'CxP comerciales' },
+        { row: 16, puc: ['22', '26', '28', '29'], label: 'Otras CxP' },
         { row: 18, puc: ['21'], label: 'Obligaciones financieras' },
-        { row: 19, puc: ['25'], label: 'Obligaciones laborales' },
+        { row: 19, puc: ['24'], label: 'Obligaciones laborales' },
       ];
       const CXP_PCTS = [
         { col: 'D', pct: 0.40 },
@@ -2041,76 +2140,105 @@ export async function rewriteFinancialDataWithExcelJS(
     // ---------------------------------------------------------------
     // HOJA7 IFE (900050t): Detalle ingresos y gastos
     // Columnas F-M servicios (diferente a Hoja4), N total
-    // Referencias cruzadas a Hoja4
+    // ESCRITURA DIRECTA de valores computados desde PUC para que XBRL Express
+    // pueda leerlos (no evalúa fórmulas cross-sheet).
     // ---------------------------------------------------------------
     const ifeSheet7 = workbook.getWorksheet('Hoja7');
     if (ifeSheet7) {
       console.log('[ExcelJS-IFE] Reescribiendo Hoja7 (Ingresos y Gastos)...');
 
-      // Mapeo Hoja7 col → Hoja4 col por servicio
+      // Mapeo Hoja7 col → servicio
       const H7_MAP = [
-        { h7: 'F', h4: 'E', svc: 'acueducto' },
-        { h7: 'G', h4: 'F', svc: 'alcantarillado' },
-        { h7: 'H', h4: 'G', svc: 'aseo' },
-        { h7: 'I', h4: 'H', svc: 'energia' },
-        { h7: 'J', h4: 'I', svc: 'gas' },
-        { h7: 'K', h4: 'J', svc: 'glp' },
-        { h7: 'L', h4: 'K', svc: 'xmm' },
-        { h7: 'M', h4: 'L', svc: 'otras' },
+        { h7: 'F', svc: 'acueducto' },
+        { h7: 'G', svc: 'alcantarillado' },
+        { h7: 'H', svc: 'aseo' },
+        { h7: 'I', svc: 'energia' },
+        { h7: 'J', svc: 'gas' },
+        { h7: 'K', svc: 'glp' },
+        { h7: 'L', svc: 'xmm' },
+        { h7: 'M', svc: 'otras' },
       ];
-      const svcCols = ['F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
 
-      // Fila 14: Ingresos de actividades ordinarias = Hoja4!fila14
-      for (const m of H7_MAP) {
-        ifeSheet7.getCell(`${m.h7}14`).value = { formula: `Hoja4!${m.h4}14` };
-      }
-      // Fila 15: Todos los demás ingresos = Hoja4!(fila18 + fila21) [Otros ingresos + Ingresos financieros]
-      for (const m of H7_MAP) {
-        ifeSheet7.getCell(`${m.h7}15`).value = { formula: `Hoja4!${m.h4}18+Hoja4!${m.h4}21` };
-      }
-      // Fila 16: Total ingresos (autosuma 14+15)
-      for (const c of svcCols) {
-        ifeSheet7.getCell(`${c}16`).value = { formula: `${c}14+${c}15` };
-      }
-      // Fila 18: Costos y gastos totales = Hoja4!(fila15+fila17+fila19+fila22) [Costo ventas + Gastos admin + Otros gastos + Costos financieros]
-      for (const m of H7_MAP) {
-        ifeSheet7.getCell(`${m.h7}18`).value = { formula: `Hoja4!${m.h4}15+Hoja4!${m.h4}17+Hoja4!${m.h4}19+Hoja4!${m.h4}22` };
-      }
-      // Fila 19: Impuestos = Hoja4 fila 25 (Gasto por impuesto, PUC 54)
-      for (const m of H7_MAP) {
-        ifeSheet7.getCell(`${m.h7}19`).value = { formula: `Hoja4!${m.h4}25` };
-      }
-      // Fila 20: Gastos financieros = Hoja4 fila 22 (Costos financieros, PUC 5802/5803)
-      for (const m of H7_MAP) {
-        ifeSheet7.getCell(`${m.h7}20`).value = { formula: `Hoja4!${m.h4}22` };
-      }
-      // Filas 21-24: Detalle directo desde PUC por servicio
-      // Estos ítems NO tienen filas separadas en Hoja4 (ER); se computan desde cuentas PUC clase 53
-      // PUC CGN R414 clase 53: Deterioro, depreciaciones y amortizaciones
+      // Mapeos de PUC alineados con Hoja4 (ER) para consistencia cross-form
+      const H7_ING_ORD  = { puc: ['41', '42', '43'], ex: [] as string[] };  // Row 14: Ingresos ordinarios
+      const H7_OTROS_ING = { puc: ['44', '48'], ex: ['4802', '4803', '4808'] }; // Otros ingresos (excl financ)
+      const H7_ING_FIN  = { puc: ['4802', '4803'], ex: [] as string[] };     // Ingresos financieros
+      const H7_COSTO_VTA = { puc: ['62', '63'], ex: [] as string[] };        // Costo ventas
+      const H7_GASTOS_AD = { puc: ['51', '52', '56'], ex: [] as string[] };  // Gastos admin
+      const H7_OTROS_GAS = { puc: ['53', '58'], ex: ['5802', '5803', '5808'] }; // Otros gastos
+      const H7_COSTOS_FI = { puc: ['5802', '5803'], ex: [] as string[] };    // Costos financieros
+      const H7_IMPUESTOS = { puc: ['54'], ex: [] as string[] };              // Gasto por impuesto
+
+      // Helper local para sumar PUC por servicio con abs
+      const sumSvcAbs = (svc: string, puc: string[], ex: string[]): number => {
+        let v = 0;
+        const accs = accountsByService[svc] || [];
+        for (const a of accs) {
+          if (!a.isLeaf) continue;
+          if (matchesPrefixes(a.code, puc, ex)) v += Math.abs(a.value);
+        }
+        return v;
+      };
+
+      // Detalle PUC clase 53 para filas 21-24
       const H7_DETAIL = [
-        { row: 21, puc: ['5346'], excl: [] as string[], label: 'Deterioro' },
-        { row: 22, puc: ['5360', '5361'], excl: [] as string[], label: 'Depreciación' },
-        { row: 23, puc: ['5365', '5366'], excl: [] as string[], label: 'Amortización' },
-        { row: 24, puc: ['53'], excl: ['5346', '5360', '5361', '5365', '5366'], label: 'Provisiones' },
+        { row: 21, puc: ['5346'], excl: [] as string[] },         // Deterioro
+        { row: 22, puc: ['5360', '5361'], excl: [] as string[] }, // Depreciación
+        { row: 23, puc: ['5365', '5366'], excl: [] as string[] }, // Amortización
+        { row: 24, puc: ['53'], excl: ['5346', '5360', '5361', '5365', '5366'] }, // Provisiones
       ];
-      for (const detail of H7_DETAIL) {
-        for (const m of H7_MAP) {
-          const svcAccounts = accountsByService[m.svc] || [];
-          let val = 0;
-          for (const acc of svcAccounts) {
-            if (!acc.isLeaf) continue;
-            if (matchesPrefixes(acc.code, detail.puc, detail.excl)) {
-              val += Math.abs(acc.value);
-            }
-          }
-          if (val !== 0) {
-            ifeSheet7.getCell(`${m.h7}${detail.row}`).value = val;
-          }
+
+      // Limpiar TODAS las filas de datos (F-N) para evitar datos residuales
+      for (const row of [14, 15, 16, 18, 19, 20, 21, 22, 23, 24]) {
+        for (const col of ['F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N']) {
+          ifeSheet7.getCell(`${col}${row}`).value = 0;
         }
       }
-      // Columna N: Total = SUM(F:M) para cada fila
+
+      // Escribir valores por servicio
+      for (const m of H7_MAP) {
+        // Fila 14: Ingresos de actividades ordinarias
+        const ingOrd = sumSvcAbs(m.svc, H7_ING_ORD.puc, H7_ING_ORD.ex);
+        ifeSheet7.getCell(`${m.h7}14`).value = ingOrd;
+
+        // Fila 15: Todos los demás ingresos = Otros ingresos + Ingresos financieros
+        const otrosIng = sumSvcAbs(m.svc, H7_OTROS_ING.puc, H7_OTROS_ING.ex);
+        const ingFin = sumSvcAbs(m.svc, H7_ING_FIN.puc, H7_ING_FIN.ex);
+        ifeSheet7.getCell(`${m.h7}15`).value = otrosIng + ingFin;
+
+        // Fila 16: Total ingresos = 14 + 15
+        const totalIng = ingOrd + otrosIng + ingFin;
+        ifeSheet7.getCell(`${m.h7}16`).value = totalIng;
+
+        // Fila 18: Costos y gastos totales = CostoVentas + GastosAdmin + OtrosGastos + CostosFinancieros
+        const costoVta = sumSvcAbs(m.svc, H7_COSTO_VTA.puc, H7_COSTO_VTA.ex);
+        const gastosAd = sumSvcAbs(m.svc, H7_GASTOS_AD.puc, H7_GASTOS_AD.ex);
+        const otrosGas = sumSvcAbs(m.svc, H7_OTROS_GAS.puc, H7_OTROS_GAS.ex);
+        const costosFi = sumSvcAbs(m.svc, H7_COSTOS_FI.puc, H7_COSTOS_FI.ex);
+        ifeSheet7.getCell(`${m.h7}18`).value = costoVta + gastosAd + otrosGas + costosFi;
+
+        // Fila 19: Impuestos, tasas y contribuciones
+        const impuestos = sumSvcAbs(m.svc, H7_IMPUESTOS.puc, H7_IMPUESTOS.ex);
+        ifeSheet7.getCell(`${m.h7}19`).value = impuestos;
+
+        // Fila 20: Gastos financieros
+        ifeSheet7.getCell(`${m.h7}20`).value = costosFi;
+
+        // Filas 21-24: Detalle desde PUC clase 53 (SIEMPRE escribir, incluso 0)
+        for (const detail of H7_DETAIL) {
+          const val = sumSvcAbs(m.svc, detail.puc, detail.excl);
+          ifeSheet7.getCell(`${m.h7}${detail.row}`).value = val;
+        }
+      }
+
+      // Columna N: Total = SUM(F:M) con valor cacheado
       for (const row of [14, 15, 16, 18, 19, 20, 21, 22, 23, 24]) {
-        ifeSheet7.getCell(`N${row}`).value = { formula: `SUM(F${row}:M${row})` };
+        let rowTotal = 0;
+        for (const m of H7_MAP) {
+          const cellVal = ifeSheet7.getCell(`${m.h7}${row}`).value;
+          rowTotal += typeof cellVal === 'number' ? cellVal : 0;
+        }
+        ifeSheet7.getCell(`N${row}`).value = { formula: `SUM(F${row}:M${row})`, result: rowTotal };
       }
 
       console.log('[ExcelJS-IFE] Hoja7 (Ingresos y Gastos) completada.');
