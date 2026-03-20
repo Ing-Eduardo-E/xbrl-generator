@@ -21,6 +21,8 @@ import {
   R414_BENEFICIOS_EMPLEADOS_MAPPINGS,
 } from '../r414/mappings';
 import { rewriteGrupoData } from '../grupos';
+import { r414TemplateService } from '../r414/R414TemplateService';
+import type { TemplateWithDataOptions as R414Options } from '../types';
 
 // ─── (Índice de secciones del body — ver marcadores ═══ abajo) ──────────
 // ─── Sección 1: Función principal + helpers de init (~L29-76)   ─────────
@@ -38,16 +40,85 @@ export async function rewriteFinancialDataWithExcelJS(
   xlsxBuffer: Buffer,
   options: TemplateWithDataOptions
 ): Promise<Buffer> {
-  // Si no hay datos financieros, retornar el buffer sin cambios
-  if (!options.consolidatedAccounts || options.consolidatedAccounts.length === 0) {
-    return xlsxBuffer;
-  }
-
   const workbook = new ExcelJS.Workbook();
   // ExcelJS load() declara Buffer pero su definición de tipos es incompatible con
   // Buffer<ArrayBufferLike> de Node — cast inevitable hasta que ExcelJS actualice sus tipos.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await workbook.xlsx.load(xlsxBuffer as any);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HOJA1: Información general — metadatos de la empresa
+  // Se llena SIEMPRE, incluso sin datos financieros.
+  // IMPORTANTE: Anteriormente se llenaba con SheetJS (customizeExcelWithData)
+  // pero SheetJS destruye la estructura interna del xlsx (elimina sharedStrings.xml,
+  // styles.xml, etc.) haciendo que XBRL Express no pueda leer los datos.
+  // Ahora se llena exclusivamente con ExcelJS que preserva la estructura al 100%.
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (options.niifGroup === 'r414') {
+    const sheet1 = workbook.getWorksheet('Hoja1');
+    if (sheet1) {
+      console.log('[ExcelJS] Escribiendo metadatos en Hoja1 (R414)...');
+      // C4: ID de empresa para XBRL Express
+      sheet1.getCell('C4').value = options.companyId;
+      // E12: Nombre de la entidad
+      sheet1.getCell('E12').value = options.companyName;
+      // E13: ID RUPS
+      sheet1.getCell('E13').value = options.companyId;
+      // E14: NIT
+      if (options.nit) sheet1.getCell('E14').value = options.nit;
+      // E15: Naturaleza EF
+      sheet1.getCell('E15').value = '1. Individual';
+      // E16: Naturaleza del negocio
+      sheet1.getCell('E16').value = options.businessNature || 'Prestación de servicios públicos domiciliarios de acueducto, alcantarillado y/o aseo';
+      // E17: Fecha de inicio de operaciones
+      sheet1.getCell('E17').value = options.startDate || '2005-01-01';
+      // E18: Fecha de cierre del período
+      sheet1.getCell('E18').value = options.reportDate;
+      // E19: Grado de redondeo
+      const roundingLabels: Record<string, string> = {
+        '1': '1 - Pesos',
+        '2': '2 - Miles de pesos',
+        '3': '3 - Millones de pesos',
+        '4': '4 - Pesos redondeada a miles',
+      };
+      sheet1.getCell('E19').value = roundingLabels[options.roundingDegree || '1'] || '1 - Pesos';
+      // E21: ¿Presenta información reexpresada?
+      if (options.hasRestatedInfo === 'Sí' || options.hasRestatedInfo === '1. Sí') {
+        sheet1.getCell('E21').value = '1. Sí';
+        if (options.restatedPeriod) {
+          sheet1.getCell('E22').value = options.restatedPeriod;
+        }
+      } else {
+        sheet1.getCell('E21').value = '2. No';
+      }
+      console.log('[ExcelJS] Hoja1 (R414) completada.');
+    }
+  } else if (options.niifGroup !== 'ife') {
+    // Para grupo1/2/3: llenar metadatos básicos con ExcelJS
+    const sheet1 = workbook.getWorksheet('Hoja1');
+    if (sheet1) {
+      console.log('[ExcelJS] Escribiendo metadatos en Hoja1...');
+      sheet1.getCell('C4').value = options.companyId;
+      sheet1.getCell('E12').value = options.companyName;
+      sheet1.getCell('E13').value = options.companyId;
+      if (options.nit) sheet1.getCell('E14').value = options.nit;
+      sheet1.getCell('E18').value = options.reportDate;
+      const roundingLabels: Record<string, string> = {
+        '1': '1 - Pesos',
+        '2': '2 - Miles de pesos',
+        '3': '3 - Millones de pesos',
+        '4': '4 - Pesos redondeada a miles',
+      };
+      sheet1.getCell('E19').value = roundingLabels[options.roundingDegree || '1'] || '1 - Pesos';
+      console.log('[ExcelJS] Hoja1 completada.');
+    }
+  }
+
+  // Si no hay datos financieros, retornar con solo metadatos
+  if (!options.consolidatedAccounts || options.consolidatedAccounts.length === 0) {
+    const outputBuffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(outputBuffer);
+  }
 
   const serviceBalances = options.serviceBalances || [];
   const activeServices = options.activeServices || ['acueducto', 'alcantarillado', 'aseo'];
@@ -1631,6 +1702,30 @@ export async function rewriteFinancialDataWithExcelJS(
       console.log(`[ExcelJS]   I26 (Aseo): ${ingresosAseo35}`);
 
       console.log('[ExcelJS] Hoja35 completada.');
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // HOJA9 (800500) y HOJA10 (800600): Notas y Políticas contables
+    // Reutiliza R414TemplateService que ya tiene las 57 notas y 33 políticas.
+    // ═══════════════════════════════════════════════════════════════════════════
+    const r414Opts = {
+      companyName: options.companyName,
+      companyId: options.companyId,
+      reportDate: options.reportDate,
+      niifGroup: 'r414',
+      accounts: options.consolidatedAccounts || [],
+      serviceBalances: options.serviceBalances || [],
+      distribution: {},
+    } as R414Options;
+
+    const sheet9 = workbook.getWorksheet('Hoja9');
+    if (sheet9) {
+      r414TemplateService.fillHoja9Sheet(sheet9, r414Opts);
+    }
+
+    const sheet10 = workbook.getWorksheet('Hoja10');
+    if (sheet10) {
+      r414TemplateService.fillHoja10Sheet(sheet10, r414Opts);
     }
   }
 

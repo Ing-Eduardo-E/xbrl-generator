@@ -7,7 +7,6 @@ export * from './official';
 import JSZip from 'jszip';
 import type { NiifGroup } from './taxonomyConfig';
 import { loadTemplate, loadBinaryTemplate } from './official/fileLoaders';
-import { customizeExcelWithData } from './official/excelDataFiller';
 import { rewriteFinancialDataWithExcelJS } from './official/excelRewriter';
 import { customizeXbrlt, customizeXml } from './official/templateCustomizers';
 import { TEMPLATE_PATHS } from './official/templatePaths';
@@ -66,13 +65,14 @@ export async function generateOfficialTemplatePackageWithData(
     const customizedXml = customizeXml(xmlContent, options);
     zip.file(`${outputFileName}.xml`, customizedXml);
 
-    // 3. Cargar y personalizar .xlsx con datos del formulario Y datos financieros
+    // 3. Cargar y personalizar .xlsx con datos financieros
+    // IMPORTANTE: Usar SOLO ExcelJS para modificar el Excel.
+    // SheetJS (xlsx) destruye la estructura interna del template (elimina sharedStrings.xml,
+    // reduce styles.xml de 14KB a 1KB, pierde formatos de hojas) lo que hace que
+    // XBRL Express no pueda leer los datos del archivo generado.
+    // ExcelJS preserva la estructura al 100%.
     const xlsxContent = await loadBinaryTemplate(templatePaths.xlsx);
-    let customizedXlsx = customizeExcelWithData(xlsxContent, options);
-
-    // 3.1 Re-escribir datos financieros con ExcelJS para mejor compatibilidad con XBRL Express
-    // La librería xlsx puede no generar celdas que XBRL Express pueda leer correctamente
-    customizedXlsx = await rewriteFinancialDataWithExcelJS(customizedXlsx, options);
+    const customizedXlsx = await rewriteFinancialDataWithExcelJS(xlsxContent, options);
 
     zip.file(`${outputFileName}.xlsx`, customizedXlsx);
 
