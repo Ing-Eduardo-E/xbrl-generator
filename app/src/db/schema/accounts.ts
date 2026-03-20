@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp, serial, index } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, bigint, boolean, timestamp, serial, index } from 'drizzle-orm/pg-core';
 
 /**
  * Tabla de cuentas de trabajo (temporal)
@@ -8,7 +8,7 @@ export const workingAccounts = pgTable('working_accounts', {
   id: serial('id').primaryKey(),
   code: text('code').notNull(), // Código PUC
   name: text('name').notNull(), // Nombre de la cuenta
-  value: integer('value').notNull(), // Valor en pesos
+  value: bigint('value', { mode: 'number' }).notNull(), // Valor en pesos (bigint: soporta hasta ±9.2 quintillones)
   isLeaf: boolean('is_leaf').notNull().default(false), // Es cuenta hoja?
   level: integer('level').notNull(), // Nivel en jerarquía
   class: text('class').notNull(), // Clase (1=Activos, 2=Pasivos, etc.)
@@ -25,7 +25,7 @@ export const serviceBalances = pgTable(
     service: text('service').notNull(), // 'acueducto', 'alcantarillado', 'aseo'
     code: text('code').notNull(), // Código PUC
     name: text('name').notNull(), // Nombre de la cuenta
-    value: integer('value').notNull(), // Valor distribuido
+    value: bigint('value', { mode: 'number' }).notNull(), // Valor distribuido (bigint: soporta hasta ±9.2 quintillones)
     isLeaf: boolean('is_leaf').notNull().default(false), // Es cuenta hoja?
     level: integer('level').notNull().default(1), // Nivel en jerarquía
     class: text('class').notNull().default(''), // Clase contable

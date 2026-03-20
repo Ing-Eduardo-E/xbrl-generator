@@ -94,10 +94,11 @@ export const R414_ER_MAPPINGS: ESFMapping[] = [
   // Fila 19: Ingresos financieros
   // PUC R414: Subcuentas específicas de 48 - Otros ingresos
   // 4802 - Intereses, 4807 - Rendimientos, 4808 - Utilidad diferencia cambio, 4810 - Dividendos
+  // EXCLUIR: 4815 (participación asociadas, va en fila 21)
   {
     row: 19,
     label: 'Ingresos financieros',
-    pucPrefixes: ['4802', '4807', '4808', '4810', '4815'],
+    pucPrefixes: ['4802', '4807', '4808', '4810'],
   },
 
   // Fila 20: Costos financieros
@@ -140,9 +141,11 @@ export const R414_ER_MAPPINGS: ESFMapping[] = [
 
   // Fila 26: Gasto/Ingreso impuesto a las ganancias diferido
   // PUC R414: 5410 - Gasto impuesto de renta diferido
+  // EXCLUIR: 540101 (impuesto corriente, fila 25)
   {
     row: 26,
     label: 'Impuesto a las ganancias diferido',
     pucPrefixes: ['5410'],
+    excludePrefixes: ['540101'],
   },
 ];

@@ -156,10 +156,12 @@ export const R414_ESF_ACTIVOS: ESFMapping[] = [
 
   // Fila 31: Otros activos no financieros corrientes
   // PUC R414: 19 - Otros activos (bienes de arte, etc.) - parte corriente
+  // EXCLUIR: 1905 (impuestos diferidos, fila 53), 1920 (planes activos, fila 55), 1975 (inversión, fila 57)
   {
     row: 31,
     label: 'Otros activos no financieros corrientes',
-    pucPrefixes: ['19'],
+    pucPrefixes: ['1910', '1930', '1970'],
+    excludePrefixes: ['1975'],
   },
 
   // =====================================================
@@ -251,10 +253,12 @@ export const R414_ESF_ACTIVOS: ESFMapping[] = [
 
   // Fila 61: Otros activos no corrientes
   // PUC: 19 - Otros activos (bienes de arte, cultura, etc.)
+  // EXCLUIR: 1905 (fila 53), 1920 (fila 55), 1975 (fila 57), 1910/1930/1970 (fila 31)
   {
     row: 61,
     label: 'Otros activos no corrientes',
     pucPrefixes: ['19'],
+    excludePrefixes: ['1905', '1910', '1920', '1930', '1970', '1975'],
   },
 ];
 
@@ -282,11 +286,13 @@ export const R414_ESF_PASIVOS: ESFMapping[] = [
 
   // Fila 70: Otras provisiones corrientes
   // PUC R414: 27 - Provisiones
-  // 2701 - Litigios y demandas, 2707 - Garantías, 2790 - Provisiones diversas
+  // 2701 - Litigios y demandas, 2707 - Garantías
+  // EXCLUIR: 2790 (provisiones diversas LP, fila 92)
   {
     row: 70,
     label: 'Otras provisiones corrientes',
     pucPrefixes: ['27'],
+    excludePrefixes: ['2790'],
   },
 
   // Fila 73: Cuentas por pagar por adquisición de servicios
@@ -360,11 +366,13 @@ export const R414_ESF_PASIVOS: ESFMapping[] = [
   },
 
   // Fila 83: Pasivos por impuestos diferidos corrientes
-  // PUC R414: 2918 - Pasivos por impuestos diferidos
+  // PUC R414: 291801 - Pasivos por impuestos diferidos (porción corriente)
+  // NOTA: En la práctica CGN, los impuestos diferidos se clasifican como no corrientes (fila 103)
+  // Solo se incluye corriente si existe una subcuenta específica
   {
     row: 83,
     label: 'Pasivos impuestos diferidos corrientes',
-    pucPrefixes: ['2918'],
+    pucPrefixes: ['291801'],
   },
 
   // Fila 86: Otros pasivos financieros corrientes
@@ -379,11 +387,12 @@ export const R414_ESF_PASIVOS: ESFMapping[] = [
   // PUC R414: 2436 - Retención en la fuente e impuesto de timbre
   // 2440 - Impuestos, contribuciones y tasas (excepto renta)
   // 2445 - IVA, 29 - Otros pasivos
+  // EXCLUIR: 244001 (renta, fila 80), 2910 (ingresos diferidos, fila 82), 2918 (impuestos diferidos, fila 83), 2990 (diferidos LP, fila 105)
   {
     row: 87,
     label: 'Otros pasivos no financieros corrientes',
     pucPrefixes: ['2436', '2440', '2445', '29'],
-    excludePrefixes: ['244001'],
+    excludePrefixes: ['244001', '2910', '2918', '2990'],
   },
 
   // =====================================================
@@ -432,11 +441,13 @@ export const R414_ESF_PASIVOS: ESFMapping[] = [
   },
 
   // Fila 103: Pasivos por impuestos diferidos no corrientes
-  // PUC R414: 2918 - Pasivos por impuestos diferidos (si es LP)
+  // PUC R414: 2918 - Pasivos por impuestos diferidos (porción no corriente)
+  // EXCLUIR: 291801 (porción corriente, fila 83)
   {
     row: 103,
     label: 'Pasivos por impuestos diferidos LP',
     pucPrefixes: ['2918'],
+    excludePrefixes: ['291801'],
   },
 
   // Fila 105: Ingresos recibidos por anticipado no corrientes
