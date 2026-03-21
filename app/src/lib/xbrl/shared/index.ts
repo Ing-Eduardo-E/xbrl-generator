@@ -69,3 +69,6 @@ export {
   DISTRIBUCION_TIPICA,
 } from './rewriterHelpers';
 export type { EstratoConfig, RangoVencimiento } from './rewriterHelpers';
+
+// ZIP builder — hibridación originalTemplate + ExcelJS output
+export { preserveOriginalStructure } from './zipBuilder';
