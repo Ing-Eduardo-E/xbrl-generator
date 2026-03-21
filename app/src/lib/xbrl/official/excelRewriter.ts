@@ -180,6 +180,25 @@ export async function rewriteFinancialDataWithExcelJS(
     return false;
   };
 
+  // Detección dinámica de hojas — reemplaza el flag isLeaf de BD (poco confiable)
+  // Pattern de baseTemplateService.ts: una cuenta es hoja si NO es prefijo de otra cuenta
+  const codesWithChildren = new Set<string>();
+  for (const account of options.consolidatedAccounts) {
+    for (let i = 1; i < account.code.length; i++) {
+      codesWithChildren.add(account.code.slice(0, i));
+    }
+  }
+
+  const serviceCodesWithChildren = new Set<string>();
+  for (const service of activeServices) {
+    const svcAccounts = accountsByService[service] || [];
+    for (const account of svcAccounts) {
+      for (let i = 1; i < account.code.length; i++) {
+        serviceCodesWithChildren.add(account.code.slice(0, i));
+      }
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // SECCIÓN 2 — R414: Hoja2 (ESF) + Hoja3 (ER) + Hoja7 (Notas PPE) (~L68-281)
   // Candidato de extracción: official/rewriters/r414FinancialStatementsRewriter.ts
@@ -198,7 +217,7 @@ export async function rewriteFinancialDataWithExcelJS(
         // Calcular total consolidado
         let totalValue = 0;
         for (const account of options.consolidatedAccounts) {
-          if (!account.isLeaf) continue;
+          if (codesWithChildren.has(account.code)) continue;
           if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
             totalValue += account.value;
           }
@@ -219,7 +238,7 @@ export async function rewriteFinancialDataWithExcelJS(
           let serviceValue = 0;
           const serviceAccounts = accountsByService[service] || [];
           for (const account of serviceAccounts) {
-            if (!account.isLeaf) continue;
+            if (serviceCodesWithChildren.has(account.code)) continue;
             if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
               serviceValue += account.value;
             }
@@ -244,7 +263,7 @@ export async function rewriteFinancialDataWithExcelJS(
         // Calcular total consolidado
         let totalValue = 0;
         for (const account of options.consolidatedAccounts) {
-          if (!account.isLeaf) continue;
+          if (codesWithChildren.has(account.code)) continue;
           if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
             totalValue += account.value;
           }
@@ -270,7 +289,7 @@ export async function rewriteFinancialDataWithExcelJS(
           let serviceValue = 0;
           const serviceAccounts = accountsByService[service] || [];
           for (const account of serviceAccounts) {
-            if (!account.isLeaf) continue;
+            if (serviceCodesWithChildren.has(account.code)) continue;
             if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
               serviceValue += account.value;
             }
@@ -288,7 +307,7 @@ export async function rewriteFinancialDataWithExcelJS(
       const acueductoAccounts3 = accountsByService['acueducto'] || [];
       let suma51 = 0, suma52 = 0;
       for (const account of acueductoAccounts3) {
-        if (!account.isLeaf) continue;
+        if (serviceCodesWithChildren.has(account.code)) continue;
         if (account.code.startsWith('51')) suma51 += account.value;
         if (account.code.startsWith('52')) suma52 += account.value;
       }
@@ -322,7 +341,7 @@ export async function rewriteFinancialDataWithExcelJS(
         for (const mapping of mappings) {
           let totalValue = 0;
           for (const account of consolidatedAccounts) {
-            if (!account.isLeaf) continue;
+            if (codesWithChildren.has(account.code)) continue;
             if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
               totalValue += account.value;
             }
@@ -426,7 +445,7 @@ export async function rewriteFinancialDataWithExcelJS(
       const sumByPrefixes16 = (accounts: typeof acueductoAccounts, prefixes: string[], excludePrefixes?: string[]): number => {
         let total = 0;
         for (const account of accounts) {
-          if (!account.isLeaf) continue;
+          if (serviceCodesWithChildren.has(account.code)) continue;
           if (matchesPrefixes(account.code, prefixes, excludePrefixes)) {
             total += account.value;
           }
@@ -640,7 +659,7 @@ export async function rewriteFinancialDataWithExcelJS(
       const cuentasNoCubiertas: Array<{code: string; value: number}> = [];
       let totalNoCubierto = 0;
       for (const account of acueductoAccounts) {
-        if (!account.isLeaf) continue;
+        if (serviceCodesWithChildren.has(account.code)) continue;
         if ((account.code.startsWith('51') || account.code.startsWith('52'))) {
           const estaCubierta = prefixesCubiertos.some(prefix => account.code.startsWith(prefix));
           if (!estaCubierta) {
@@ -680,7 +699,7 @@ export async function rewriteFinancialDataWithExcelJS(
       const sumByPrefixes17 = (accounts: typeof alcantarilladoAccounts, prefixes: string[], excludePrefixes?: string[]): number => {
         let total = 0;
         for (const account of accounts) {
-          if (!account.isLeaf) continue;
+          if (serviceCodesWithChildren.has(account.code)) continue;
           if (matchesPrefixes(account.code, prefixes, excludePrefixes)) {
             total += account.value;
           }
@@ -831,7 +850,7 @@ export async function rewriteFinancialDataWithExcelJS(
       const sumByPrefixes18 = (accounts: typeof aseoAccounts, prefixes: string[], excludePrefixes?: string[]): number => {
         let total = 0;
         for (const account of accounts) {
-          if (!account.isLeaf) continue;
+          if (serviceCodesWithChildren.has(account.code)) continue;
           if (matchesPrefixes(account.code, prefixes, excludePrefixes)) {
             total += account.value;
           }
