@@ -276,3 +276,100 @@ describe('preserveOriginalStructure — hybrid ZIP assembly', () => {
     expect(worksheetFiles.length).toBeGreaterThan(5);
   });
 });
+
+// ---------------------------------------------------------------------------
+// FIX-03: customizeXbrlt — doble-reemplazo de fechas
+// ---------------------------------------------------------------------------
+import { customizeXbrlt } from '../official/templateCustomizers';
+import { readFile } from 'fs/promises';
+import { resolve } from 'path';
+
+describe('customizeXbrlt — date double-replacement fix (FIX-03)', () => {
+  let xbrltContent: string;
+
+  beforeAll(async () => {
+    const xbrltPath = resolve(
+      __dirname,
+      '../../../../public/templates/r414/R414Ind_ID20037_2024-12-31.xbrlt'
+    );
+    xbrltContent = await readFile(xbrltPath, 'utf-8');
+  }, 30000);
+
+  it('reportYear=2022: current-period instants must be 2022, NOT 2020', () => {
+    const result = customizeXbrlt(
+      xbrltContent,
+      { niifGroup: 'r414', companyId: '02462', companyName: 'Test', reportDate: '2022-12-31' },
+      'R414_Individual_ID02462_2022-12-31'
+    );
+
+    // After fix: 2024→2022 (current), 2023→2021 (prev), 2022→2020 (prevprev)
+    const instant2022 = (result.match(/<instant>2022-12-31<\/instant>/g) || []).length;
+    const instant2020 = (result.match(/<instant>2020-12-31<\/instant>/g) || []).length;
+    const instant2021 = (result.match(/<instant>2021-12-31<\/instant>/g) || []).length;
+
+    // Template has 49 instant-2024 → should become 49 instant-2022
+    expect(instant2022).toBe(49);
+    // Template has 33 instant-2023 → should become 33 instant-2021
+    expect(instant2021).toBe(33);
+    // Template has 26 instant-2022 → should become 26 instant-2020
+    expect(instant2020).toBe(26);
+  });
+
+  it('reportYear=2023: current-period instants must be 2023, prev must be 2022', () => {
+    const result = customizeXbrlt(
+      xbrltContent,
+      { niifGroup: 'r414', companyId: '02462', companyName: 'Test', reportDate: '2023-12-31' },
+      'R414_Individual_ID02462_2023-12-31'
+    );
+
+    const instant2023 = (result.match(/<instant>2023-12-31<\/instant>/g) || []).length;
+    const instant2022 = (result.match(/<instant>2022-12-31<\/instant>/g) || []).length;
+    const instant2021 = (result.match(/<instant>2021-12-31<\/instant>/g) || []).length;
+
+    expect(instant2023).toBe(49);
+    expect(instant2022).toBe(33);
+    expect(instant2021).toBe(26);
+  });
+
+  it('reportYear=2024: no replacements needed, dates stay as template', () => {
+    const result = customizeXbrlt(
+      xbrltContent,
+      { niifGroup: 'r414', companyId: '02462', companyName: 'Test', reportDate: '2024-12-31' },
+      'R414_Individual_ID02462_2024-12-31'
+    );
+
+    const instant2024 = (result.match(/<instant>2024-12-31<\/instant>/g) || []).length;
+    const instant2023 = (result.match(/<instant>2023-12-31<\/instant>/g) || []).length;
+    const instant2022 = (result.match(/<instant>2022-12-31<\/instant>/g) || []).length;
+
+    expect(instant2024).toBe(49);
+    expect(instant2023).toBe(33);
+    expect(instant2022).toBe(26);
+  });
+
+  it('reportYear=2025: must replace even with future year', () => {
+    const result = customizeXbrlt(
+      xbrltContent,
+      { niifGroup: 'r414', companyId: '02462', companyName: 'Test', reportDate: '2025-12-31' },
+      'R414_Individual_ID02462_2025-12-31'
+    );
+
+    const instant2025 = (result.match(/<instant>2025-12-31<\/instant>/g) || []).length;
+    const instant2024 = (result.match(/<instant>2024-12-31<\/instant>/g) || []).length;
+    const instant2023 = (result.match(/<instant>2023-12-31<\/instant>/g) || []).length;
+
+    expect(instant2025).toBe(49);
+    expect(instant2024).toBe(33);
+    expect(instant2023).toBe(26);
+  });
+
+  it('no placeholder tokens remain in output', () => {
+    const result = customizeXbrlt(
+      xbrltContent,
+      { niifGroup: 'r414', companyId: '02462', companyName: 'Test', reportDate: '2022-12-31' },
+      'R414_Individual_ID02462_2022-12-31'
+    );
+
+    expect(result).not.toContain('__XBRL_');
+  });
+});

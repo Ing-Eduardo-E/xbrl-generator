@@ -151,21 +151,30 @@ export function customizeXbrlt(content: string, options: TemplateCustomization, 
     // ============================================================
     // SOLO REEMPLAZAR FECHAS EN CONTEXTOS XBRL (períodos contables)
     // ============================================================
+    // NOTA: Usamos placeholders para evitar el bug de doble-reemplazo.
+    // Sin placeholders, al generar para 2022: 2024→2022 (paso 1) y luego
+    // 2022→2020 (paso 3) sobrescribe las fechas recién insertadas.
 
-    // Reemplazar año actual (2024 -> reportYear)
-    customized = customized.replace(/<instant>2024-12-31<\/instant>/g, `<instant>${reportYear}-12-31</instant>`);
-    customized = customized.replace(/<startDate>2024-01-01<\/startDate>/g, `<startDate>${reportYear}-01-01</startDate>`);
-    customized = customized.replace(/<endDate>2024-12-31<\/endDate>/g, `<endDate>${reportYear}-12-31</endDate>`);
+    // Paso 1: Reemplazar todas las fechas del template con placeholders
+    customized = customized.replace(/<instant>2024-12-31<\/instant>/g, '<instant>__XBRL_CUR_1231__</instant>');
+    customized = customized.replace(/<startDate>2024-01-01<\/startDate>/g, '<startDate>__XBRL_CUR_0101__</startDate>');
+    customized = customized.replace(/<endDate>2024-12-31<\/endDate>/g, '<endDate>__XBRL_CUR_1231__</endDate>');
 
-    // Reemplazar año anterior (2023 -> reportPrevYear)
-    customized = customized.replace(/<instant>2023-12-31<\/instant>/g, `<instant>${reportPrevYear}-12-31</instant>`);
-    customized = customized.replace(/<startDate>2023-01-01<\/startDate>/g, `<startDate>${reportPrevYear}-01-01</startDate>`);
-    customized = customized.replace(/<endDate>2023-12-31<\/endDate>/g, `<endDate>${reportPrevYear}-12-31</endDate>`);
+    customized = customized.replace(/<instant>2023-12-31<\/instant>/g, '<instant>__XBRL_PREV_1231__</instant>');
+    customized = customized.replace(/<startDate>2023-01-01<\/startDate>/g, '<startDate>__XBRL_PREV_0101__</startDate>');
+    customized = customized.replace(/<endDate>2023-12-31<\/endDate>/g, '<endDate>__XBRL_PREV_1231__</endDate>');
 
-    // Reemplazar año ante-anterior (2022 -> reportPrevPrevYear)
-    customized = customized.replace(/<instant>2022-12-31<\/instant>/g, `<instant>${reportPrevPrevYear}-12-31</instant>`);
-    customized = customized.replace(/<startDate>2022-01-01<\/startDate>/g, `<startDate>${reportPrevPrevYear}-01-01</startDate>`);
-    customized = customized.replace(/<endDate>2022-12-31<\/endDate>/g, `<endDate>${reportPrevPrevYear}-12-31</endDate>`);
+    customized = customized.replace(/<instant>2022-12-31<\/instant>/g, '<instant>__XBRL_PPREV_1231__</instant>');
+    customized = customized.replace(/<startDate>2022-01-01<\/startDate>/g, '<startDate>__XBRL_PPREV_0101__</startDate>');
+    customized = customized.replace(/<endDate>2022-12-31<\/endDate>/g, '<endDate>__XBRL_PPREV_1231__</endDate>');
+
+    // Paso 2: Reemplazar placeholders con las fechas correctas del reporte
+    customized = customized.replace(/__XBRL_CUR_1231__/g, `${reportYear}-12-31`);
+    customized = customized.replace(/__XBRL_CUR_0101__/g, `${reportYear}-01-01`);
+    customized = customized.replace(/__XBRL_PREV_1231__/g, `${reportPrevYear}-12-31`);
+    customized = customized.replace(/__XBRL_PREV_0101__/g, `${reportPrevYear}-01-01`);
+    customized = customized.replace(/__XBRL_PPREV_1231__/g, `${reportPrevPrevYear}-12-31`);
+    customized = customized.replace(/__XBRL_PPREV_0101__/g, `${reportPrevPrevYear}-01-01`);
   }
 
   return customized;
