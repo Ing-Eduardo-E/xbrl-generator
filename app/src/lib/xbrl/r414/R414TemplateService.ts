@@ -1,56 +1,25 @@
 /**
  * R414TemplateService - Servicio de plantillas para taxonomía R414.
- *
- * Este servicio extiende BaseTemplateService e implementa la lógica específica
- * para la taxonomía R414 (Resolución 414 CGN - Sector Público).
- *
- * R414 es la taxonomía utilizada por empresas de servicios públicos que reportan
- * bajo el marco normativo de la Contaduría General de la Nación (CGN).
- *
- * @module r414/R414TemplateService
+ * Extiende BaseTemplateService con lógica específica para R414
+ * (Resolución 414 CGN - Sector Público / SSPD).
  */
-
 import type ExcelJS from 'exceljs';
 import { BaseTemplateService } from '../shared/baseTemplateService';
 import type {
-  NiifGroup,
-  TemplatePaths,
-  ESFMapping,
-  ServiceColumnMapping,
-  SheetMapping,
-  TemplateWithDataOptions,
+  NiifGroup, TemplatePaths, ESFMapping,
+  ServiceColumnMapping, SheetMapping, TemplateWithDataOptions,
 } from '../types';
-
-import {
-  R414_SERVICE_COLUMNS,
-  R414_ESF_MAPPINGS,
-} from './mappings/esfMappings';
+import { R414_SERVICE_COLUMNS, R414_ESF_MAPPINGS } from './mappings/esfMappings';
 import { R414_SHEET_MAPPING, R414_TEMPLATE_PATHS } from './config';
 
-/**
- * Servicio de plantillas para R414.
- */
+/** Servicio de plantillas para R414. */
 export class R414TemplateService extends BaseTemplateService {
   readonly group: NiifGroup = 'r414';
-
   readonly templatePaths: TemplatePaths = R414_TEMPLATE_PATHS;
 
-  // ============================================
-  // IMPLEMENTACIÓN DE MÉTODOS ABSTRACTOS
-  // ============================================
-
-  getESFMappings(): ESFMapping[] {
-    return R414_ESF_MAPPINGS;
-  }
-
-  getServiceColumns(): ServiceColumnMapping {
-    return R414_SERVICE_COLUMNS;
-  }
-
-  getSheetMapping(): SheetMapping {
-    return R414_SHEET_MAPPING;
-  }
-
+  getESFMappings(): ESFMapping[] { return R414_ESF_MAPPINGS; }
+  getServiceColumns(): ServiceColumnMapping { return R414_SERVICE_COLUMNS; }
+  getSheetMapping(): SheetMapping { return R414_SHEET_MAPPING; }
 
   fillHoja9Sheet(
     worksheet: ExcelJS.Worksheet,

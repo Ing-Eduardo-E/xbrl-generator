@@ -17,3 +17,6 @@ export * from './mappings';
 
 // Exportar el servicio de plantillas R414
 export { R414TemplateService, r414TemplateService } from './R414TemplateService';
+
+// Exportar el writer de datos R414 (ex official/r414DataWriter.ts)
+export { writeR414Data } from './writers';

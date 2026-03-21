@@ -225,17 +225,33 @@ export const R414_FC01_GASTOS_MAPPINGS: ESFMapping[] = [
 ];
 
 /**
- * Filas con datos en FC01 (para limpiar columna F y calcular columna G).
+ * Filas con datos en FC01 (para calcular columna G = E+F).
+ * - standard: Hoja16 (Acueducto) y Hoja17 (Alcantarillado)
+ * - aseo: Hoja18 (Aseo) — incluye fila 74 (Disposición final)
  */
-export const R414_FC01_DATA_ROWS = [
-  13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35,
-  72, 77, 80, 81,
-];
+export const R414_FC01_DATA_ROWS = {
+  standard: [
+    13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35,
+    72, 77, 80, 81,
+  ],
+  aseo: [
+    13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35,
+    72, 74, 77, 80, 81,
+  ],
+};
 
 /**
- * Filas que deben tener valor 0 en columna F (excepto fila 72 para costos de ventas).
+ * Filas que deben tener valor 0 en columna F.
+ * - standard: Hoja16/17 (costos van en F72 solamente)
+ * - aseo: Hoja18 (costos van en F72 40% y F74 60%, F73 = 0)
  */
-export const R414_FC01_ZERO_F_ROWS = [
-  13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33,
-  34, 35, 77, 80, 81,
-];
+export const R414_FC01_ZERO_F_ROWS = {
+  standard: [
+    13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+    34, 35, 77, 80, 81,
+  ],
+  aseo: [
+    13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+    34, 35, 73, 77, 80, 81,
+  ],
+};

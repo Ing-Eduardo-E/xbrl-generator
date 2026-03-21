@@ -1,10 +1,10 @@
 /**
  * Dispatcher de reescritura de datos financieros en workbooks Excel con ExcelJS.
- * Archivo reducido: delega la logica heavy a r414DataWriter e ifeDataWriter.
+ * Archivo reducido: delega la logica heavy a r414/writers, ifeDataWriter y grupos.
  *
  * DEPENDENCIAS:
  * - ServiceBalanceData, TemplateWithDataOptions: importados desde ./interfaces
- * - writeR414Data: official/r414DataWriter.ts
+ * - writeR414Data: ../r414/writers
  * - writeIFEData: official/ifeDataWriter.ts
  * - rewriteGrupoData: ../grupos
  */
@@ -13,7 +13,7 @@ import type { TemplateWithDataOptions } from './interfaces';
 import type { ServiceBalanceData } from '../types';
 import { rewriteGrupoData } from '../grupos';
 import { writeCellSafe, buildCodesWithChildren } from '../shared/excelUtils';
-import { writeR414Data } from './r414DataWriter';
+import { writeR414Data } from '../r414/writers';
 import { writeIFEData } from './ifeDataWriter';
 
 // ═══════════════════════════════════════════════════════════════════════════
