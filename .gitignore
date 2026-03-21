@@ -115,17 +115,17 @@ backup_*/
 /IFE Trimestral/
 IFE Trimestral/
 
-# XBRL Reporting Standard (herramienta externa)
+# XBRL Reporting Standard (herramienta externa - ignorada, ~276 MB)
 Reporting Standard XBRL/
-# Archivos Excel de referencia (no son código) — en la raíz
-/Balance_*.xlsx
-/Balances*.xlsx
-/Estructuras*.xlsx
-/Taxonom*.xlsx
-/Plantilla*.xlsx
-Balances Plantilla 2020.xlsx
-IFE_PuntoEntradaPrimerTrimestre-2025.xlsx
-mapper-2021.xlsx
+# Archivos Excel de referencia - INCLUIDOS en repo
+# /Balance_*.xlsx
+# /Balances*.xlsx
+# /Estructuras*.xlsx
+# /Taxonom*.xlsx
+# /Plantilla*.xlsx
+# Balances Plantilla 2020.xlsx
+# IFE_PuntoEntradaPrimerTrimestre-2025.xlsx
+# mapper-2021.xlsx
 ~$*.xlsx
 .claude/worktrees/
 
