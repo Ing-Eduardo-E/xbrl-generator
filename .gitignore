@@ -117,10 +117,20 @@ IFE Trimestral/
 
 # XBRL Reporting Standard (herramienta externa)
 Reporting Standard XBRL/
-# Archivos Excel de referencia (no son código)
+# Archivos Excel de referencia (no son código) — en la raíz
+/Balance_*.xlsx
+/Balances*.xlsx
+/Estructuras*.xlsx
+/Taxonom*.xlsx
+/Plantilla*.xlsx
 Balances Plantilla 2020.xlsx
 IFE_PuntoEntradaPrimerTrimestre-2025.xlsx
-Plantilla XBRL.xlsx
 mapper-2021.xlsx
 ~$*.xlsx
 .claude/worktrees/
+
+# Archivos raíz generados (no parte del proyecto)
+/next-env.d.ts
+/package.json
+/pnpm-lock.yaml
+/tsconfig.json
