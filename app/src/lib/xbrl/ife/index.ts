@@ -1,13 +1,12 @@
 /**
  * Módulo IFE - Informe Financiero Especial (Trimestral).
  *
- * Exporta el servicio de plantillas IFE y sus configuraciones.
+ * La lógica de escritura de datos Excel está en official/ifeDataWriter.ts.
+ * La personalización de xbrlt/xml está en official/templateCustomizers.ts.
+ * Este módulo exporta configuraciones y mapeos de referencia.
  *
  * @module ife
  */
-
-// Servicio principal
-export { IFETemplateService, ifeTemplateService } from './IFETemplateService';
 
 // Configuración
 export {
@@ -19,5 +18,5 @@ export {
   IFE_CXP_COLUMNS,
 } from './config';
 
-// Mapeos
+// Mapeos de referencia
 export * from './mappings';
