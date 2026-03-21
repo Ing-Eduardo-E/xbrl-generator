@@ -12,6 +12,7 @@
 
 import type ExcelJS from 'exceljs';
 import { BaseTemplateService } from '../shared/baseTemplateService';
+import { safeNumericValue } from '../excelUtils';
 import type {
   NiifGroup,
   TemplatePaths,
@@ -440,8 +441,8 @@ export class R414TemplateService extends BaseTemplateService {
 
     // Columna G - Total (E + F) para cada fila con datos
     for (const row of R414_FC01_DATA_ROWS) {
-      const valorE = (worksheet.getCell(`E${row}`).value as number) || 0;
-      const valorF = (worksheet.getCell(`F${row}`).value as number) || 0;
+      const valorE = safeNumericValue(worksheet.getCell(`E${row}`));
+      const valorF = safeNumericValue(worksheet.getCell(`F${row}`));
       this.writeCell(worksheet, `G${row}`, valorE + valorF);
     }
   }
@@ -486,15 +487,15 @@ export class R414TemplateService extends BaseTemplateService {
 
     for (const { origen, destino } of mapeoFilas) {
       // Sumar columna E de las 3 hojas
-      const e16 = (sheet16.getCell(`E${origen}`).value as number) || 0;
-      const e17 = (sheet17.getCell(`E${origen}`).value as number) || 0;
-      const e18 = (sheet18.getCell(`E${origen}`).value as number) || 0;
+      const e16 = safeNumericValue(sheet16.getCell(`E${origen}`));
+      const e17 = safeNumericValue(sheet17.getCell(`E${origen}`));
+      const e18 = safeNumericValue(sheet18.getCell(`E${origen}`));
       const sumaE = e16 + e17 + e18;
 
       // Sumar columna F de las 3 hojas
-      const f16 = (sheet16.getCell(`F${origen}`).value as number) || 0;
-      const f17 = (sheet17.getCell(`F${origen}`).value as number) || 0;
-      const f18 = (sheet18.getCell(`F${origen}`).value as number) || 0;
+      const f16 = safeNumericValue(sheet16.getCell(`F${origen}`));
+      const f17 = safeNumericValue(sheet17.getCell(`F${origen}`));
+      const f18 = safeNumericValue(sheet18.getCell(`F${origen}`));
       const sumaF = f16 + f17 + f18;
 
       // Escribir en Hoja22
@@ -517,9 +518,9 @@ export class R414TemplateService extends BaseTemplateService {
     sheet3: ExcelJS.Worksheet
   ): void {
     // Obtener los valores de ingresos de la Hoja3 (fila 14)
-    const ingresosAcueducto = (sheet3.getCell('E14').value as number) || 0;
-    const ingresosAlcantarillado = (sheet3.getCell('F14').value as number) || 0;
-    const ingresosAseo = (sheet3.getCell('G14').value as number) || 0;
+    const ingresosAcueducto = safeNumericValue(sheet3.getCell('E14'));
+    const ingresosAlcantarillado = safeNumericValue(sheet3.getCell('F14'));
+    const ingresosAseo = safeNumericValue(sheet3.getCell('G14'));
 
     // Acueducto (filas 17-18)
     this.writeCell(worksheet, 'I17', ingresosAcueducto);
@@ -546,16 +547,16 @@ export class R414TemplateService extends BaseTemplateService {
   ): void {
     // Obtener CXC Corrientes de Hoja2 (filas 19 + 20)
     const cxcCorrientes19 =
-      (sheet2.getCell(`${serviceColumn}19`).value as number) || 0;
+      safeNumericValue(sheet2.getCell(`${serviceColumn}19`));
     const cxcCorrientes20 =
-      (sheet2.getCell(`${serviceColumn}20`).value as number) || 0;
+      safeNumericValue(sheet2.getCell(`${serviceColumn}20`));
     const totalCXCCorrientes = cxcCorrientes19 + cxcCorrientes20;
 
     // Obtener CXC No Corrientes de Hoja2 (filas 43 + 44)
     const cxcNoCorrientes43 =
-      (sheet2.getCell(`${serviceColumn}43`).value as number) || 0;
+      safeNumericValue(sheet2.getCell(`${serviceColumn}43`));
     const cxcNoCorrientes44 =
-      (sheet2.getCell(`${serviceColumn}44`).value as number) || 0;
+      safeNumericValue(sheet2.getCell(`${serviceColumn}44`));
     const totalCXCNoCorrientes = cxcNoCorrientes43 + cxcNoCorrientes44;
 
     // Estratos residenciales
@@ -648,13 +649,13 @@ export class R414TemplateService extends BaseTemplateService {
     usuariosEstrato?: UsuariosEstrato
   ): void {
     // Obtener CXC Corrientes de Hoja2 columna K (K19 + K20)
-    const cxcCorrientes19 = (sheet2.getCell('K19').value as number) || 0;
-    const cxcCorrientes20 = (sheet2.getCell('K20').value as number) || 0;
+    const cxcCorrientes19 = safeNumericValue(sheet2.getCell('K19'));
+    const cxcCorrientes20 = safeNumericValue(sheet2.getCell('K20'));
     const totalCXCCorrientes = cxcCorrientes19 + cxcCorrientes20;
 
     // Obtener CXC No Corrientes de Hoja2 columna K (K43 + K44)
-    const cxcNoCorrientes43 = (sheet2.getCell('K43').value as number) || 0;
-    const cxcNoCorrientes44 = (sheet2.getCell('K44').value as number) || 0;
+    const cxcNoCorrientes43 = safeNumericValue(sheet2.getCell('K43'));
+    const cxcNoCorrientes44 = safeNumericValue(sheet2.getCell('K44'));
     const totalCXCNoCorrientes = cxcNoCorrientes43 + cxcNoCorrientes44;
 
     console.log(`[R414] Hoja26 - CXC Aseo desde Hoja2:`);
@@ -737,7 +738,7 @@ export class R414TemplateService extends BaseTemplateService {
       // Ajustar diferencia de redondeo en columna J (mayor porcentaje)
       const diferencia = totalCXCEstrato - sumaRangos;
       if (diferencia !== 0) {
-        const valorJActual = (worksheet.getCell(`J${estrato.fila}`).value as number) || 0;
+        const valorJActual = safeNumericValue(worksheet.getCell(`J${estrato.fila}`));
         this.writeCell(worksheet, `J${estrato.fila}`, valorJActual + diferencia);
         sumaRangos = totalCXCEstrato;
       }
@@ -1081,18 +1082,18 @@ export class R414TemplateService extends BaseTemplateService {
     // =====================================================
     // Filas de subsidios (14, 15, 16)
     for (const fila of [14, 15, 16]) {
-      const valorE = (worksheet.getCell(`E${fila}`).value as number) || 0;
-      const valorF = (worksheet.getCell(`F${fila}`).value as number) || 0;
-      const valorG = (worksheet.getCell(`G${fila}`).value as number) || 0;
+      const valorE = safeNumericValue(worksheet.getCell(`E${fila}`));
+      const valorF = safeNumericValue(worksheet.getCell(`F${fila}`));
+      const valorG = safeNumericValue(worksheet.getCell(`G${fila}`));
       const totalK = valorE + valorF + valorG;
       this.writeCell(worksheet, `K${fila}`, totalK);
     }
 
     // Filas de contribuciones (19, 20, 21, 22)
     for (const fila of [19, 20, 21, 22]) {
-      const valorE = (worksheet.getCell(`E${fila}`).value as number) || 0;
-      const valorF = (worksheet.getCell(`F${fila}`).value as number) || 0;
-      const valorG = (worksheet.getCell(`G${fila}`).value as number) || 0;
+      const valorE = safeNumericValue(worksheet.getCell(`E${fila}`));
+      const valorF = safeNumericValue(worksheet.getCell(`F${fila}`));
+      const valorG = safeNumericValue(worksheet.getCell(`G${fila}`));
       const totalK = valorE + valorF + valorG;
       this.writeCell(worksheet, `K${fila}`, totalK);
     }
@@ -1652,7 +1653,7 @@ export class R414TemplateService extends BaseTemplateService {
     for (const servicio of servicios) {
       // Obtener el valor de ingresos del Estado de Resultados
       const celdaER = `${servicio.columnaER}${filaIngresosER}`;
-      const valorIngresos = (sheet3.getCell(celdaER).value as number) || 0;
+      const valorIngresos = safeNumericValue(sheet3.getCell(celdaER));
 
       if (valorIngresos !== 0) {
         // Escribir en la celda de "Ingresos por prestación de servicios públicos domiciliarios"
@@ -1711,8 +1712,8 @@ export class R414TemplateService extends BaseTemplateService {
     // =====================================================
     
     // Obtener ingresos de actividades ordinarias del Estado de Resultados (Hoja3 fila 14)
-    const ingresosAcueducto = (sheet3.getCell('E14').value as number) || 0;
-    const ingresosAlcantarillado = (sheet3.getCell('F14').value as number) || 0;
+    const ingresosAcueducto = safeNumericValue(sheet3.getCell('E14'));
+    const ingresosAlcantarillado = safeNumericValue(sheet3.getCell('F14'));
     
     // E18: Ingresos Acueducto (RI: Recaudo en el periodo de evaluación)
     if (ingresosAcueducto !== 0) {

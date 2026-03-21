@@ -21,6 +21,7 @@ import {
   R414_BENEFICIOS_EMPLEADOS_MAPPINGS,
 } from '../r414/mappings';
 import { rewriteGrupoData } from '../grupos';
+import { safeNumericValue } from '../excelUtils';
 import { r414TemplateService } from '../r414/R414TemplateService';
 import type { TemplateWithDataOptions as R414Options } from '../types';
 
@@ -567,7 +568,10 @@ export async function rewriteFinancialDataWithExcelJS(
       console.log(`[ExcelJS] Hoja16!F72 (Costos de ventas total) = ${costosVentasTotal}`);
 
       // Limpiar otras celdas de la columna F que puedan tener valores previos
-      for (const row of [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 34, 35, 77, 80, 81]) {
+      // IMPORTANTE: Incluir fila 33 (Ganancias MPP) — si no se limpia, ExcelJS
+      // conserva la fórmula original del template y `.value` retorna un objeto
+      // { formula: '...' }, causando "0[object Object]" al sumar en columna G.
+      for (const row of [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 77, 80, 81]) {
         sheet16.getCell(`F${row}`).value = 0;
       }
 
@@ -576,8 +580,8 @@ export async function rewriteFinancialDataWithExcelJS(
       // =====================================================
       const filasConDatos16 = [13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35, 72, 77, 80, 81];
       for (const row of filasConDatos16) {
-        const valorE = sheet16.getCell(`E${row}`).value as number || 0;
-        const valorF = sheet16.getCell(`F${row}`).value as number || 0;
+        const valorE = safeNumericValue(sheet16.getCell(`E${row}`));
+        const valorF = safeNumericValue(sheet16.getCell(`F${row}`));
         sheet16.getCell(`G${row}`).value = valorE + valorF;
       }
       console.log(`[ExcelJS] Hoja16 - Columna G (E+F) calculada para ${filasConDatos16.length} filas`);
@@ -755,8 +759,8 @@ export async function rewriteFinancialDataWithExcelJS(
 
       const filasConDatos17 = [13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35, 72, 77, 80, 81];
       for (const row of filasConDatos17) {
-        const valorE = sheet17.getCell(`E${row}`).value as number || 0;
-        const valorF = sheet17.getCell(`F${row}`).value as number || 0;
+        const valorE = safeNumericValue(sheet17.getCell(`E${row}`));
+        const valorF = safeNumericValue(sheet17.getCell(`F${row}`));
         sheet17.getCell(`G${row}`).value = valorE + valorF;
       }
       console.log(`[ExcelJS] Hoja17 - Columna G (E+F) calculada para ${filasConDatos17.length} filas`);
@@ -920,8 +924,8 @@ export async function rewriteFinancialDataWithExcelJS(
 
       const filasConDatos18 = [13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35, 72, 74, 77, 80, 81];
       for (const row of filasConDatos18) {
-        const valorE = sheet18.getCell(`E${row}`).value as number || 0;
-        const valorF = sheet18.getCell(`F${row}`).value as number || 0;
+        const valorE = safeNumericValue(sheet18.getCell(`E${row}`));
+        const valorF = safeNumericValue(sheet18.getCell(`F${row}`));
         sheet18.getCell(`G${row}`).value = valorE + valorF;
       }
       console.log(`[ExcelJS] Hoja18 - Columna G (E+F) calculada para ${filasConDatos18.length} filas`);
@@ -988,14 +992,14 @@ export async function rewriteFinancialDataWithExcelJS(
       ];
 
       for (const { origen, destino } of mapeoFilas) {
-        const e16 = sheet16ForHoja22.getCell(`E${origen}`).value as number || 0;
-        const e17 = sheet17ForHoja22.getCell(`E${origen}`).value as number || 0;
-        const e18 = sheet18ForHoja22.getCell(`E${origen}`).value as number || 0;
+        const e16 = safeNumericValue(sheet16ForHoja22.getCell(`E${origen}`));
+        const e17 = safeNumericValue(sheet17ForHoja22.getCell(`E${origen}`));
+        const e18 = safeNumericValue(sheet18ForHoja22.getCell(`E${origen}`));
         const sumaE = e16 + e17 + e18;
 
-        const f16 = sheet16ForHoja22.getCell(`F${origen}`).value as number || 0;
-        const f17 = sheet17ForHoja22.getCell(`F${origen}`).value as number || 0;
-        const f18 = sheet18ForHoja22.getCell(`F${origen}`).value as number || 0;
+        const f16 = safeNumericValue(sheet16ForHoja22.getCell(`F${origen}`));
+        const f17 = safeNumericValue(sheet17ForHoja22.getCell(`F${origen}`));
+        const f18 = safeNumericValue(sheet18ForHoja22.getCell(`F${origen}`));
         const sumaF = f16 + f17 + f18;
 
         sheet22.getCell(`E${destino}`).value = sumaE;
@@ -1013,8 +1017,8 @@ export async function rewriteFinancialDataWithExcelJS(
 
       let totalE = 0, totalF = 0;
       for (const { destino } of mapeoFilas) {
-        totalE += sheet22.getCell(`E${destino}`).value as number || 0;
-        totalF += sheet22.getCell(`F${destino}`).value as number || 0;
+        totalE += safeNumericValue(sheet22.getCell(`E${destino}`));
+        totalF += safeNumericValue(sheet22.getCell(`F${destino}`));
       }
       console.log(`[ExcelJS] Hoja22 - Totales consolidados:`);
       console.log(`[ExcelJS]   Columna E (Gastos admin): ${totalE}`);
@@ -1033,9 +1037,9 @@ export async function rewriteFinancialDataWithExcelJS(
     if (sheet23 && sheet3ForHoja23) {
       console.log('[ExcelJS] Escribiendo datos en Hoja23 (FC02 - Complementario Ingresos)...');
 
-      const ingresosAcueducto = sheet3ForHoja23.getCell('E14').value as number || 0;
-      const ingresosAlcantarillado = sheet3ForHoja23.getCell('F14').value as number || 0;
-      const ingresosAseo = sheet3ForHoja23.getCell('G14').value as number || 0;
+      const ingresosAcueducto = safeNumericValue(sheet3ForHoja23.getCell('E14'));
+      const ingresosAlcantarillado = safeNumericValue(sheet3ForHoja23.getCell('F14'));
+      const ingresosAseo = safeNumericValue(sheet3ForHoja23.getCell('G14'));
 
       console.log(`[ExcelJS] Hoja23 - Valores de Hoja3.fila14:`);
       console.log(`[ExcelJS]   E14 (Acueducto): ${ingresosAcueducto}`);
@@ -1066,12 +1070,12 @@ export async function rewriteFinancialDataWithExcelJS(
     if (sheet24 && sheet2ForHoja24) {
       console.log('[ExcelJS] Escribiendo datos en Hoja24 (FC03-1 - CXC Acueducto por estrato)...');
 
-      const cxcCorrientes19 = sheet2ForHoja24.getCell('I19').value as number || 0;
-      const cxcCorrientes20 = sheet2ForHoja24.getCell('I20').value as number || 0;
+      const cxcCorrientes19 = safeNumericValue(sheet2ForHoja24.getCell('I19'));
+      const cxcCorrientes20 = safeNumericValue(sheet2ForHoja24.getCell('I20'));
       const totalCXCCorrientes = cxcCorrientes19 + cxcCorrientes20;
 
-      const cxcNoCorrientes43 = sheet2ForHoja24.getCell('I43').value as number || 0;
-      const cxcNoCorrientes44 = sheet2ForHoja24.getCell('I44').value as number || 0;
+      const cxcNoCorrientes43 = safeNumericValue(sheet2ForHoja24.getCell('I43'));
+      const cxcNoCorrientes44 = safeNumericValue(sheet2ForHoja24.getCell('I44'));
       const totalCXCNoCorrientes = cxcNoCorrientes43 + cxcNoCorrientes44;
 
       console.log(`[ExcelJS] Hoja24 - CXC desde Hoja2:`);
@@ -1142,7 +1146,7 @@ export async function rewriteFinancialDataWithExcelJS(
 
           const diferencia = totalCXCEstrato - sumaRangos;
           if (diferencia !== 0) {
-            const valorLActual = sheet24.getCell(`L${estrato.fila}`).value as number || 0;
+            const valorLActual = safeNumericValue(sheet24.getCell(`L${estrato.fila}`));
             sheet24.getCell(`L${estrato.fila}`).value = valorLActual + diferencia;
             sumaRangos = totalCXCEstrato;
           }
@@ -1199,7 +1203,7 @@ export async function rewriteFinancialDataWithExcelJS(
 
           const diferencia = totalCXCEstrato - sumaRangos;
           if (diferencia !== 0) {
-            const valorLActual = sheet24.getCell(`L${estrato.fila}`).value as number || 0;
+            const valorLActual = safeNumericValue(sheet24.getCell(`L${estrato.fila}`));
             sheet24.getCell(`L${estrato.fila}`).value = valorLActual + diferencia;
             sumaRangos = totalCXCEstrato;
           }
@@ -1220,12 +1224,12 @@ export async function rewriteFinancialDataWithExcelJS(
     if (sheet25 && sheet2ForHoja25) {
       console.log('[ExcelJS] Escribiendo datos en Hoja25 (FC03-2 - CXC Alcantarillado por estrato)...');
 
-      const cxcCorrientes19Alc = sheet2ForHoja25.getCell('J19').value as number || 0;
-      const cxcCorrientes20Alc = sheet2ForHoja25.getCell('J20').value as number || 0;
+      const cxcCorrientes19Alc = safeNumericValue(sheet2ForHoja25.getCell('J19'));
+      const cxcCorrientes20Alc = safeNumericValue(sheet2ForHoja25.getCell('J20'));
       const totalCXCCorrientesAlc = cxcCorrientes19Alc + cxcCorrientes20Alc;
 
-      const cxcNoCorrientes43Alc = sheet2ForHoja25.getCell('J43').value as number || 0;
-      const cxcNoCorrientes44Alc = sheet2ForHoja25.getCell('J44').value as number || 0;
+      const cxcNoCorrientes43Alc = safeNumericValue(sheet2ForHoja25.getCell('J43'));
+      const cxcNoCorrientes44Alc = safeNumericValue(sheet2ForHoja25.getCell('J44'));
       const totalCXCNoCorrientesAlc = cxcNoCorrientes43Alc + cxcNoCorrientes44Alc;
 
       console.log(`[ExcelJS] Hoja25 - CXC Alcantarillado desde Hoja2:`);
@@ -1296,7 +1300,7 @@ export async function rewriteFinancialDataWithExcelJS(
 
           const diferencia = totalCXCEstrato - sumaRangos;
           if (diferencia !== 0) {
-            const valorLActual = sheet25.getCell(`L${estrato.fila}`).value as number || 0;
+            const valorLActual = safeNumericValue(sheet25.getCell(`L${estrato.fila}`));
             sheet25.getCell(`L${estrato.fila}`).value = valorLActual + diferencia;
             sumaRangos = totalCXCEstrato;
           }
@@ -1341,7 +1345,7 @@ export async function rewriteFinancialDataWithExcelJS(
 
           const diferencia = totalCXCEstrato - sumaRangos;
           if (diferencia !== 0) {
-            const valorLActual = sheet25.getCell(`L${estrato.fila}`).value as number || 0;
+            const valorLActual = safeNumericValue(sheet25.getCell(`L${estrato.fila}`));
             sheet25.getCell(`L${estrato.fila}`).value = valorLActual + diferencia;
             sumaRangos = totalCXCEstrato;
           }
@@ -1363,12 +1367,12 @@ export async function rewriteFinancialDataWithExcelJS(
     if (sheet26 && sheet2ForHoja26) {
       console.log('[ExcelJS] Escribiendo datos en Hoja26 (FC03-3 - CXC Aseo por estrato)...');
 
-      const cxcCorrientes19Aseo = sheet2ForHoja26.getCell('K19').value as number || 0;
-      const cxcCorrientes20Aseo = sheet2ForHoja26.getCell('K20').value as number || 0;
+      const cxcCorrientes19Aseo = safeNumericValue(sheet2ForHoja26.getCell('K19'));
+      const cxcCorrientes20Aseo = safeNumericValue(sheet2ForHoja26.getCell('K20'));
       const totalCXCCorrientesAseo = cxcCorrientes19Aseo + cxcCorrientes20Aseo;
 
-      const cxcNoCorrientes43Aseo = sheet2ForHoja26.getCell('K43').value as number || 0;
-      const cxcNoCorrientes44Aseo = sheet2ForHoja26.getCell('K44').value as number || 0;
+      const cxcNoCorrientes43Aseo = safeNumericValue(sheet2ForHoja26.getCell('K43'));
+      const cxcNoCorrientes44Aseo = safeNumericValue(sheet2ForHoja26.getCell('K44'));
       const totalCXCNoCorrientesAseo = cxcNoCorrientes43Aseo + cxcNoCorrientes44Aseo;
 
       console.log(`[ExcelJS] Hoja26 - CXC Aseo desde Hoja2:`);
@@ -1439,7 +1443,7 @@ export async function rewriteFinancialDataWithExcelJS(
 
           const diferencia = totalCXCEstrato - sumaRangos;
           if (diferencia !== 0) {
-            const valorJActual = sheet26.getCell(`J${estrato.fila}`).value as number || 0;
+            const valorJActual = safeNumericValue(sheet26.getCell(`J${estrato.fila}`));
             sheet26.getCell(`J${estrato.fila}`).value = valorJActual + diferencia;
             sumaRangos = totalCXCEstrato;
           }
@@ -1484,7 +1488,7 @@ export async function rewriteFinancialDataWithExcelJS(
 
           const diferencia = totalCXCEstrato - sumaRangos;
           if (diferencia !== 0) {
-            const valorJActual = sheet26.getCell(`J${estrato.fila}`).value as number || 0;
+            const valorJActual = safeNumericValue(sheet26.getCell(`J${estrato.fila}`));
             sheet26.getCell(`J${estrato.fila}`).value = valorJActual + diferencia;
             sumaRangos = totalCXCEstrato;
           }
@@ -1688,9 +1692,9 @@ export async function rewriteFinancialDataWithExcelJS(
     if (sheet35 && sheet3ForHoja35) {
       console.log('[ExcelJS] Escribiendo datos en Hoja35 (FC08 - Conciliación de ingresos)...');
 
-      const ingresosAcueducto35 = sheet3ForHoja35.getCell('E14').value as number || 0;
-      const ingresosAlcantarillado35 = sheet3ForHoja35.getCell('F14').value as number || 0;
-      const ingresosAseo35 = sheet3ForHoja35.getCell('G14').value as number || 0;
+      const ingresosAcueducto35 = safeNumericValue(sheet3ForHoja35.getCell('E14'));
+      const ingresosAlcantarillado35 = safeNumericValue(sheet3ForHoja35.getCell('F14'));
+      const ingresosAseo35 = safeNumericValue(sheet3ForHoja35.getCell('G14'));
 
       sheet35.getCell('G26').value = ingresosAcueducto35;
       sheet35.getCell('H26').value = ingresosAlcantarillado35;

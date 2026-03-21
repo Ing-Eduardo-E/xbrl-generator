@@ -11,6 +11,7 @@
 import type ExcelJS from 'exceljs';
 import type { ServiceBalanceData } from '../types';
 import type { UsuariosEstrato } from '../official/interfaces';
+import { safeNumericValue } from '../excelUtils';
 import {
   fillExpenseColumnE,
   fillExpenseColumnF,
@@ -136,9 +137,9 @@ export function rewriteGrupoFC02(
   console.log(`[ExcelJS-Grupo] Escribiendo FC02 en ${config.fc02Sheet}...`);
 
   // Ingresos por servicio desde Hoja3 fila 15 (Ingresos actividades ordinarias)
-  const ingAcu = sheet3.getCell('J15').value as number || 0;
-  const ingAlc = sheet3.getCell('K15').value as number || 0;
-  const ingAseo = sheet3.getCell('L15').value as number || 0;
+  const ingAcu = safeNumericValue(sheet3.getCell('J15'));
+  const ingAlc = safeNumericValue(sheet3.getCell('K15'));
+  const ingAseo = safeNumericValue(sheet3.getCell('L15'));
 
   // FC02 - Acueducto (fila 18, subtotal en fila 18)
   fc02.getCell('I17').value = ingAcu;
@@ -177,9 +178,9 @@ export function rewriteGrupoFC03(
     if (fc03Acu) {
       console.log(`[ExcelJS-Grupo] Escribiendo FC03 Acueducto en ${config.fc03AcuSheet}...`);
 
-      const cxcCorr = (sheet2.getCell('J17').value as number || 0) +
-                       (sheet2.getCell('J18').value as number || 0);
-      const cxcNoCorr = (sheet2.getCell('J32').value as number || 0);
+      const cxcCorr = safeNumericValue(sheet2.getCell('J17')) +
+                       safeNumericValue(sheet2.getCell('J18'));
+      const cxcNoCorr = safeNumericValue(sheet2.getCell('J32'));
 
       const todosEstratos = [...ESTRATOS_RESIDENCIALES, ...ESTRATOS_NO_RESIDENCIALES];
       fillCxCByEstrato(
@@ -198,9 +199,9 @@ export function rewriteGrupoFC03(
     if (fc03Alc) {
       console.log(`[ExcelJS-Grupo] Escribiendo FC03 Alcantarillado en ${config.fc03AlcSheet}...`);
 
-      const cxcCorr = (sheet2.getCell('K17').value as number || 0) +
-                       (sheet2.getCell('K18').value as number || 0);
-      const cxcNoCorr = (sheet2.getCell('K32').value as number || 0);
+      const cxcCorr = safeNumericValue(sheet2.getCell('K17')) +
+                       safeNumericValue(sheet2.getCell('K18'));
+      const cxcNoCorr = safeNumericValue(sheet2.getCell('K32'));
 
       const todosEstratos = [...ESTRATOS_RESIDENCIALES, ...ESTRATOS_NO_RESIDENCIALES];
       fillCxCByEstrato(
@@ -219,9 +220,9 @@ export function rewriteGrupoFC03(
     if (fc03Aseo) {
       console.log(`[ExcelJS-Grupo] Escribiendo FC03 Aseo en ${config.fc03AseoSheet}...`);
 
-      const cxcCorr = (sheet2.getCell('L17').value as number || 0) +
-                       (sheet2.getCell('L18').value as number || 0);
-      const cxcNoCorr = (sheet2.getCell('L32').value as number || 0);
+      const cxcCorr = safeNumericValue(sheet2.getCell('L17')) +
+                       safeNumericValue(sheet2.getCell('L18'));
+      const cxcNoCorr = safeNumericValue(sheet2.getCell('L32'));
 
       // Aseo usa filas 15-24 en lugar de 19-28
       const estratosAseo = [
@@ -358,9 +359,9 @@ export function rewriteGrupoFC08(
   console.log(`[ExcelJS-Grupo] Escribiendo FC08 en ${config.fc08Sheet}...`);
 
   // Copiar ingresos por servicio desde Hoja3 fila 15
-  const ingAcu = sheet3.getCell('J15').value as number || 0;
-  const ingAlc = sheet3.getCell('K15').value as number || 0;
-  const ingAseo = sheet3.getCell('L15').value as number || 0;
+  const ingAcu = safeNumericValue(sheet3.getCell('J15'));
+  const ingAlc = safeNumericValue(sheet3.getCell('K15'));
+  const ingAseo = safeNumericValue(sheet3.getCell('L15'));
 
   fc08.getCell('G26').value = ingAcu;
   fc08.getCell('H26').value = ingAlc;
