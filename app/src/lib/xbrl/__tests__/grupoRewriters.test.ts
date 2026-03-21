@@ -3,7 +3,7 @@ import {
   matchesPrefixes,
   sumAccountsByPrefixes,
 } from '../shared/rewriterHelpers';
-import { getGrupoConfig, GRUPO_ER_MAPPINGS, GRUPO_FC01_EXPENSE_MAPPINGS } from '../grupos/mappings';
+import { getGrupoConfig, GRUPO_FC01_EXPENSE_MAPPINGS } from '../grupos/mappings';
 import type { ServiceBalanceData } from '../types';
 
 // ============================================
@@ -157,20 +157,62 @@ describe('getGrupoConfig', () => {
 // TESTS: Mappings consistency
 // ============================================
 
-describe('GRUPO_ER_MAPPINGS', () => {
-  it('debe tener 7 entradas para ER', () => {
-    expect(GRUPO_ER_MAPPINGS).toHaveLength(7);
+describe('erMappings (per-group ER row mappings)', () => {
+  it('grupo1 erMappings tiene 9 entradas', () => {
+    const config = getGrupoConfig('grupo1');
+    expect(config!.erMappings).toHaveLength(9);
   });
 
-  it('debe tener filas correctas para ER', () => {
-    const rows = GRUPO_ER_MAPPINGS.map(m => m.row);
-    expect(rows).toEqual([15, 16, 17, 21, 22, 25, 26]);
+  it('grupo2 erMappings tiene 11 entradas (incluye impuestos)', () => {
+    const config = getGrupoConfig('grupo2');
+    expect(config!.erMappings).toHaveLength(11);
   });
 
-  it('cada mapping debe tener pucPrefixes no vacío', () => {
-    for (const m of GRUPO_ER_MAPPINGS) {
-      expect(m.pucPrefixes.length).toBeGreaterThan(0);
+  it('grupo3 erMappings tiene 10 entradas', () => {
+    const config = getGrupoConfig('grupo3');
+    expect(config!.erMappings).toHaveLength(10);
+  });
+
+  it('grupo1 ER filas comienzan en 14 (Ingresos ordinarios)', () => {
+    const config = getGrupoConfig('grupo1');
+    expect(config!.erMappings[0].row).toBe(14);
+    expect(config!.erMappings[0].pucPrefixes).toEqual(['41']);
+  });
+
+  it('grupo2 ER filas comienzan en 14 (Ingresos ordinarios)', () => {
+    const config = getGrupoConfig('grupo2');
+    expect(config!.erMappings[0].row).toBe(14);
+    expect(config!.erMappings[0].pucPrefixes).toEqual(['41']);
+  });
+
+  it('grupo3 ER filas comienzan en 14 (Ingresos ordinarios)', () => {
+    const config = getGrupoConfig('grupo3');
+    expect(config!.erMappings[0].row).toBe(14);
+    expect(config!.erMappings[0].pucPrefixes).toEqual(['41']);
+  });
+
+  it('cada erMapping debe tener pucPrefixes no vacío', () => {
+    for (const group of ['grupo1', 'grupo2', 'grupo3'] as const) {
+      const config = getGrupoConfig(group);
+      for (const m of config!.erMappings) {
+        expect(m.pucPrefixes.length).toBeGreaterThan(0);
+      }
     }
+  });
+
+  it('grupo1 ER columnas empiezan en F (Acueducto)', () => {
+    const config = getGrupoConfig('grupo1');
+    expect(config!.erColumns.acueducto).toBe('F');
+  });
+
+  it('grupo2 ER columnas empiezan en E (Acueducto)', () => {
+    const config = getGrupoConfig('grupo2');
+    expect(config!.erColumns.acueducto).toBe('E');
+  });
+
+  it('grupo3 ER columnas empiezan en E (Acueducto)', () => {
+    const config = getGrupoConfig('grupo3');
+    expect(config!.erColumns.acueducto).toBe('E');
   });
 });
 

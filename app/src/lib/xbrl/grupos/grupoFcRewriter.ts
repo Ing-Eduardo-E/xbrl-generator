@@ -289,7 +289,8 @@ const PORCENTAJES_ANTIGUEDAD = {
 export function rewriteGrupoFC05b(
   workbook: ExcelJS.Workbook,
   consolidatedAccounts: Array<{ code: string; value: number; isLeaf: boolean }>,
-  config: GrupoConfig
+  config: GrupoConfig,
+  codesWithChildren: Set<string> = new Set()
 ): void {
   if (!config.fc05bSheet) return;
   const sheet = workbook.getWorksheet(config.fc05bSheet);
@@ -300,7 +301,7 @@ export function rewriteGrupoFC05b(
   for (const mapping of FC05B_PAYABLES_MAPPING) {
     let valorTotal = 0;
     for (const account of consolidatedAccounts) {
-      if (!account.isLeaf) continue;
+      if (codesWithChildren.has(account.code)) continue;
       for (const prefix of mapping.pucPrefixes) {
         if (account.code.startsWith(prefix)) {
           valorTotal += account.value;

@@ -6,6 +6,7 @@
  */
 import type ExcelJS from 'exceljs';
 import type { TemplateWithDataOptions, ServiceBalanceData } from '../official/interfaces';
+import { buildCodesWithChildren } from '../shared/excelUtils';
 import { getGrupoConfig } from './mappings';
 import { rewriteGrupoESF, rewriteGrupoER } from './grupoEsfErRewriter';
 import {
@@ -58,11 +59,14 @@ export function rewriteGrupoData(
   console.log(`[ExcelJS-Grupo] Cuentas consolidadas: ${consolidatedAccounts.length}`);
   console.log(`[ExcelJS-Grupo] Servicios activos: ${activeServices.join(', ')}`);
 
+  // Detección dinámica de hojas: una cuenta es hoja si su código NO es prefijo de otra
+  const codesWithChildren = buildCodesWithChildren(consolidatedAccounts);
+
   // 1. ESF (Hoja2)
-  rewriteGrupoESF(workbook, consolidatedAccounts, serviceBalances as ServiceBalanceData[], activeServices, accountsByService);
+  rewriteGrupoESF(workbook, consolidatedAccounts, serviceBalances as ServiceBalanceData[], activeServices, accountsByService, codesWithChildren);
 
   // 2. ER (Hoja3)
-  rewriteGrupoER(workbook, consolidatedAccounts, activeServices, accountsByService);
+  rewriteGrupoER(workbook, consolidatedAccounts, activeServices, accountsByService, codesWithChildren, config.erColumns, config.erMappings);
 
   // 3. FC01 - Gastos por servicio
   rewriteGrupoFC01(workbook, accountsByService, activeServices, config);
@@ -74,7 +78,7 @@ export function rewriteGrupoData(
   rewriteGrupoFC03(workbook, config, options.usuariosEstrato);
 
   // 6. FC05b - Pasivos por edades (grupo1 only)
-  rewriteGrupoFC05b(workbook, consolidatedAccounts, config);
+  rewriteGrupoFC05b(workbook, consolidatedAccounts, config, codesWithChildren);
 
   // 7. FC08 - Conciliación de ingresos (grupo1 only)
   rewriteGrupoFC08(workbook, config);

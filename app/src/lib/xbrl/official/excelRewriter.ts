@@ -77,21 +77,42 @@ export async function rewriteFinancialDataWithExcelJS(
     }
   } else if (options.niifGroup !== 'ife') {
     // Para grupo1/2/3: llenar metadatos básicos con ExcelJS
+    // Cada grupo tiene layout diferente en Hoja1 — coordenadas verificadas contra xlsx reales
     const sheet1 = workbook.getWorksheet('Hoja1');
     if (sheet1) {
-      console.log('[ExcelJS] Escribiendo metadatos en Hoja1...');
-      writeCellSafe(sheet1, 'C4', options.companyId);
-      writeCellSafe(sheet1, 'E12', options.companyName);
-      writeCellSafe(sheet1, 'E13', options.companyId);
-      if (options.nit) writeCellSafe(sheet1, 'E14', options.nit);
-      writeCellSafe(sheet1, 'E18', options.reportDate);
+      console.log(`[ExcelJS] Escribiendo metadatos en Hoja1 (${options.niifGroup})...`);
       const roundingLabels: Record<string, string> = {
         '1': '1 - Pesos',
         '2': '2 - Miles de pesos',
         '3': '3 - Millones de pesos',
         '4': '4 - Pesos redondeada a miles',
       };
-      writeCellSafe(sheet1, 'E19', roundingLabels[options.roundingDegree || '1'] || '1 - Pesos');
+      const rounding = roundingLabels[options.roundingDegree || '1'] || '1 - Pesos';
+
+      writeCellSafe(sheet1, 'C4', options.companyId);
+
+      if (options.niifGroup === 'grupo3') {
+        // Grupo 3: usa columna D (no E), rows 12-18
+        writeCellSafe(sheet1, 'D12', options.companyName);
+        writeCellSafe(sheet1, 'D13', options.companyId);
+        if (options.nit) writeCellSafe(sheet1, 'D14', options.nit);
+        writeCellSafe(sheet1, 'D17', options.reportDate);
+        writeCellSafe(sheet1, 'D18', rounding);
+      } else if (options.niifGroup === 'grupo2') {
+        // Grupo 2: columna E, tiene fila extra D16 "Descripción naturaleza EF"
+        writeCellSafe(sheet1, 'E13', options.companyName);
+        writeCellSafe(sheet1, 'E14', options.companyId);
+        if (options.nit) writeCellSafe(sheet1, 'E15', options.nit);
+        writeCellSafe(sheet1, 'E19', options.reportDate);
+        writeCellSafe(sheet1, 'E20', rounding);
+      } else {
+        // Grupo 1: columna E, rows 13-19
+        writeCellSafe(sheet1, 'E13', options.companyName);
+        writeCellSafe(sheet1, 'E14', options.companyId);
+        if (options.nit) writeCellSafe(sheet1, 'E15', options.nit);
+        writeCellSafe(sheet1, 'E18', options.reportDate);
+        writeCellSafe(sheet1, 'E19', rounding);
+      }
       console.log('[ExcelJS] Hoja1 completada.');
     }
   }

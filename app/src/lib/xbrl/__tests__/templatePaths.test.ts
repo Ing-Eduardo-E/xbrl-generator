@@ -151,24 +151,24 @@ describe('SHEET_MAPPING', () => {
 // SERVICE_COLUMNS
 // ============================================
 describe('SERVICE_COLUMNS', () => {
-  it('maps total to column I', () => {
-    expect(SERVICE_COLUMNS.total).toBe('I');
+  it('does not have total key (total is a template formula)', () => {
+    expect(SERVICE_COLUMNS.total).toBeUndefined();
   });
 
-  it('maps acueducto to column J', () => {
-    expect(SERVICE_COLUMNS.acueducto).toBe('J');
+  it('maps acueducto to column I', () => {
+    expect(SERVICE_COLUMNS.acueducto).toBe('I');
   });
 
-  it('maps alcantarillado to column K', () => {
-    expect(SERVICE_COLUMNS.alcantarillado).toBe('K');
+  it('maps alcantarillado to column J', () => {
+    expect(SERVICE_COLUMNS.alcantarillado).toBe('J');
   });
 
-  it('maps aseo to column L', () => {
-    expect(SERVICE_COLUMNS.aseo).toBe('L');
+  it('maps aseo to column K', () => {
+    expect(SERVICE_COLUMNS.aseo).toBe('K');
   });
 
   it('maps all 8 service columns', () => {
-    const keys = ['total', 'acueducto', 'alcantarillado', 'aseo', 'energia', 'gas', 'glp', 'otras', 'other'];
+    const keys = ['acueducto', 'alcantarillado', 'aseo', 'energia', 'gas', 'glp', 'otras', 'xm'];
     for (const key of keys) {
       expect(SERVICE_COLUMNS).toHaveProperty(key);
       expect(typeof SERVICE_COLUMNS[key]).toBe('string');

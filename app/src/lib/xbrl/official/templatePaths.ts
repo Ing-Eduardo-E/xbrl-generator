@@ -146,18 +146,19 @@ export const SHEET_MAPPING: Record<NiifGroup, Record<string, string>> = {
 
 /**
  * Estructura de columnas para datos por servicio - Grupo 1, 2, 3
- * Columna I = Total, J = Acueducto, K = Alcantarillado, L = Aseo, etc.
+ * Verificado contra plantillas xlsx reales:
+ *   I=Acueducto, J=Alcantarillado, K=Aseo, L=Energía, M=Gas, N=GLP, O=Otras, P=XM
+ *   Total es fórmula en la columna posterior (P, Q o O según grupo) — no se escribe.
  */
 export const SERVICE_COLUMNS: Record<string, string> = {
-  total: 'I',
-  acueducto: 'J',
-  alcantarillado: 'K',
-  aseo: 'L',
-  energia: 'M',
-  gas: 'N',
-  glp: 'O',
-  otras: 'P',
-  other: 'Q',
+  acueducto: 'I',
+  alcantarillado: 'J',
+  aseo: 'K',
+  energia: 'L',
+  gas: 'M',
+  glp: 'N',
+  otras: 'O',
+  xm: 'P',
 };
 
 /**
