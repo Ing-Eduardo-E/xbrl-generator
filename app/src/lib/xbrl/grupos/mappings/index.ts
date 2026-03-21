@@ -172,7 +172,167 @@ export interface GrupoConfig {
   erColumns: Record<string, string>;
   /** Mappings ER (Hoja3) — filas y PUC prefixes varían por grupo */
   erMappings: ESFMapping[];
+  /** ESF row overrides — traduce row default de ESF_CONCEPTS al row real del template */
+  esfRowMap: Record<number, number>;
 }
+
+// ============================================
+// ESF ROW MAPS — traduce ESF_CONCEPTS.row al row real de cada template
+// Valores verificados contra plantillas xlsx oficiales.
+// 0 = concepto no tiene fila en la plantilla (skip).
+// ============================================
+
+/**
+ * Grupo 1 (NIIF Plenas): Rows 15-21 coinciden con ESF_CONCEPTS.
+ * Rows 22+ están desplazados por sub-detail CxC (rows 18-27 en template).
+ */
+const GRUPO1_ESF_ROW_MAP: Record<number, number> = {
+  // Activos corrientes (15-21 coinciden directamente)
+  22: 28,   // Inventarios
+  23: 29,   // Activos por impuestos corrientes
+  24: 32,   // Otros activos no financieros corrientes
+  // Activos no corrientes
+  27: 40,   // PPE
+  28: 43,   // Intangibles
+  29: 41,   // Propiedad de inversión
+  30: 42,   // Plusvalía
+  31: 61,   // Activos por impuestos diferidos
+  32: 49,   // CxC no corrientes
+  33: 64,   // Otros activos no corrientes
+  // Pasivos corrientes
+  37: 75,   // CxP comerciales (aggregate)
+  38: 75,   // Proveedores → CxP aggregate
+  39: 84,   // Ingresos diferidos → Otros pasivos corrientes
+  40: 84,   // Gastos acumulados → Otros pasivos corrientes
+  41: 82,   // Obligaciones financieras corrientes
+  42: 84,   // Obligaciones laborales → Otros pasivos corrientes
+  43: 81,   // Pasivos por impuestos corrientes
+  44: 71,   // Provisiones corrientes
+  45: 84,   // Otros pasivos corrientes
+  // Pasivos no corrientes
+  48: 101,  // Obligaciones financieras NC
+  49: 93,   // Proveedores NC → CxP NC
+  50: 103,  // Ingresos diferidos NC → Otros NC
+  51: 103,  // Obligaciones laborales NC → Otros NC
+  52: 99,   // Pasivo por impuestos diferidos
+  53: 89,   // Provisiones NC
+  54: 103,  // Otros pasivos NC
+  // Patrimonio
+  58: 107,  // Capital emitido
+  59: 110,  // Prima de emisión
+  60: 109,  // Acciones propias en cartera
+  61: 111,  // Ganancias acumuladas
+  62: 111,  // Utilidad del ejercicio → Ganancias acumuladas
+  63: 116,  // Superávit revaluación → ORI
+  64: 115,  // Otras reservas
+  65: 116,  // Otro resultado integral
+  67: 113,  // Participaciones NC → Otras participaciones patrimonio
+};
+
+/**
+ * Grupo 2 (NIIF Pymes): Estructura similar a G1 con pequeños desplazamientos.
+ * Rows 15-21 coinciden; 22+ difieren.
+ */
+const GRUPO2_ESF_ROW_MAP: Record<number, number> = {
+  // Activos corrientes (15-21 coinciden)
+  22: 28,   // Inventarios
+  23: 29,   // Activos por impuestos corrientes
+  24: 33,   // Otros activos no financieros corrientes
+  // Activos no corrientes
+  27: 38,   // PPE
+  28: 42,   // Intangibles
+  29: 39,   // Propiedad de inversión
+  30: 41,   // Plusvalía
+  31: 62,   // Activos por impuestos diferidos
+  32: 50,   // CxC no corrientes
+  33: 65,   // Otros activos no corrientes
+  // Pasivos corrientes
+  37: 76,   // CxP comerciales
+  38: 76,   // Proveedores → CxP aggregate
+  39: 87,   // Ingresos diferidos → Otros pasivos
+  40: 87,   // Gastos acumulados → Otros pasivos
+  41: 83,   // Obligaciones financieras corrientes
+  42: 87,   // Obligaciones laborales → Otros pasivos
+  43: 82,   // Pasivos por impuestos corrientes
+  44: 72,   // Provisiones corrientes
+  45: 87,   // Otros pasivos corrientes
+  // Pasivos no corrientes
+  48: 102,  // Obligaciones financieras NC → Otros pasivos financieros NC
+  49: 94,   // Proveedores NC → CxP NC
+  50: 104,  // Ingresos diferidos NC → Otros NC
+  51: 104,  // Obligaciones laborales NC → Otros NC
+  52: 100,  // Pasivo por impuestos diferidos
+  53: 90,   // Provisiones NC
+  54: 104,  // Otros pasivos NC
+  // Patrimonio
+  58: 108,  // Capital emitido
+  59: 112,  // Prima de emisión
+  60: 113,  // Acciones propias en cartera
+  61: 110,  // Ganancias acumuladas
+  62: 110,  // Utilidad del ejercicio → Ganancias acumuladas
+  63: 117,  // Superávit revaluación → ORI
+  64: 116,  // Otras reservas
+  65: 117,  // Otro resultado integral
+  67: 114,  // Participaciones NC → Otras participaciones patrimonio
+};
+
+/**
+ * Grupo 3 (Microempresas): Estructura simplificada, CxC desplazada a row 18.
+ * Proveedores, ingresos diferidos y gastos acumulados tienen filas propias.
+ */
+const GRUPO3_ESF_ROW_MAP: Record<number, number> = {
+  // Activos corrientes — CxC desplazada (row 17=Inversiones)
+  17: 18,   // CxC corrientes (G3: row 18, no row 17)
+  18: 19,   // CxC servicios públicos (shifted +1)
+  19: 25,   // Deudores comerciales → CxC por venta bienes
+  20: 26,   // Otras CxC corrientes
+  21: 18,   // Deterioro CxC → CxC aggregate
+  22: 28,   // Inventarios
+  23: 29,   // Activos por impuestos corrientes
+  24: 30,   // Otros activos corrientes
+  // Activos no corrientes
+  27: 36,   // PPE
+  28: 0,    // Intangibles (sin fila en G3)
+  29: 35,   // Propiedad de inversión
+  30: 0,    // Plusvalía (sin fila en G3)
+  31: 48,   // Activos por impuestos diferidos
+  32: 37,   // CxC no corrientes
+  33: 50,   // Otros activos no corrientes
+  // Pasivos corrientes — G3 tiene sub-detail bajo CxP
+  37: 56,   // CxP corrientes (aggregate)
+  38: 57,   // Proveedores corrientes (G3 tiene fila propia!)
+  39: 58,   // Ingresos diferidos corrientes (G3 tiene fila propia!)
+  40: 59,   // Gastos acumulados corrientes (G3 tiene fila propia!)
+  41: 63,   // Obligaciones financieras corrientes
+  42: 62,   // Obligaciones laborales corrientes
+  43: 64,   // Pasivo por impuestos corrientes
+  44: 65,   // Provisiones corrientes
+  45: 66,   // Otros pasivos corrientes
+  // Pasivos no corrientes — G3 también tiene sub-detail
+  48: 75,   // Obligaciones financieras NC
+  49: 70,   // Proveedores NC (G3 tiene fila propia!)
+  50: 71,   // Ingresos diferidos NC (G3 tiene fila propia!)
+  51: 76,   // Obligaciones laborales NC
+  52: 78,   // Pasivo por impuestos diferidos
+  53: 79,   // Provisiones NC
+  54: 80,   // Otros pasivos NC
+  // Patrimonio (simplificado)
+  58: 84,   // Capital emitido
+  59: 0,    // Prima de emisión (sin fila en G3)
+  60: 0,    // Acciones propias (sin fila en G3)
+  61: 85,   // Ganancias acumuladas
+  62: 85,   // Utilidad del ejercicio → Ganancias acumuladas
+  63: 89,   // Superávit revaluación → Otras participaciones
+  64: 88,   // Otras reservas
+  65: 89,   // Otro resultado integral → Otras participaciones
+  67: 0,    // Participaciones NC (sin fila en G3)
+};
+
+const ESF_ROW_MAPS: Record<string, Record<number, number>> = {
+  grupo1: GRUPO1_ESF_ROW_MAP,
+  grupo2: GRUPO2_ESF_ROW_MAP,
+  grupo3: GRUPO3_ESF_ROW_MAP,
+};
 
 /**
  * Obtiene la configuración de un grupo NIIF usando SHEET_MAPPING.
@@ -201,5 +361,6 @@ export function getGrupoConfig(niifGroup: NiifGroup): GrupoConfig | null {
     fc01AseoDisposalRow: null,
     erColumns: ER_COLUMNS_BY_GROUP[niifGroup] || GRUPO2_ER_COLUMNS,
     erMappings: ER_MAPPINGS_BY_GROUP[niifGroup] || GRUPO2_ER_MAPPINGS,
+    esfRowMap: ESF_ROW_MAPS[niifGroup] || GRUPO2_ESF_ROW_MAP,
   };
 }

@@ -20,6 +20,7 @@ import { SERVICE_COLUMNS } from './mappings';
 /**
  * Reescribe el ESF (Hoja2) para grupo1/2/3 usando ExcelJS.
  * Usa ESF_CONCEPTS con matching conceptual (findESFConceptByPUC).
+ * esfRowMap traduce ESF_CONCEPTS.row al row real del template (0 = skip).
  */
 export function rewriteGrupoESF(
   workbook: ExcelJS.Workbook,
@@ -27,7 +28,8 @@ export function rewriteGrupoESF(
   serviceBalances: ServiceBalanceData[],
   activeServices: string[],
   accountsByService: Record<string, ServiceBalanceData[]>,
-  codesWithChildren: Set<string> = new Set()
+  codesWithChildren: Set<string> = new Set(),
+  esfRowMap: Record<number, number> = {}
 ): void {
   const sheet2 = workbook.getWorksheet('Hoja2');
   if (!sheet2) return;
@@ -38,15 +40,9 @@ export function rewriteGrupoESF(
     if (concept.isTotal) continue;
     if (!concept.pucCode) continue;
 
-    // Calcular total consolidado
-    let totalValue = 0;
-    for (const account of consolidatedAccounts) {
-      if (codesWithChildren.has(account.code)) continue;
-      const mapped = findESFConceptByPUC(account.code);
-      if (mapped && mapped.concept === concept.concept) {
-        totalValue += account.value;
-      }
-    }
+    // Resolver row real del template (override si existe, sino default)
+    const actualRow = esfRowMap[concept.row] ?? concept.row;
+    if (actualRow === 0) continue; // Concepto sin fila en este template
 
     // Total es fórmula en las plantillas — no se escribe.
     // Solo escribir valores por servicio en sus columnas correspondientes.
@@ -65,7 +61,7 @@ export function rewriteGrupoESF(
       }
 
       if (serviceValue !== 0) {
-        sheet2.getCell(`${serviceColumn}${concept.row}`).value = serviceValue;
+        sheet2.getCell(`${serviceColumn}${actualRow}`).value = serviceValue;
       }
     }
   }

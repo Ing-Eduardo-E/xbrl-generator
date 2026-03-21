@@ -216,6 +216,53 @@ describe('erMappings (per-group ER row mappings)', () => {
   });
 });
 
+describe('esfRowMap (per-group ESF row overrides)', () => {
+  it('grupo1 mapea Inventarios (default 22) a row 28', () => {
+    const config = getGrupoConfig('grupo1');
+    expect(config!.esfRowMap[22]).toBe(28);
+  });
+
+  it('grupo1 mapea PPE (default 27) a row 40', () => {
+    const config = getGrupoConfig('grupo1');
+    expect(config!.esfRowMap[27]).toBe(40);
+  });
+
+  it('grupo1 mapea Capital (default 58) a row 107', () => {
+    const config = getGrupoConfig('grupo1');
+    expect(config!.esfRowMap[58]).toBe(107);
+  });
+
+  it('grupo3 mapea CxC corrientes (default 17) a row 18', () => {
+    const config = getGrupoConfig('grupo3');
+    expect(config!.esfRowMap[17]).toBe(18);
+  });
+
+  it('grupo3 mapea Intangibles (default 28) a 0 (skip)', () => {
+    const config = getGrupoConfig('grupo3');
+    expect(config!.esfRowMap[28]).toBe(0);
+  });
+
+  it('grupo3 mapea Plusvalía (default 30) a 0 (skip)', () => {
+    const config = getGrupoConfig('grupo3');
+    expect(config!.esfRowMap[30]).toBe(0);
+  });
+
+  it('grupo2 mapea PPE (default 27) a row 38', () => {
+    const config = getGrupoConfig('grupo2');
+    expect(config!.esfRowMap[27]).toBe(38);
+  });
+
+  it('todos los esfRowMap tienen overrides para filas clave', () => {
+    for (const group of ['grupo1', 'grupo2', 'grupo3'] as const) {
+      const config = getGrupoConfig(group);
+      // Inventarios, PPE y Capital deben tener override
+      expect(config!.esfRowMap[22]).toBeDefined(); // Inventarios
+      expect(config!.esfRowMap[27]).toBeDefined(); // PPE
+      expect(config!.esfRowMap[58]).toBeDefined(); // Capital
+    }
+  });
+});
+
 describe('GRUPO_FC01_EXPENSE_MAPPINGS', () => {
   it('debe tener 10 entradas para FC01', () => {
     expect(GRUPO_FC01_EXPENSE_MAPPINGS).toHaveLength(10);

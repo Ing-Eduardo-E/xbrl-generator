@@ -63,7 +63,7 @@ export function rewriteGrupoData(
   const codesWithChildren = buildCodesWithChildren(consolidatedAccounts);
 
   // 1. ESF (Hoja2)
-  rewriteGrupoESF(workbook, consolidatedAccounts, serviceBalances as ServiceBalanceData[], activeServices, accountsByService, codesWithChildren);
+  rewriteGrupoESF(workbook, consolidatedAccounts, serviceBalances as ServiceBalanceData[], activeServices, accountsByService, codesWithChildren, config.esfRowMap);
 
   // 2. ER (Hoja3)
   rewriteGrupoER(workbook, consolidatedAccounts, activeServices, accountsByService, codesWithChildren, config.erColumns, config.erMappings);
