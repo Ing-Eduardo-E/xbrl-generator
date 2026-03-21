@@ -221,6 +221,47 @@ export function parseNumericValue(value: unknown): number {
 }
 
 /**
+ * Verifica si un código PUC coincide con alguno de los prefijos dados,
+ * excluyendo opcionalmente ciertos prefijos.
+ */
+export function matchesPrefixes(code: string, prefixes: string[], excludes?: string[]): boolean {
+  if (excludes) {
+    for (const exclude of excludes) {
+      if (code.startsWith(exclude)) return false;
+    }
+  }
+  for (const prefix of prefixes) {
+    if (code.startsWith(prefix)) return true;
+  }
+  return false;
+}
+
+/**
+ * Construye un Set de códigos que tienen hijos en la jerarquía de cuentas.
+ * Una cuenta es "hoja" si su código NO está en el Set resultante.
+ */
+export function buildCodesWithChildren(accounts: Array<{ code: string }>): Set<string> {
+  const set = new Set<string>();
+  for (const account of accounts) {
+    for (let i = 1; i < account.code.length; i++) {
+      set.add(account.code.slice(0, i));
+    }
+  }
+  return set;
+}
+
+/**
+ * Contexto precomputado para writers de datos financieros.
+ * Generado en el dispatcher (excelRewriter) y pasado a cada writer de taxonomía.
+ */
+export interface DataWriterContext {
+  accountsByService: Record<string, Array<{ service: string; code: string; name: string; value: number; isLeaf: boolean }>>;
+  activeServices: string[];
+  codesWithChildren: Set<string>;
+  serviceCodesWithChildren: Set<string>;
+}
+
+/**
  * Formatea un número como moneda colombiana.
  */
 export function formatCurrency(value: number): string {
