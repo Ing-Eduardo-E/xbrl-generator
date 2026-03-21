@@ -114,6 +114,9 @@ backup_*/
 # Archivos IFE de prueba generados
 /IFE Trimestral/
 IFE Trimestral/
+
+# XBRL Reporting Standard (herramienta externa)
+Reporting Standard XBRL/
 # Archivos Excel de referencia (no son código)
 Balances Plantilla 2020.xlsx
 IFE_PuntoEntradaPrimerTrimestre-2025.xlsx
