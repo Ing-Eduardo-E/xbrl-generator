@@ -12,6 +12,63 @@ import { customizeXbrlt, customizeXml } from './official/templateCustomizers';
 import { TEMPLATE_PATHS } from './official/templatePaths';
 import type { TemplateWithDataOptions, TemplateCustomization, OfficialTemplatePackage } from './official/interfaces';
 
+/**
+ * Preserva la estructura original del template xlsx mientras inyecta los datos de ExcelJS.
+ *
+ * ExcelJS modifica workbook.xml, _rels/workbook.xml.rels y [Content_Types].xml
+ * al generar el buffer de salida. Específicamente:
+ * - Agrega una referencia rota a xl/theme/theme1.xml (que no existe)
+ * - Renumera todos los rIds de las relaciones
+ * - Modifica workbookPr, fileVersion y otros metadatos
+ *
+ * Estas modificaciones hacen que XBRL Express (Java/POI) no pueda resolver
+ * correctamente las hojas del workbook, mostrando todos los cuadros vacíos.
+ *
+ * Solución: Combinar la estructura original (workbook.xml, rels, Content_Types,
+ * docProps) con los datos de ExcelJS (worksheets, sharedStrings, styles).
+ */
+async function preserveOriginalStructure(
+  originalBuffer: Buffer,
+  excelJsBuffer: Buffer
+): Promise<Buffer> {
+  const originalZip = await JSZip.loadAsync(originalBuffer);
+  const excelJsZip = await JSZip.loadAsync(excelJsBuffer);
+  const hybridZip = new JSZip();
+
+  // Archivos estructurales que se preservan del template ORIGINAL
+  // (mantienen workbook.xml, rels y metadatos intactos)
+  const structuralFiles = new Set([
+    'xl/workbook.xml',
+    'xl/_rels/workbook.xml.rels',
+    '[Content_Types].xml',
+    '_rels/.rels',
+    'docProps/app.xml',
+    'docProps/core.xml',
+  ]);
+
+  // 1. Copiar archivos estructurales del original
+  for (const filePath of structuralFiles) {
+    const file = originalZip.file(filePath);
+    if (file) {
+      hybridZip.file(filePath, await file.async('nodebuffer'));
+    }
+  }
+
+  // 2. Copiar datos de ExcelJS (worksheets, styles, sharedStrings)
+  for (const [filePath, file] of Object.entries(excelJsZip.files)) {
+    if (file.dir) continue;
+    if (structuralFiles.has(filePath)) continue; // ya copiado del original
+    hybridZip.file(filePath, await file.async('nodebuffer'));
+  }
+
+  const result = await hybridZip.generateAsync({
+    type: 'nodebuffer',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 },
+  });
+  return Buffer.from(result);
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // FUNCIONES PÚBLICAS (L4717–4943 del monolito original)
 // ═══════════════════════════════════════════════════════════════════
@@ -70,9 +127,11 @@ export async function generateOfficialTemplatePackageWithData(
     // SheetJS (xlsx) destruye la estructura interna del template (elimina sharedStrings.xml,
     // reduce styles.xml de 14KB a 1KB, pierde formatos de hojas) lo que hace que
     // XBRL Express no pueda leer los datos del archivo generado.
-    // ExcelJS preserva la estructura al 100%.
+    // ExcelJS preserva los datos pero modifica workbook.xml y rels (agrega referencia
+    // rota a theme/theme1.xml). preserveOriginalStructure() restaura la estructura original.
     const xlsxContent = await loadBinaryTemplate(templatePaths.xlsx);
-    const customizedXlsx = await rewriteFinancialDataWithExcelJS(xlsxContent, options);
+    const excelJsOutput = await rewriteFinancialDataWithExcelJS(xlsxContent, options);
+    const customizedXlsx = await preserveOriginalStructure(xlsxContent, excelJsOutput);
 
     zip.file(`${outputFileName}.xlsx`, customizedXlsx);
 
