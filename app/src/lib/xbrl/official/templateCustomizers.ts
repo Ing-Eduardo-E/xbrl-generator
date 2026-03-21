@@ -7,15 +7,6 @@ import path from 'path';
 import type { NiifGroup } from '../taxonomyConfig';
 import type { TemplateCustomization } from './interfaces';
 import { TEMPLATE_PATHS } from './templatePaths';
-import { customizeExcelWithData } from './excelDataFiller';
-import type { TemplateWithDataOptions } from './interfaces';
-
-/**
- * Personaliza el archivo Excel con datos de la plantilla.
- */
-export function customizeExcel(xlsxBuffer: Buffer, options: TemplateCustomization): Buffer {
-  return customizeExcelWithData(xlsxBuffer, options as TemplateWithDataOptions);
-}
 
 /**
  * Personaliza el contenido del archivo .xbrlt

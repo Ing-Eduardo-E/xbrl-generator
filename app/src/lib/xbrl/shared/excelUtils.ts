@@ -8,6 +8,37 @@
 import type ExcelJS from 'exceljs';
 
 /**
+ * Escribe un valor en una celda de forma segura, limpiando shared formulas
+ * y aplicando formato numérico. Compatible con XBRL Express.
+ */
+export function writeCellSafe(
+  worksheet: ExcelJS.Worksheet,
+  cellAddress: string,
+  value: number | string | null
+): void {
+  const cell = worksheet.getCell(cellAddress);
+
+  // Limpiar shared formulas para evitar errores de POI
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const model = cell as any;
+  if (model.model) {
+    delete model.model.sharedFormula;
+    delete model.model.formula;
+  }
+
+  // Limpiar completamente la celda
+  cell.value = null;
+
+  // Escribir el nuevo valor
+  if (value !== null && value !== undefined) {
+    cell.value = value;
+    if (typeof value === 'number') {
+      cell.numFmt = '#,##0;(#,##0)';
+    }
+  }
+}
+
+/**
  * Escribe un valor numérico en una celda, redondeando a entero.
  */
 export function writeCellNumber(

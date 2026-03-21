@@ -22,45 +22,9 @@ import {
 } from '../r414/mappings';
 import { rewriteGrupoData } from '../grupos';
 import { safeNumericValue } from '../excelUtils';
+import { writeCellSafe } from '../shared/excelUtils';
 import { r414TemplateService } from '../r414/R414TemplateService';
 import type { TemplateWithDataOptions as R414Options } from '../types';
-
-/**
- * Escribe un valor en una celda de forma segura, limpiando fórmulas compartidas
- * y aplicando formato numérico XBRL.
- *
- * Replica la lógica de BaseTemplateService.writeCell() que es necesaria para
- * compatibilidad con Apache POI / XBRL Express:
- * 1. Elimina shared formulas (evita error "Shared Formula master must exist")
- * 2. Limpia la celda con null antes de escribir (fuerza estado limpio)
- * 3. Aplica numFmt '#,##0;(#,##0)' para numéricos (requerido por SSPD)
- */
-function writeCellSafe(
-  worksheet: ExcelJS.Worksheet,
-  cellAddress: string,
-  value: number | string | null
-): void {
-  const cell = worksheet.getCell(cellAddress);
-
-  // Limpiar shared formulas para evitar errores de POI
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const model = cell as any;
-  if (model.model) {
-    delete model.model.sharedFormula;
-    delete model.model.formula;
-  }
-
-  // Limpiar completamente la celda
-  cell.value = null;
-
-  // Escribir el nuevo valor
-  if (value !== null && value !== undefined) {
-    cell.value = value;
-    if (typeof value === 'number') {
-      cell.numFmt = '#,##0;(#,##0)';
-    }
-  }
-}
 
 // ─── (Índice de secciones del body — ver marcadores ═══ abajo) ──────────
 // ─── Sección 1: Función principal + helpers de init (~L29-76)   ─────────

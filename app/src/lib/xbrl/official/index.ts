@@ -9,6 +9,5 @@
 export * from './interfaces';
 export * from './templatePaths';
 export * from './fileLoaders';
-export { customizeExcelWithData } from './excelDataFiller';
 export { rewriteFinancialDataWithExcelJS } from './excelRewriter';
 export * from './templateCustomizers';
