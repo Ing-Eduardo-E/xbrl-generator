@@ -28,7 +28,13 @@ This milestone takes a brownfield production codebase from a state where IFE Tri
   3. Generating an R414 ZIP and opening the .xlsx in Excel shows populated ESF and ER cells with the distributed service balances — not zeros or blanks
   4. Generating an IFE ZIP for Q1, Q3, and Q4 (not just Q2) produces packages whose .xbrlt entry-point XSD URL matches the correct trimestre namespace
   5. Hoja1 (informacion general) in an R414 output has NIT, company name, address, report date, and responsible party filled in with the correct values from the session
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Write IFE pipeline test + BUG-02 regression (TEST-01, BUG-02)
+- [ ] 01-02-PLAN.md — Write ZIP shape tests for generateOfficialTemplatePackageWithData (TEST-02, TEST-03)
+- [ ] 01-03-PLAN.md — Fix R414 isLeaf bug with codesWithChildren (BUG-01, R414-01, R414-02, R414-04)
+- [ ] 01-04-PLAN.md — Fix IFE XSD entry-point URL for all trimestres (BUG-02, IFE-01)
 
 ### Phase 2: Architecture Cleanup
 **Goal**: The codebase has a single authoritative `TemplateWithDataOptions` interface, no dead SheetJS code that could accidentally destroy xlsx structure, `writeCellSafe()` lives in exactly one place, and IFE's CxP sheet (Hoja6) has its data-filling implemented
@@ -84,7 +90,7 @@ Phase 1 must come first. Phase 4 can run in parallel with Phases 2 and 3 (depend
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Safety Net & Bug Fixes | 0/TBD | Not started | - |
+| 1. Safety Net & Bug Fixes | 0/4 | Not started | - |
 | 2. Architecture Cleanup | 0/TBD | Not started | - |
 | 3. Modular Decomposition | 0/TBD | Not started | - |
 | 4. Grupos NIIF Completion | 0/TBD | Not started | - |
