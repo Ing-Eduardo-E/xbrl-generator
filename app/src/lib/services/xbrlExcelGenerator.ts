@@ -21,6 +21,7 @@
  */
 
 import { ROUNDING_DEGREES, type RoundingDegree } from '../xbrl/taxonomyConfig';
+import { sumByPrefixes } from '../xbrl/shared/pucUtils';
 
 import * as XLSX from 'xlsx';
 import { db } from '@/lib/db';
@@ -185,42 +186,23 @@ interface ServiceAccountData {
 }
 
 /**
- * Suma los valores de las cuentas que coinciden con los prefijos PUC especificados
- */
-function sumAccountsByPrefixes(accounts: ServiceAccountData[], prefixes: readonly string[]): number {
-  let total = 0;
-  for (const account of accounts) {
-    // Solo sumar cuentas hoja para evitar doble conteo
-    if (!account.isLeaf) continue;
-    
-    for (const prefix of prefixes) {
-      if (account.code.startsWith(prefix)) {
-        total += account.value;
-        break; // Evitar contar la misma cuenta múltiples veces
-      }
-    }
-  }
-  return total;
-}
-
-/**
  * Procesa datos de gastos (Clase 5) para un servicio específico
  */
 function processExpenseData(accounts: ServiceAccountData[]): ProcessedExpenseData {
-  const sueldos = sumAccountsByPrefixes(accounts, PUC_GASTOS_MAP.sueldos);
-  const prestaciones = sumAccountsByPrefixes(accounts, PUC_GASTOS_MAP.prestaciones);
-  const gastosPersonal = sumAccountsByPrefixes(accounts, PUC_GASTOS_MAP.gastosPersonal);
-  const serviciosPublicos = sumAccountsByPrefixes(accounts, PUC_GASTOS_MAP.serviciosPublicos);
-  const seguros = sumAccountsByPrefixes(accounts, PUC_GASTOS_MAP.seguros);
-  const servicios = sumAccountsByPrefixes(accounts, PUC_GASTOS_MAP.servicios);
-  const mantenimiento = sumAccountsByPrefixes(accounts, PUC_GASTOS_MAP.mantenimiento);
-  const adecuacion = sumAccountsByPrefixes(accounts, PUC_GASTOS_MAP.adecuacion);
-  const materiales = sumAccountsByPrefixes(accounts, PUC_GASTOS_MAP.materiales);
-  const transporte = sumAccountsByPrefixes(accounts, PUC_GASTOS_MAP.transporte);
-  const viajes = sumAccountsByPrefixes(accounts, PUC_GASTOS_MAP.viajes);
-  const depreciaciones = sumAccountsByPrefixes(accounts, PUC_GASTOS_MAP.depreciaciones);
-  const amortizaciones = sumAccountsByPrefixes(accounts, PUC_GASTOS_MAP.amortizaciones);
-  const otros = sumAccountsByPrefixes(accounts, PUC_GASTOS_MAP.otros);
+  const sueldos = sumByPrefixes(accounts, PUC_GASTOS_MAP.sueldos);
+  const prestaciones = sumByPrefixes(accounts, PUC_GASTOS_MAP.prestaciones);
+  const gastosPersonal = sumByPrefixes(accounts, PUC_GASTOS_MAP.gastosPersonal);
+  const serviciosPublicos = sumByPrefixes(accounts, PUC_GASTOS_MAP.serviciosPublicos);
+  const seguros = sumByPrefixes(accounts, PUC_GASTOS_MAP.seguros);
+  const servicios = sumByPrefixes(accounts, PUC_GASTOS_MAP.servicios);
+  const mantenimiento = sumByPrefixes(accounts, PUC_GASTOS_MAP.mantenimiento);
+  const adecuacion = sumByPrefixes(accounts, PUC_GASTOS_MAP.adecuacion);
+  const materiales = sumByPrefixes(accounts, PUC_GASTOS_MAP.materiales);
+  const transporte = sumByPrefixes(accounts, PUC_GASTOS_MAP.transporte);
+  const viajes = sumByPrefixes(accounts, PUC_GASTOS_MAP.viajes);
+  const depreciaciones = sumByPrefixes(accounts, PUC_GASTOS_MAP.depreciaciones);
+  const amortizaciones = sumByPrefixes(accounts, PUC_GASTOS_MAP.amortizaciones);
+  const otros = sumByPrefixes(accounts, PUC_GASTOS_MAP.otros);
   
   // Total de gastos clase 5
   const total = accounts
@@ -250,15 +232,15 @@ function processExpenseData(accounts: ServiceAccountData[]): ProcessedExpenseDat
  * Procesa datos de costos (Clase 6) para un servicio específico
  */
 function processCostData(accounts: ServiceAccountData[]): ProcessedCostData {
-  const personalDirecto = sumAccountsByPrefixes(accounts, PUC_COSTOS_MAP.personalDirecto);
-  const depreciaciones = sumAccountsByPrefixes(accounts, PUC_COSTOS_MAP.depreciaciones);
-  const amortizaciones = sumAccountsByPrefixes(accounts, PUC_COSTOS_MAP.amortizaciones);
-  const serviciosPublicos = sumAccountsByPrefixes(accounts, PUC_COSTOS_MAP.serviciosPublicos);
-  const materiales = sumAccountsByPrefixes(accounts, PUC_COSTOS_MAP.materiales);
-  const mantenimiento = sumAccountsByPrefixes(accounts, PUC_COSTOS_MAP.mantenimiento);
-  const serviciosTerceros = sumAccountsByPrefixes(accounts, PUC_COSTOS_MAP.serviciosTerceros);
-  const seguros = sumAccountsByPrefixes(accounts, PUC_COSTOS_MAP.seguros);
-  const otros = sumAccountsByPrefixes(accounts, PUC_COSTOS_MAP.otros);
+  const personalDirecto = sumByPrefixes(accounts, PUC_COSTOS_MAP.personalDirecto);
+  const depreciaciones = sumByPrefixes(accounts, PUC_COSTOS_MAP.depreciaciones);
+  const amortizaciones = sumByPrefixes(accounts, PUC_COSTOS_MAP.amortizaciones);
+  const serviciosPublicos = sumByPrefixes(accounts, PUC_COSTOS_MAP.serviciosPublicos);
+  const materiales = sumByPrefixes(accounts, PUC_COSTOS_MAP.materiales);
+  const mantenimiento = sumByPrefixes(accounts, PUC_COSTOS_MAP.mantenimiento);
+  const serviciosTerceros = sumByPrefixes(accounts, PUC_COSTOS_MAP.serviciosTerceros);
+  const seguros = sumByPrefixes(accounts, PUC_COSTOS_MAP.seguros);
+  const otros = sumByPrefixes(accounts, PUC_COSTOS_MAP.otros);
   
   // Total de costos clase 6
   const total = accounts
@@ -283,11 +265,11 @@ function processCostData(accounts: ServiceAccountData[]): ProcessedCostData {
  * Procesa datos de ingresos (Clase 4) para un servicio específico
  */
 function processIncomeData(accounts: ServiceAccountData[]): ProcessedIncomeData {
-  const ingresosFacturados = sumAccountsByPrefixes(accounts, PUC_INGRESOS_MAP.ingresosFacturados);
-  const otrosIngresos = sumAccountsByPrefixes(accounts, PUC_INGRESOS_MAP.otrosIngresos);
-  const subsidios = sumAccountsByPrefixes(accounts, PUC_INGRESOS_MAP.subsidios);
-  const contribuciones = sumAccountsByPrefixes(accounts, PUC_INGRESOS_MAP.contribuciones);
-  const ingresosFinancieros = sumAccountsByPrefixes(accounts, PUC_INGRESOS_MAP.ingresosFinancieros);
+  const ingresosFacturados = sumByPrefixes(accounts, PUC_INGRESOS_MAP.ingresosFacturados);
+  const otrosIngresos = sumByPrefixes(accounts, PUC_INGRESOS_MAP.otrosIngresos);
+  const subsidios = sumByPrefixes(accounts, PUC_INGRESOS_MAP.subsidios);
+  const contribuciones = sumByPrefixes(accounts, PUC_INGRESOS_MAP.contribuciones);
+  const ingresosFinancieros = sumByPrefixes(accounts, PUC_INGRESOS_MAP.ingresosFinancieros);
   
   // Total de ingresos clase 4
   const total = accounts

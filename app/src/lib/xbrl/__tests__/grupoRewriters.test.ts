@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   matchesPrefixes,
-  sumAccountsByPrefixes,
 } from '../shared/rewriterHelpers';
+import { sumByPrefixes } from '../shared/pucUtils';
 import { getGrupoConfig, GRUPO_FC01_EXPENSE_MAPPINGS } from '../grupos/mappings';
 import type { ServiceBalanceData } from '../types';
 
@@ -55,34 +55,34 @@ describe('matchesPrefixes', () => {
 });
 
 // ============================================
-// TESTS: sumAccountsByPrefixes
+// TESTS: sumByPrefixes (unificado desde pucUtils)
 // ============================================
 
-describe('sumAccountsByPrefixes', () => {
+describe('sumByPrefixes (ServiceBalanceData)', () => {
   it('debe sumar solo cuentas hoja que coincidan', () => {
-    const total = sumAccountsByPrefixes(mockServiceAccounts, ['51']);
+    const total = sumByPrefixes(mockServiceAccounts, ['51']);
     // 5105 (1000) + 511006 (500) + 513525 (200) = 1700 (ignora 51 no-hoja)
     expect(total).toBe(1700);
   });
 
   it('debe sumar costos clase 6', () => {
-    const total = sumAccountsByPrefixes(mockServiceAccounts, ['6']);
+    const total = sumByPrefixes(mockServiceAccounts, ['6']);
     expect(total).toBe(3000);
   });
 
   it('debe retornar 0 si no hay coincidencias', () => {
-    const total = sumAccountsByPrefixes(mockServiceAccounts, ['99']);
+    const total = sumByPrefixes(mockServiceAccounts, ['99']);
     expect(total).toBe(0);
   });
 
   it('debe excluir prefijos correctamente', () => {
-    const total = sumAccountsByPrefixes(mockServiceAccounts, ['51'], ['5105']);
+    const total = sumByPrefixes(mockServiceAccounts, ['51'], ['5105']);
     // 511006 (500) + 513525 (200) = 700 (excluye 5105)
     expect(total).toBe(700);
   });
 
   it('debe manejar array vacío de cuentas', () => {
-    const total = sumAccountsByPrefixes([], ['51']);
+    const total = sumByPrefixes([], ['51']);
     expect(total).toBe(0);
   });
 });

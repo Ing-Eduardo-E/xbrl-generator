@@ -4,48 +4,10 @@
  */
 import type ExcelJS from 'exceljs';
 import type { ServiceBalanceData, ESFMapping } from '../types';
+import { sumByPrefixes } from './pucUtils';
 
-// ============================================
-// HELPERS DE MATCHING PUC
-// ============================================
-
-/**
- * Verifica si un código PUC coincide con alguno de los prefijos dados,
- * excluyendo los que coincidan con los prefijos de exclusión.
- */
-export function matchesPrefixes(
-  code: string,
-  prefixes: string[],
-  excludePrefixes?: string[]
-): boolean {
-  if (excludePrefixes) {
-    for (const exclude of excludePrefixes) {
-      if (code.startsWith(exclude)) return false;
-    }
-  }
-  for (const prefix of prefixes) {
-    if (code.startsWith(prefix)) return true;
-  }
-  return false;
-}
-
-/**
- * Suma los valores de cuentas hoja que coinciden con los prefijos PUC.
- */
-export function sumAccountsByPrefixes(
-  accounts: ServiceBalanceData[],
-  prefixes: string[],
-  excludePrefixes?: string[]
-): number {
-  let total = 0;
-  for (const account of accounts) {
-    if (!account.isLeaf) continue;
-    if (matchesPrefixes(account.code, prefixes, excludePrefixes)) {
-      total += account.value;
-    }
-  }
-  return total;
-}
+// Re-export matchesPrefixes from the canonical location
+export { matchesPrefixes } from './excelUtils';
 
 // ============================================
 // HELPERS DE LLENADO FC01 (GASTOS POR SERVICIO)
@@ -60,7 +22,7 @@ export function fillExpenseColumnE(
   mappings: ESFMapping[]
 ): void {
   for (const mapping of mappings) {
-    const value = sumAccountsByPrefixes(
+    const value = sumByPrefixes(
       serviceAccounts,
       mapping.pucPrefixes,
       mapping.excludePrefixes
@@ -83,7 +45,7 @@ export function fillExpenseColumnF(
     zeroRows: number[];
   }
 ): number {
-  const costosVentas = sumAccountsByPrefixes(serviceAccounts, ['6']);
+  const costosVentas = sumByPrefixes(serviceAccounts, ['6']);
 
   if (options.isAseo && options.aseoDisposalRow) {
     const mantenimiento = Math.round(costosVentas * 0.40);

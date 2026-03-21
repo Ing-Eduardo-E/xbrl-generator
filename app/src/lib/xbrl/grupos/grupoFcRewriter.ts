@@ -16,12 +16,12 @@ import {
   fillExpenseColumnE,
   fillExpenseColumnF,
   calculateColumnG,
-  sumAccountsByPrefixes,
   fillCxCByEstrato,
   ESTRATOS_RESIDENCIALES,
   ESTRATOS_NO_RESIDENCIALES,
   RANGOS_VENCIMIENTO_STANDARD,
 } from '../shared/rewriterHelpers';
+import { sumByPrefixes } from '../shared/pucUtils';
 import {
   GRUPO_FC01_EXPENSE_MAPPINGS,
   GRUPO_FC01_DATA_ROWS,
@@ -96,7 +96,7 @@ function rewriteGrupoFC01Consolidado(
     let totalValue = 0;
     for (const service of activeServices) {
       const serviceAccounts = accountsByService[service] || [];
-      totalValue += sumAccountsByPrefixes(serviceAccounts, mapping.pucPrefixes, mapping.excludePrefixes);
+      totalValue += sumByPrefixes(serviceAccounts, mapping.pucPrefixes, mapping.excludePrefixes);
     }
     sheetConsolidado.getCell(`E${mapping.row}`).value = totalValue;
   }
@@ -105,7 +105,7 @@ function rewriteGrupoFC01Consolidado(
   let costosConsolidados = 0;
   for (const service of activeServices) {
     const serviceAccounts = accountsByService[service] || [];
-    costosConsolidados += sumAccountsByPrefixes(serviceAccounts, ['6']);
+    costosConsolidados += sumByPrefixes(serviceAccounts, ['6']);
   }
   sheetConsolidado.getCell(`F${config.fc01CostRow}`).value = costosConsolidados;
 

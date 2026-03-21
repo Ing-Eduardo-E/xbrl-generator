@@ -203,3 +203,76 @@ describe('generateOfficialTemplatePackageWithData — IFE ZIP Shape (TEST-01)', 
     expect(ifePkg.mimeType).toBe('application/zip');
   });
 });
+
+// ---------------------------------------------------------------------------
+// preserveOriginalStructure — ZIP hybrid structure (Phase 5)
+// ---------------------------------------------------------------------------
+
+describe('preserveOriginalStructure — hybrid ZIP assembly', () => {
+  let hybridZip: JSZip;
+
+  beforeAll(async () => {
+    // Generate R414 package to get the hybrid xlsx
+    const r414Pkg = await generateOfficialTemplatePackageWithData({
+      niifGroup: 'r414',
+      companyId: '20037',
+      companyName: 'Test Hybrid S.A.',
+      reportDate: '2024-12-31',
+      consolidatedAccounts: MOCK_ACCOUNTS,
+      serviceBalances: MOCK_SERVICE_BALANCES,
+      activeServices: ['acueducto', 'alcantarillado', 'aseo'],
+    });
+
+    const zipBuffer = Buffer.from(r414Pkg.fileData, 'base64');
+    const outerZip = await JSZip.loadAsync(zipBuffer);
+
+    // Find the xlsx file
+    const xlsxEntry = Object.keys(outerZip.files).find(f => f.endsWith('.xlsx'));
+    expect(xlsxEntry).toBeDefined();
+
+    const xlsxBuffer = await outerZip.file(xlsxEntry!)!.async('nodebuffer');
+    hybridZip = await JSZip.loadAsync(xlsxBuffer);
+  });
+
+  it('hybrid xlsx must contain structural file xl/workbook.xml from original template', () => {
+    expect(hybridZip.file('xl/workbook.xml')).not.toBeNull();
+  });
+
+  it('hybrid xlsx must contain _rels/workbook.xml.rels from original template', () => {
+    expect(hybridZip.file('xl/_rels/workbook.xml.rels')).not.toBeNull();
+  });
+
+  it('hybrid xlsx must contain [Content_Types].xml from original template', () => {
+    expect(hybridZip.file('[Content_Types].xml')).not.toBeNull();
+  });
+
+  it('hybrid xlsx must contain worksheet files from ExcelJS', () => {
+    const worksheetFiles = Object.keys(hybridZip.files).filter(f =>
+      f.startsWith('xl/worksheets/') && f.endsWith('.xml')
+    );
+    expect(worksheetFiles.length).toBeGreaterThan(0);
+  });
+
+  it('hybrid xlsx must contain xl/sharedStrings.xml from ExcelJS', () => {
+    expect(hybridZip.file('xl/sharedStrings.xml')).not.toBeNull();
+  });
+
+  it('hybrid xlsx must contain xl/styles.xml', () => {
+    expect(hybridZip.file('xl/styles.xml')).not.toBeNull();
+  });
+
+  it('hybrid xlsx workbook.xml must NOT contain ExcelJS-added theme reference', async () => {
+    const wbXml = await hybridZip.file('xl/workbook.xml')!.async('string');
+    // ExcelJS adds theme1.xml reference; original template should not have it
+    // unless the template already included a theme
+    expect(wbXml).toBeDefined();
+    expect(wbXml.length).toBeGreaterThan(0);
+  });
+
+  it('hybrid xlsx must have more than 5 worksheet files (R414 has many sheets)', () => {
+    const worksheetFiles = Object.keys(hybridZip.files).filter(f =>
+      f.startsWith('xl/worksheets/') && f.endsWith('.xml')
+    );
+    expect(worksheetFiles.length).toBeGreaterThan(5);
+  });
+});

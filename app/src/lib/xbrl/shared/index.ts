@@ -58,7 +58,6 @@ export * from './dateUtils';
 // Helpers de reescritura ExcelJS (compartidos entre R414 y grupos NIIF)
 export {
   matchesPrefixes,
-  sumAccountsByPrefixes,
   fillExpenseColumnE,
   fillExpenseColumnF,
   calculateColumnG,

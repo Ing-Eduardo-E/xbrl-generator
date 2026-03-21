@@ -130,11 +130,12 @@ export function isCost(code: string): boolean {
 /**
  * Suma valores de cuentas que coinciden con los prefijos dados.
  * Solo suma cuentas hoja (isLeaf = true) para evitar doble conteo.
+ * Acepta cualquier array de objetos con {code, value, isLeaf}.
  */
 export function sumByPrefixes(
-  accounts: AccountData[],
-  prefixes: string[],
-  excludePrefixes: string[] = [],
+  accounts: ReadonlyArray<{ code: string; value: number; isLeaf: boolean }>,
+  prefixes: readonly string[],
+  excludePrefixes: readonly string[] = [],
   useAbsoluteValue = false
 ): number {
   let total = 0;
