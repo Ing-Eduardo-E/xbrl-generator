@@ -107,6 +107,20 @@ export function customizeXbrlt(content: string, options: TemplateCustomization, 
     customized = customized.replace(/<instant>2025-06-30<\/instant>/g, `<instant>${newInstant}</instant>`);
     customized = customized.replace(/<instant>2025-03-31<\/instant>/g, `<instant>${prevInstant}</instant>`);
 
+    // Reemplazar URL del entry-point XSD según el trimestre
+    // BUG-02: El template tiene siempre SegundoTrimestre — debe reemplazarse para Q1/Q3/Q4
+    const trimNamesXsd: Record<string, string> = {
+      '03': 'PrimerTrimestre',
+      '06': 'SegundoTrimestre',
+      '09': 'TercerTrimestre',
+      '12': 'CuartoTrimestre',
+    };
+    const trimName = trimNamesXsd[reportMonth] ?? 'SegundoTrimestre';
+    customized = customized.replace(
+      /IFE_PuntoEntrada\w+Trimestre-(\d{4})\.xsd/g,
+      `IFE_PuntoEntrada${trimName}-$1.xsd`
+    );
+
     return customized;
   }
 
