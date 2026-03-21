@@ -6,25 +6,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 XBRL Taxonomy Generator for Colombian public service companies. This web application automates XBRL taxonomy generation from consolidated financial statements, reducing preparation time from 8 hours to 10 minutes. The system processes Excel balance sheets, distributes accounts across services (Acueducto, Alcantarillado, Aseo), validates accounting equations, and generates XBRL-compatible files for SSPD reporting.
 
-**Status (2025-06-04)**: Production-ready MVP deployed on Vercel. Core distribution and XBRL generation fully implemented.
+**Status (2025-06-21)**: Production-ready. All 5 GSD ROADMAP phases complete. 345 tests passing. R414 module fully self-contained.
 
-## Current Priority: IFE Trimestral (95% complete)
+## Refactoring Status: GSD ROADMAP (ALL 5 PHASES COMPLETE)
 
-IFE (Informe Financiero Especial) is the quarterly taxonomy required by SSPD since 2020.
+### Phase 1: Safety Net & Bug Fixes ✅
+- IFE pipeline safety-net tests, ZIP shape tests, R414 ESF data-presence tests
+- Fix: IFE XSD entry-point URL substitution per trimestre
+- Fix: dynamic codesWithChildren detection (replaces DB isLeaf flag)
+- Dead SheetJS code removed, writeCellSafe extracted to shared
 
-### IFE vs Annual Reports:
-- **Quarterly** (1T, 2T, 3T, 4T) vs Annual
-- **8 simplified sheets** vs 60+ full sheets  
-- **NO users by stratum or subsidies required** - simplified flow
-- **CxC by aging ranges** (auto-distributed: 55%/25%/20%/0%/0%)
+### Phase 2: Architecture Cleanup ✅
+- excelRewriter.ts → dispatcher + writers
+- Eliminated 1061 lines of dead IFETemplateService.ts
+- Extracted preserveOriginalStructure() to shared/zipBuilder.ts
 
-### IFE Implementation Status:
-- ✅ All TypeScript types and configurations
-- ✅ UI selectors (IFE + trimester)
-- ✅ Backend router and date handling
-- ✅ Data filling for Hoja1, Hoja3, Hoja4, Hoja5
-- ✅ Simplified DistributeStep (hides usuarios/subsidios for IFE)
-- ⏳ End-to-end testing with XBRL Express
+### Phase 3: Modular Decomposition ✅
+- R414 module fully self-contained under r414/
+
+### Phase 4: Grupos NIIF ✅
+- Fixed ESF/ER column/row bugs per-grupo, dynamic esfRowMap
+
+### Phase 5: Integration & Polish ✅
+- Unified sumByPrefixes, preserveOriginalStructure tests
+
+### R414 Module Independence ✅ (Latest)
+- Split 1318-line monolith into 6 focused writers (798 lines total)
+- All files under 600 lines, zero DRY violations
 
 ## Technology Stack
 
@@ -42,7 +50,7 @@ IFE (Informe Financiero Especial) is the quarterly taxonomy required by SSPD sin
 - **master**: Production branch (auto-deploys to Vercel)
 - Always work on `desarrollo`, merge to `master` when ready for production
 
-## Security (Last Update: 2026-03-19)
+## Security (Last Update: 2025-06-21)
 
 - ✅ **CVE-2025-55182 PATCHED** - Critical RCE vulnerability in React Server Components (CVSS 10.0)
   - Updated React 19.2.0 → 19.2.1
@@ -60,6 +68,13 @@ cd app                # Enter the Next.js app directory
 pnpm dev              # Start development server (localhost:3000)
 pnpm build            # Build for production (validates types)
 pnpm check            # Type check without emitting files
+```
+
+### Testing
+```bash
+cd app
+pnpm test             # Run all 345 tests (Vitest)
+pnpm test -- --reporter=verbose  # Verbose output
 ```
 
 ### Database
@@ -117,33 +132,49 @@ Three main tables:
 ### Code Organization
 
 ```
-client/src/
-  components/ui/       # shadcn/ui components
-  pages/Home.tsx       # Main 3-step wizard interface
+app/src/
+  components/ui/         # shadcn/ui components
+  app/                   # Next.js App Router pages
   lib/
-    trpc.ts           # tRPC client setup
+    trpc.ts             # tRPC client setup
+    xbrl/
+      types.ts          # Shared XBRL types
+      excelUtils.ts     # Legacy Excel utilities
+      shared/
+        baseTemplateService.ts  # Base class for all template services
+        excelUtils.ts           # writeCellSafe, matchesPrefixes, DataWriterContext
+        zipBuilder.ts           # preserveOriginalStructure()
+        index.ts                # Barrel exports
+      official/
+        excelRewriter.ts        # Dispatcher: routes to grupo/r414 writers
+        interfaces.ts           # TemplateWithDataOptions, UsuariosEstrato
+        grupoDataWriter.ts      # Writer for Grupo 1/2/3
+      r414/                     # Self-contained R414 module (<600 lines per file)
+        index.ts                # Public API exports
+        config.ts               # Template paths, sheet mapping
+        R414TemplateService.ts  # Extends BaseTemplateService (585 lines)
+        mappings/
+          index.ts              # Barrel: ESF, ER, PPE, FC01 mappings
+          esfMappings.ts        # ESF row/column mappings
+          erMappings.ts         # ER row/column mappings
+          ppeMappings.ts        # PPE, Intangibles, Efectivo, Provisiones
+          fc01Mappings.ts       # FC01 gastos por servicio
+        writers/
+          index.ts              # Orchestrator (32 lines)
+          writeFinancialStmts.ts  # Hoja2 ESF + Hoja3 ER (100 lines)
+          writeNotesData.ts       # Hoja7 notes (98 lines)
+          writeServiceExpenses.ts # Hoja16/17/18/22 gastos (169 lines)
+          writeCxcData.ts         # Hoja24/25/26 CxC (203 lines)
+          writeSupplementary.ts   # FC02/FC04/FC05b/FC08/Notas (196 lines)
+      grupo1/              # Grupo 1 NIIF Plenas config
+      grupo2/              # Grupo 2 NIIF PYMES config
+      grupo3/              # Grupo 3 Microempresas config
+      ife/                 # IFE trimestral config
+  server/
+    routers/balance.ts   # tRPC API routes
+  db/                    # Drizzle ORM schema and operations
 
-server/
-  routers.ts          # tRPC API routes (balance.cargar, balance.distribuir, etc.)
-  db.ts               # Database operations (truncate, insert, calculate totals)
-  excelProcessor.ts   # Excel file parsing (flexible column detection)
-  excelGenerator.ts   # Excel file generation (consolidated + per-service sheets)
-  index.ts            # Express server (static file serving only)
-  *.test.ts          # Vitest test files
-
-server/_core/
-  index.ts            # Main server entry (NOT used in production - see server/index.ts)
-  trpc.ts            # tRPC setup
-  context.ts         # Request context
-  env.ts             # Environment variables
-
-drizzle/
-  schema.ts          # Database schema definitions
-  relations.ts       # Drizzle relations (if any)
-
-shared/
-  types.ts           # Shared types between client/server
-  const.ts           # Shared constants
+app/src/lib/xbrl/__tests__/  # 10 test files, 345 tests (Vitest)
 ```
 
 ### Excel Processing

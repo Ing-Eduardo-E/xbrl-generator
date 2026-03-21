@@ -1,20 +1,69 @@
 # TODO - Generador de Taxonomías XBRL
 
-## Estado Actual del Proyecto (v2.5)
+## Estado Actual del Proyecto (v3.0)
 
-**Última Actualización**: 2025-06-04
-**Stack**: Next.js 15.5.7 + React 19.2.1 + TypeScript + Tailwind CSS + shadcn/ui + tRPC + Drizzle ORM
-**Branch Desarrollo**: desarrollo
+**Última Actualización**: 2025-06-21
+**Stack**: Next.js 15.5.9 + React 19.2.1 + TypeScript + Tailwind CSS 4 + shadcn/ui + tRPC + Drizzle ORM
+**Branch Desarrollo**: desarrollo (23 commits por delante de master)
 **Branch Producción**: master (desplegado en Vercel)
+**Tests**: 345 tests pasando (10 archivos de test, Vitest)
 
-## 🔒 Seguridad (Última actualización: 2025-06-04)
+## 🔒 Seguridad (Última actualización: 2025-06-21)
 
 - ✅ **CVE-2025-55182 PARCHEADO** - Vulnerabilidad crítica RCE en React Server Components (CVSS 10.0)
   - Actualizado React 19.2.0 → 19.2.1
   - Actualizado Next.js 15.5.6 → 15.5.7
   - Commit: 7783050 (mergeado a master/producción)
+- ✅ **CVE-2025-55184 PARCHEADO** - DoS vía bucle infinito en App Router (Alta Severidad)
+- ✅ **CVE-2025-55183 PARCHEADO** - Exposición de código fuente vía Server Functions (Media Severidad)
+- ✅ **CVE-2025-67779 PARCHEADO** - Fix completo de DoS (supersede CVE-2025-55184)
+  - Actualizado Next.js 15.5.7 → 15.5.9
 
-## 🆕 IFE - Informe Financiero Especial Trimestral (EN PROGRESO - 95%)
+## ✅ GSD ROADMAP - Refactorización Completa (5 Fases COMPLETADAS)
+
+### Resumen
+Refactorización profunda del proyecto en 5 fases, desde safety net hasta integración final.
+23 commits en rama `desarrollo`, 345 tests, 0 regresiones.
+
+### Fase 1: Safety Net & Bug Fixes ✅
+- Tests de seguridad para IFE pipeline y ZIP shape
+- Tests de presencia de datos R414 ESF
+- Fix: sustitución de entry-point URL XSD por trimestre IFE
+- Fix: detección dinámica de `codesWithChildren` en lugar de flag DB `isLeaf`
+- Eliminación de código muerto SheetJS, extracción de `writeCellSafe` a shared
+
+### Fase 2: Architecture Cleanup ✅
+- ARCH-04: Descomposición de `excelRewriter.ts` en dispatcher + writers
+- ARCH-05: Eliminación de dead code en `R414TemplateService.ts`
+- ARCH-06: Eliminación de `IFETemplateService.ts` (1061 líneas de código muerto)
+- ARCH-07: Extracción de `preserveOriginalStructure()` a `shared/zipBuilder.ts`
+- ARCH-08: Agregado de `zipBuilder` al barrel de `shared/index.ts`
+
+### Fase 3: Modular Decomposition ✅
+- Módulo R414 completamente autocontenido bajo `r414/`
+- Estructura modular: config, mappings, writers, service
+
+### Fase 4: Grupos NIIF ✅
+- Fix de bugs críticos de columnas/filas en ESF y ER por grupo
+- Mapeos ESF por plantilla de grupo (esfRowMap)
+- Corrección de detección de cuentas hoja (isLeaf)
+
+### Fase 5: Integration & Polish ✅
+- Unificación de `sumByPrefixes` en función compartida
+- Tests para `preserveOriginalStructure`
+- Commit final: 12bd1b5
+
+### R414 Module Independence ✅ (Último - commit e532428)
+- Monolito `official/r414DataWriter.ts` (1318 líneas) → 6 writers enfocados (798 líneas total)
+- `writers/writeFinancialStmts.ts` (100 líneas): Hoja2 ESF + Hoja3 ER
+- `writers/writeNotesData.ts` (98 líneas): Hoja7 PPE/Intangibles/Efectivo/Provisiones
+- `writers/writeServiceExpenses.ts` (169 líneas): Hoja16/17/18 + Hoja22 paramétrico
+- `writers/writeCxcData.ts` (203 líneas): Hoja24/25/26 CxC paramétrico
+- `writers/writeSupplementary.ts` (196 líneas): FC02/FC04/FC05b/FC08/Notas
+- `writers/index.ts` (32 líneas): orquestador
+- Eliminación de 3 copias DRY en gastos (630→169 líneas) y CxC (480→203 líneas)
+
+## 🆕 IFE - Informe Financiero Especial Trimestral (95%)
 
 ### Descripción
 IFE es la taxonomía trimestral obligatoria de la SSPD desde 2020. Las empresas deben reportar
@@ -54,7 +103,7 @@ IFE es la taxonomía trimestral obligatoria de la SSPD desde 2020. Las empresas 
 - 181-360 días: 0%
 - >360 días: 0%
 
-## 🆕 Automatización de Hojas XBRL (EN PROGRESO)
+## ✅ Automatización de Hojas XBRL (COMPLETADO)
 
 ### Nueva Integración de Datos Financieros
 Se implementó la integración de datos del balance distribuido directamente en las
@@ -155,7 +204,7 @@ proporcionadas por la SSPD, garantizando 100% de compatibilidad con el catálogo
 - [ ] Exportación/importación de configuraciones
 - [ ] Validaciones avanzadas de datos
 - [ ] Soporte para múltiples períodos fiscales
-- [ ] Testing unitario e integración
+- [x] ~~Testing unitario e integración~~ (345 tests, 10 archivos, Vitest)
 - [ ] Dark mode toggle
 - [ ] Soporte para R533 e IFE cuando SSPD publique plantillas
 
