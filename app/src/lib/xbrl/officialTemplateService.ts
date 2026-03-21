@@ -54,19 +54,41 @@ async function preserveOriginalStructure(
     }
   }
 
+  // Detectar si el template original tiene archivo de tema
+  const originalHasTheme = originalZip.file('xl/theme/theme1.xml') !== null;
+
   // 2. Copiar datos de ExcelJS (worksheets, styles, sharedStrings)
   let worksheetCount = 0;
   for (const [filePath, file] of Object.entries(excelJsZip.files)) {
     if (file.dir) continue;
     if (structuralFiles.has(filePath)) continue; // ya copiado del original
 
-    // No copiar archivo theme1.xml generado por ExcelJS (puede ser phantom)
-    if (filePath.includes('theme/theme') && !originalZip.file(filePath)) {
+    // No copiar archivo theme1.xml generado por ExcelJS si el original no lo tiene
+    if (filePath.includes('theme/theme') && !originalHasTheme) {
       continue;
     }
 
     hybridZip.file(filePath, await file.async('nodebuffer'));
     if (filePath.startsWith('xl/worksheets/')) worksheetCount++;
+  }
+
+  // 3. Si el original NO tiene tema, limpiar referencias theme de styles.xml
+  // ExcelJS siempre agrega atributos theme="X" en definiciones de color dentro de
+  // styles.xml, incluso cuando el template original no tiene archivo de tema.
+  // Apache POI (usado por XBRL Express) puede fallar al resolver esas referencias
+  // contra un tema inexistente, causando que todos los cuadros aparezcan vacíos.
+  if (!originalHasTheme) {
+    const stylesFile = hybridZip.file('xl/styles.xml');
+    if (stylesFile) {
+      let stylesXml = await stylesFile.async('string');
+      const themeRefCount = (stylesXml.match(/\btheme="/g) || []).length;
+      if (themeRefCount > 0) {
+        // Eliminar atributos theme="N" de elementos <color> y similares
+        stylesXml = stylesXml.replace(/\s*theme="\d+"/g, '');
+        hybridZip.file('xl/styles.xml', stylesXml);
+        console.log(`[preserveOriginalStructure] Eliminadas ${themeRefCount} referencias theme de styles.xml (template sin tema)`);
+      }
+    }
   }
 
   // Validar que el híbrido tiene worksheets
