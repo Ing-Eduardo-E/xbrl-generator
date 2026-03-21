@@ -55,10 +55,25 @@ async function preserveOriginalStructure(
   }
 
   // 2. Copiar datos de ExcelJS (worksheets, styles, sharedStrings)
+  let worksheetCount = 0;
   for (const [filePath, file] of Object.entries(excelJsZip.files)) {
     if (file.dir) continue;
     if (structuralFiles.has(filePath)) continue; // ya copiado del original
+
+    // No copiar archivo theme1.xml generado por ExcelJS (puede ser phantom)
+    if (filePath.includes('theme/theme') && !originalZip.file(filePath)) {
+      continue;
+    }
+
     hybridZip.file(filePath, await file.async('nodebuffer'));
+    if (filePath.startsWith('xl/worksheets/')) worksheetCount++;
+  }
+
+  // Validar que el híbrido tiene worksheets
+  if (worksheetCount === 0) {
+    console.error('[preserveOriginalStructure] ADVERTENCIA: El ZIP híbrido no contiene worksheets');
+  } else {
+    console.log(`[preserveOriginalStructure] ZIP híbrido generado: ${worksheetCount} worksheets`);
   }
 
   const result = await hybridZip.generateAsync({

@@ -25,6 +25,43 @@ import { safeNumericValue } from '../excelUtils';
 import { r414TemplateService } from '../r414/R414TemplateService';
 import type { TemplateWithDataOptions as R414Options } from '../types';
 
+/**
+ * Escribe un valor en una celda de forma segura, limpiando fórmulas compartidas
+ * y aplicando formato numérico XBRL.
+ *
+ * Replica la lógica de BaseTemplateService.writeCell() que es necesaria para
+ * compatibilidad con Apache POI / XBRL Express:
+ * 1. Elimina shared formulas (evita error "Shared Formula master must exist")
+ * 2. Limpia la celda con null antes de escribir (fuerza estado limpio)
+ * 3. Aplica numFmt '#,##0;(#,##0)' para numéricos (requerido por SSPD)
+ */
+function writeCellSafe(
+  worksheet: ExcelJS.Worksheet,
+  cellAddress: string,
+  value: number | string | null
+): void {
+  const cell = worksheet.getCell(cellAddress);
+
+  // Limpiar shared formulas para evitar errores de POI
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const model = cell as any;
+  if (model.model) {
+    delete model.model.sharedFormula;
+    delete model.model.formula;
+  }
+
+  // Limpiar completamente la celda
+  cell.value = null;
+
+  // Escribir el nuevo valor
+  if (value !== null && value !== undefined) {
+    cell.value = value;
+    if (typeof value === 'number') {
+      cell.numFmt = '#,##0;(#,##0)';
+    }
+  }
+}
+
 // ─── (Índice de secciones del body — ver marcadores ═══ abajo) ──────────
 // ─── Sección 1: Función principal + helpers de init (~L29-76)   ─────────
 // ─── Sección 2: R414 Hoja2/3/7 - ESF, ER y Notas PPE (~L77-280) ────────
@@ -60,21 +97,21 @@ export async function rewriteFinancialDataWithExcelJS(
     if (sheet1) {
       console.log('[ExcelJS] Escribiendo metadatos en Hoja1 (R414)...');
       // C4: ID de empresa para XBRL Express
-      sheet1.getCell('C4').value = options.companyId;
+      writeCellSafe(sheet1, 'C4', options.companyId);
       // E12: Nombre de la entidad
-      sheet1.getCell('E12').value = options.companyName;
+      writeCellSafe(sheet1, 'E12', options.companyName);
       // E13: ID RUPS
-      sheet1.getCell('E13').value = options.companyId;
+      writeCellSafe(sheet1, 'E13', options.companyId);
       // E14: NIT
-      if (options.nit) sheet1.getCell('E14').value = options.nit;
+      if (options.nit) writeCellSafe(sheet1, 'E14', options.nit);
       // E15: Naturaleza EF
-      sheet1.getCell('E15').value = '1. Individual';
+      writeCellSafe(sheet1, 'E15', '1. Individual');
       // E16: Naturaleza del negocio
-      sheet1.getCell('E16').value = options.businessNature || 'Prestación de servicios públicos domiciliarios de acueducto, alcantarillado y/o aseo';
+      writeCellSafe(sheet1, 'E16', options.businessNature || 'Prestación de servicios públicos domiciliarios de acueducto, alcantarillado y/o aseo');
       // E17: Fecha de inicio de operaciones
-      sheet1.getCell('E17').value = options.startDate || '2005-01-01';
+      writeCellSafe(sheet1, 'E17', options.startDate || '2005-01-01');
       // E18: Fecha de cierre del período
-      sheet1.getCell('E18').value = options.reportDate;
+      writeCellSafe(sheet1, 'E18', options.reportDate);
       // E19: Grado de redondeo
       const roundingLabels: Record<string, string> = {
         '1': '1 - Pesos',
@@ -82,15 +119,15 @@ export async function rewriteFinancialDataWithExcelJS(
         '3': '3 - Millones de pesos',
         '4': '4 - Pesos redondeada a miles',
       };
-      sheet1.getCell('E19').value = roundingLabels[options.roundingDegree || '1'] || '1 - Pesos';
+      writeCellSafe(sheet1, 'E19', roundingLabels[options.roundingDegree || '1'] || '1 - Pesos');
       // E21: ¿Presenta información reexpresada?
       if (options.hasRestatedInfo === 'Sí' || options.hasRestatedInfo === '1. Sí') {
-        sheet1.getCell('E21').value = '1. Sí';
+        writeCellSafe(sheet1, 'E21', '1. Sí');
         if (options.restatedPeriod) {
-          sheet1.getCell('E22').value = options.restatedPeriod;
+          writeCellSafe(sheet1, 'E22', options.restatedPeriod);
         }
       } else {
-        sheet1.getCell('E21').value = '2. No';
+        writeCellSafe(sheet1, 'E21', '2. No');
       }
       console.log('[ExcelJS] Hoja1 (R414) completada.');
     }
@@ -99,18 +136,18 @@ export async function rewriteFinancialDataWithExcelJS(
     const sheet1 = workbook.getWorksheet('Hoja1');
     if (sheet1) {
       console.log('[ExcelJS] Escribiendo metadatos en Hoja1...');
-      sheet1.getCell('C4').value = options.companyId;
-      sheet1.getCell('E12').value = options.companyName;
-      sheet1.getCell('E13').value = options.companyId;
-      if (options.nit) sheet1.getCell('E14').value = options.nit;
-      sheet1.getCell('E18').value = options.reportDate;
+      writeCellSafe(sheet1, 'C4', options.companyId);
+      writeCellSafe(sheet1, 'E12', options.companyName);
+      writeCellSafe(sheet1, 'E13', options.companyId);
+      if (options.nit) writeCellSafe(sheet1, 'E14', options.nit);
+      writeCellSafe(sheet1, 'E18', options.reportDate);
       const roundingLabels: Record<string, string> = {
         '1': '1 - Pesos',
         '2': '2 - Miles de pesos',
         '3': '3 - Millones de pesos',
         '4': '4 - Pesos redondeada a miles',
       };
-      sheet1.getCell('E19').value = roundingLabels[options.roundingDegree || '1'] || '1 - Pesos';
+      writeCellSafe(sheet1, 'E19', roundingLabels[options.roundingDegree || '1'] || '1 - Pesos');
       console.log('[ExcelJS] Hoja1 completada.');
     }
   }
@@ -169,8 +206,7 @@ export async function rewriteFinancialDataWithExcelJS(
 
         // Escribir valor total en columna P (columna 16)
         if (totalValue !== 0) {
-          const cell = sheet2.getCell(`P${mapping.row}`);
-          cell.value = totalValue;
+          writeCellSafe(sheet2, `P${mapping.row}`, totalValue);
           console.log(`[ExcelJS] Hoja2!P${mapping.row} = ${totalValue}`);
         }
 
@@ -190,8 +226,7 @@ export async function rewriteFinancialDataWithExcelJS(
           }
 
           if (serviceValue !== 0) {
-            const cell = sheet2.getCell(`${serviceColumn}${mapping.row}`);
-            cell.value = serviceValue;
+            writeCellSafe(sheet2, `${serviceColumn}${mapping.row}`, serviceValue);
             console.log(`[ExcelJS] Hoja2!${serviceColumn}${mapping.row} = ${serviceValue}`);
           }
         }
@@ -216,8 +251,7 @@ export async function rewriteFinancialDataWithExcelJS(
         }
 
         // Escribir valor total en columna L (columna 12) - SIEMPRE escribir, incluso si es 0
-        const cellL = sheet3.getCell(`L${mapping.row}`);
-        cellL.value = totalValue;
+        writeCellSafe(sheet3, `L${mapping.row}`, totalValue);
         if (totalValue !== 0) {
           console.log(`[ExcelJS] Hoja3!L${mapping.row} = ${totalValue}`);
         }
@@ -243,8 +277,7 @@ export async function rewriteFinancialDataWithExcelJS(
           }
 
           // SIEMPRE escribir el valor, incluso si es 0, para limpiar valores previos del template
-          const cell = sheet3.getCell(`${serviceColumn}${mapping.row}`);
-          cell.value = serviceValue;
+          writeCellSafe(sheet3, `${serviceColumn}${mapping.row}`, serviceValue);
           if (serviceValue !== 0) {
             console.log(`[ExcelJS] Hoja3!${serviceColumn}${mapping.row} = ${serviceValue}`);
           }
@@ -311,8 +344,7 @@ export async function rewriteFinancialDataWithExcelJS(
 
           for (const row of allRowsInSection) {
             const value = rowValues.get(row) ?? 0;
-            const cell = sheet7.getCell(`F${row}`);
-            cell.value = value;
+            writeCellSafe(sheet7, `F${row}`, value);
             console.log(`[ExcelJS] Hoja7!F${row} = ${value}`);
           }
         } else {
@@ -420,37 +452,37 @@ export async function rewriteFinancialDataWithExcelJS(
 
       // Fila 13: Beneficios a empleados
       const beneficiosEmpleados = sumByPrefixes16(acueductoAccounts, ['5101', '5103', '5104', '5107', '5108']);
-      sheet16.getCell('E13').value = beneficiosEmpleados;
+      writeCellSafe(sheet16, 'E13', beneficiosEmpleados);
       console.log(`[ExcelJS] Hoja16!E13 (Beneficios empleados) = ${beneficiosEmpleados}`);
 
       // Fila 14: Honorarios
       const honorarios = sumByPrefixes16(acueductoAccounts, ['5110']);
-      sheet16.getCell('E14').value = honorarios;
+      writeCellSafe(sheet16, 'E14', honorarios);
       console.log(`[ExcelJS] Hoja16!E14 (Honorarios) = ${honorarios}`);
 
       // Fila 15: Impuestos, Tasas y Contribuciones (No incluye impuesto de renta)
       const impuestosTasas = sumByPrefixes16(acueductoAccounts, ['5120']);
-      sheet16.getCell('E15').value = impuestosTasas;
+      writeCellSafe(sheet16, 'E15', impuestosTasas);
       console.log(`[ExcelJS] Hoja16!E15 (Impuestos y tasas) = ${impuestosTasas}`);
 
       // Fila 16: Generales
       const generales = sumByPrefixes16(acueductoAccounts, ['5111']);
-      sheet16.getCell('E16').value = generales;
+      writeCellSafe(sheet16, 'E16', generales);
       console.log(`[ExcelJS] Hoja16!E16 (Generales) = ${generales}`);
 
       // Fila 17: Deterioro
       const deterioro = sumByPrefixes16(acueductoAccounts, ['5350']);
-      sheet16.getCell('E17').value = deterioro;
+      writeCellSafe(sheet16, 'E17', deterioro);
       console.log(`[ExcelJS] Hoja16!E17 (Deterioro) = ${deterioro}`);
 
       // Fila 18: Depreciación
       const depreciacion = sumByPrefixes16(acueductoAccounts, ['5360']);
-      sheet16.getCell('E18').value = depreciacion;
+      writeCellSafe(sheet16, 'E18', depreciacion);
       console.log(`[ExcelJS] Hoja16!E18 (Depreciación) = ${depreciacion}`);
 
       // Fila 19: Amortización
       const amortizacion = sumByPrefixes16(acueductoAccounts, ['5365']);
-      sheet16.getCell('E19').value = amortizacion;
+      writeCellSafe(sheet16, 'E19', amortizacion);
       console.log(`[ExcelJS] Hoja16!E19 (Amortización) = ${amortizacion}`);
 
       // =====================================================
@@ -459,19 +491,19 @@ export async function rewriteFinancialDataWithExcelJS(
 
       // Fila 21: Litigios y demandas
       const litigios = sumByPrefixes16(acueductoAccounts, ['537001', '537002']);
-      sheet16.getCell('E21').value = litigios;
+      writeCellSafe(sheet16, 'E21', litigios);
 
       // Fila 22: Garantías
       const garantias = sumByPrefixes16(acueductoAccounts, ['537003']);
-      sheet16.getCell('E22').value = garantias;
+      writeCellSafe(sheet16, 'E22', garantias);
 
       // Fila 23: Diversas (otras provisiones)
       const provisionesDiversas = sumByPrefixes16(acueductoAccounts, ['5370'], ['537001', '537002', '537003']);
-      sheet16.getCell('E23').value = provisionesDiversas;
+      writeCellSafe(sheet16, 'E23', provisionesDiversas);
 
       // Fila 25: Arrendamientos
       const arrendamientos = sumByPrefixes16(acueductoAccounts, ['5115', '5124']);
-      sheet16.getCell('E25').value = arrendamientos;
+      writeCellSafe(sheet16, 'E25', arrendamientos);
       console.log(`[ExcelJS] Hoja16!E25 (Arrendamientos) = ${arrendamientos}`);
 
       // =====================================================
@@ -480,30 +512,30 @@ export async function rewriteFinancialDataWithExcelJS(
 
       // Fila 27: Comisiones
       const comisiones = sumByPrefixes16(acueductoAccounts, ['5125']);
-      sheet16.getCell('E27').value = comisiones;
+      writeCellSafe(sheet16, 'E27', comisiones);
 
       // Fila 28: Ajuste por diferencia en cambio
       const diferenciaEnCambio = sumByPrefixes16(acueductoAccounts, ['5807']);
-      sheet16.getCell('E28').value = diferenciaEnCambio;
+      writeCellSafe(sheet16, 'E28', diferenciaEnCambio);
 
       // Fila 29: Financieros (Costos financieros - Hoja3 fila 20)
       const financieros = sumByPrefixes16(acueductoAccounts, ['5802', '5803']);
-      sheet16.getCell('E29').value = financieros;
+      writeCellSafe(sheet16, 'E29', financieros);
       console.log(`[ExcelJS] Hoja16!E29 (Financieros) = ${financieros}`);
 
       // Fila 30: Pérdidas por aplicación del método de participación patrimonial
       const perdidasMPP = sumByPrefixes16(acueductoAccounts, ['5815']);
-      sheet16.getCell('E30').value = perdidasMPP;
+      writeCellSafe(sheet16, 'E30', perdidasMPP);
       console.log(`[ExcelJS] Hoja16!E30 (Pérdidas MPP) = ${perdidasMPP}`);
 
       // Fila 31: Gastos diversos
       const gastosDiversos = sumByPrefixes16(acueductoAccounts, ['5195', '5895']);
-      sheet16.getCell('E31').value = gastosDiversos;
+      writeCellSafe(sheet16, 'E31', gastosDiversos);
       console.log(`[ExcelJS] Hoja16!E31 (Gastos diversos) = ${gastosDiversos}`);
 
       // Fila 32: Donaciones
       const donaciones = sumByPrefixes16(acueductoAccounts, ['5423']);
-      sheet16.getCell('E32').value = donaciones;
+      writeCellSafe(sheet16, 'E32', donaciones);
       console.log(`[ExcelJS] Hoja16!E32 (Donaciones) = ${donaciones}`);
 
       // =====================================================
@@ -513,10 +545,10 @@ export async function rewriteFinancialDataWithExcelJS(
       // =====================================================
       const gananciasMPP = sumByPrefixes16(acueductoAccounts, ['4815']);
       if (gananciasMPP !== 0) {
-        sheet16.getCell('E33').value = -gananciasMPP;
+        writeCellSafe(sheet16, 'E33', -gananciasMPP);
         console.log(`[ExcelJS] Hoja16!E33 (Ganancias MPP) = ${-gananciasMPP}`);
       } else {
-        sheet16.getCell('E33').value = 0;
+        writeCellSafe(sheet16, 'E33', 0);
       }
 
       // =====================================================
@@ -525,12 +557,12 @@ export async function rewriteFinancialDataWithExcelJS(
 
       // Fila 34: Impuesto a las ganancias corrientes
       const impuestoRentaCorriente = sumByPrefixes16(acueductoAccounts, ['540101']);
-      sheet16.getCell('E34').value = impuestoRentaCorriente;
+      writeCellSafe(sheet16, 'E34', impuestoRentaCorriente);
       console.log(`[ExcelJS] Hoja16!E34 (Imp. renta corriente) = ${impuestoRentaCorriente}`);
 
       // Fila 35: Impuesto a las ganancias diferido
       const impuestoRentaDiferido = sumByPrefixes16(acueductoAccounts, ['5410'], ['540101']);
-      sheet16.getCell('E35').value = impuestoRentaDiferido;
+      writeCellSafe(sheet16, 'E35', impuestoRentaDiferido);
       console.log(`[ExcelJS] Hoja16!E35 (Imp. renta diferido) = ${impuestoRentaDiferido}`);
 
       // =====================================================
@@ -539,22 +571,22 @@ export async function rewriteFinancialDataWithExcelJS(
 
       // Fila 72: Órdenes y contratos de mantenimiento y reparaciones
       const mantenimiento = sumByPrefixes16(acueductoAccounts, ['5140', '5145']);
-      sheet16.getCell('E72').value = mantenimiento;
+      writeCellSafe(sheet16, 'E72', mantenimiento);
       console.log(`[ExcelJS] Hoja16!E72 (Mantenimiento) = ${mantenimiento}`);
 
       // Fila 77: Servicios públicos
       const serviciosPublicos = sumByPrefixes16(acueductoAccounts, ['5135']);
-      sheet16.getCell('E77').value = serviciosPublicos;
+      writeCellSafe(sheet16, 'E77', serviciosPublicos);
       console.log(`[ExcelJS] Hoja16!E77 (Servicios públicos) = ${serviciosPublicos}`);
 
       // Fila 80: Seguros
       const seguros = sumByPrefixes16(acueductoAccounts, ['5130']);
-      sheet16.getCell('E80').value = seguros;
+      writeCellSafe(sheet16, 'E80', seguros);
       console.log(`[ExcelJS] Hoja16!E80 (Seguros) = ${seguros}`);
 
       // Fila 81: Órdenes y contratos por otros servicios
       const otrosContratos = sumByPrefixes16(acueductoAccounts, ['5150', '5155']);
-      sheet16.getCell('E81').value = otrosContratos;
+      writeCellSafe(sheet16, 'E81', otrosContratos);
       console.log(`[ExcelJS] Hoja16!E81 (Otros contratos) = ${otrosContratos}`);
 
       // =====================================================
@@ -564,7 +596,7 @@ export async function rewriteFinancialDataWithExcelJS(
       // =====================================================
 
       const costosVentasTotal = sumByPrefixes16(acueductoAccounts, ['6']);
-      sheet16.getCell('F72').value = costosVentasTotal;
+      writeCellSafe(sheet16, 'F72', costosVentasTotal);
       console.log(`[ExcelJS] Hoja16!F72 (Costos de ventas total) = ${costosVentasTotal}`);
 
       // Limpiar otras celdas de la columna F que puedan tener valores previos
@@ -572,7 +604,7 @@ export async function rewriteFinancialDataWithExcelJS(
       // conserva la fórmula original del template y `.value` retorna un objeto
       // { formula: '...' }, causando "0[object Object]" al sumar en columna G.
       for (const row of [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 77, 80, 81]) {
-        sheet16.getCell(`F${row}`).value = 0;
+        writeCellSafe(sheet16, `F${row}`, 0);
       }
 
       // =====================================================
@@ -582,7 +614,7 @@ export async function rewriteFinancialDataWithExcelJS(
       for (const row of filasConDatos16) {
         const valorE = safeNumericValue(sheet16.getCell(`E${row}`));
         const valorF = safeNumericValue(sheet16.getCell(`F${row}`));
-        sheet16.getCell(`G${row}`).value = valorE + valorF;
+        writeCellSafe(sheet16, `G${row}`, valorE + valorF);
       }
       console.log(`[ExcelJS] Hoja16 - Columna G (E+F) calculada para ${filasConDatos16.length} filas`);
 
@@ -657,111 +689,111 @@ export async function rewriteFinancialDataWithExcelJS(
       };
 
       const beneficiosEmpleados17 = sumByPrefixes17(alcantarilladoAccounts, ['5101', '5103', '5104', '5107', '5108']);
-      sheet17.getCell('E13').value = beneficiosEmpleados17;
+      writeCellSafe(sheet17, 'E13', beneficiosEmpleados17);
       console.log(`[ExcelJS] Hoja17!E13 (Beneficios empleados) = ${beneficiosEmpleados17}`);
 
       const honorarios17 = sumByPrefixes17(alcantarilladoAccounts, ['5110']);
-      sheet17.getCell('E14').value = honorarios17;
+      writeCellSafe(sheet17, 'E14', honorarios17);
       console.log(`[ExcelJS] Hoja17!E14 (Honorarios) = ${honorarios17}`);
 
       const impuestosTasas17 = sumByPrefixes17(alcantarilladoAccounts, ['5120']);
-      sheet17.getCell('E15').value = impuestosTasas17;
+      writeCellSafe(sheet17, 'E15', impuestosTasas17);
       console.log(`[ExcelJS] Hoja17!E15 (Impuestos y tasas) = ${impuestosTasas17}`);
 
       const generales17 = sumByPrefixes17(alcantarilladoAccounts, ['5111']);
-      sheet17.getCell('E16').value = generales17;
+      writeCellSafe(sheet17, 'E16', generales17);
       console.log(`[ExcelJS] Hoja17!E16 (Generales) = ${generales17}`);
 
       const deterioro17 = sumByPrefixes17(alcantarilladoAccounts, ['5350']);
-      sheet17.getCell('E17').value = deterioro17;
+      writeCellSafe(sheet17, 'E17', deterioro17);
       console.log(`[ExcelJS] Hoja17!E17 (Deterioro) = ${deterioro17}`);
 
       const depreciacion17 = sumByPrefixes17(alcantarilladoAccounts, ['5360']);
-      sheet17.getCell('E18').value = depreciacion17;
+      writeCellSafe(sheet17, 'E18', depreciacion17);
       console.log(`[ExcelJS] Hoja17!E18 (Depreciación) = ${depreciacion17}`);
 
       const amortizacion17 = sumByPrefixes17(alcantarilladoAccounts, ['5365']);
-      sheet17.getCell('E19').value = amortizacion17;
+      writeCellSafe(sheet17, 'E19', amortizacion17);
       console.log(`[ExcelJS] Hoja17!E19 (Amortización) = ${amortizacion17}`);
 
       const litigios17 = sumByPrefixes17(alcantarilladoAccounts, ['537001', '537002']);
-      sheet17.getCell('E21').value = litigios17;
+      writeCellSafe(sheet17, 'E21', litigios17);
 
       const garantias17 = sumByPrefixes17(alcantarilladoAccounts, ['537003']);
-      sheet17.getCell('E22').value = garantias17;
+      writeCellSafe(sheet17, 'E22', garantias17);
 
       const provisionesDiversas17 = sumByPrefixes17(alcantarilladoAccounts, ['5370'], ['537001', '537002', '537003']);
-      sheet17.getCell('E23').value = provisionesDiversas17;
+      writeCellSafe(sheet17, 'E23', provisionesDiversas17);
 
       const arrendamientos17 = sumByPrefixes17(alcantarilladoAccounts, ['5115', '5124']);
-      sheet17.getCell('E25').value = arrendamientos17;
+      writeCellSafe(sheet17, 'E25', arrendamientos17);
       console.log(`[ExcelJS] Hoja17!E25 (Arrendamientos) = ${arrendamientos17}`);
 
       const comisiones17 = sumByPrefixes17(alcantarilladoAccounts, ['5125']);
-      sheet17.getCell('E27').value = comisiones17;
+      writeCellSafe(sheet17, 'E27', comisiones17);
 
       const diferenciaEnCambio17 = sumByPrefixes17(alcantarilladoAccounts, ['5807']);
-      sheet17.getCell('E28').value = diferenciaEnCambio17;
+      writeCellSafe(sheet17, 'E28', diferenciaEnCambio17);
 
       const financieros17 = sumByPrefixes17(alcantarilladoAccounts, ['5802', '5803']);
-      sheet17.getCell('E29').value = financieros17;
+      writeCellSafe(sheet17, 'E29', financieros17);
       console.log(`[ExcelJS] Hoja17!E29 (Financieros) = ${financieros17}`);
 
       const perdidasMPP17 = sumByPrefixes17(alcantarilladoAccounts, ['5815']);
-      sheet17.getCell('E30').value = perdidasMPP17;
+      writeCellSafe(sheet17, 'E30', perdidasMPP17);
       console.log(`[ExcelJS] Hoja17!E30 (Pérdidas MPP) = ${perdidasMPP17}`);
 
       const gastosDiversos17 = sumByPrefixes17(alcantarilladoAccounts, ['5195', '5895']);
-      sheet17.getCell('E31').value = gastosDiversos17;
+      writeCellSafe(sheet17, 'E31', gastosDiversos17);
       console.log(`[ExcelJS] Hoja17!E31 (Gastos diversos) = ${gastosDiversos17}`);
 
       const donaciones17 = sumByPrefixes17(alcantarilladoAccounts, ['5423']);
-      sheet17.getCell('E32').value = donaciones17;
+      writeCellSafe(sheet17, 'E32', donaciones17);
       console.log(`[ExcelJS] Hoja17!E32 (Donaciones) = ${donaciones17}`);
 
       const gananciasMPP17 = sumByPrefixes17(alcantarilladoAccounts, ['4815']);
-      sheet17.getCell('E33').value = gananciasMPP17 !== 0 ? -gananciasMPP17 : 0;
+      writeCellSafe(sheet17, 'E33', gananciasMPP17 !== 0 ? -gananciasMPP17 : 0);
       if (gananciasMPP17 !== 0) {
         console.log(`[ExcelJS] Hoja17!E33 (Ganancias MPP) = ${-gananciasMPP17}`);
       }
 
       const impuestoRentaCorriente17 = sumByPrefixes17(alcantarilladoAccounts, ['540101']);
-      sheet17.getCell('E34').value = impuestoRentaCorriente17;
+      writeCellSafe(sheet17, 'E34', impuestoRentaCorriente17);
       console.log(`[ExcelJS] Hoja17!E34 (Imp. renta corriente) = ${impuestoRentaCorriente17}`);
 
       const impuestoRentaDiferido17 = sumByPrefixes17(alcantarilladoAccounts, ['5410'], ['540101']);
-      sheet17.getCell('E35').value = impuestoRentaDiferido17;
+      writeCellSafe(sheet17, 'E35', impuestoRentaDiferido17);
       console.log(`[ExcelJS] Hoja17!E35 (Imp. renta diferido) = ${impuestoRentaDiferido17}`);
 
       const mantenimiento17 = sumByPrefixes17(alcantarilladoAccounts, ['5140', '5145']);
-      sheet17.getCell('E72').value = mantenimiento17;
+      writeCellSafe(sheet17, 'E72', mantenimiento17);
       console.log(`[ExcelJS] Hoja17!E72 (Mantenimiento) = ${mantenimiento17}`);
 
       const serviciosPublicos17 = sumByPrefixes17(alcantarilladoAccounts, ['5135']);
-      sheet17.getCell('E77').value = serviciosPublicos17;
+      writeCellSafe(sheet17, 'E77', serviciosPublicos17);
       console.log(`[ExcelJS] Hoja17!E77 (Servicios públicos) = ${serviciosPublicos17}`);
 
       const seguros17 = sumByPrefixes17(alcantarilladoAccounts, ['5130']);
-      sheet17.getCell('E80').value = seguros17;
+      writeCellSafe(sheet17, 'E80', seguros17);
       console.log(`[ExcelJS] Hoja17!E80 (Seguros) = ${seguros17}`);
 
       const otrosContratos17 = sumByPrefixes17(alcantarilladoAccounts, ['5150', '5155']);
-      sheet17.getCell('E81').value = otrosContratos17;
+      writeCellSafe(sheet17, 'E81', otrosContratos17);
       console.log(`[ExcelJS] Hoja17!E81 (Otros contratos) = ${otrosContratos17}`);
 
       const costosVentasTotal17 = sumByPrefixes17(alcantarilladoAccounts, ['6']);
-      sheet17.getCell('F72').value = costosVentasTotal17;
+      writeCellSafe(sheet17, 'F72', costosVentasTotal17);
       console.log(`[ExcelJS] Hoja17!F72 (Costos de ventas total) = ${costosVentasTotal17}`);
 
       for (const row of [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 77, 80, 81]) {
-        sheet17.getCell(`F${row}`).value = 0;
+        writeCellSafe(sheet17, `F${row}`, 0);
       }
 
       const filasConDatos17 = [13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35, 72, 77, 80, 81];
       for (const row of filasConDatos17) {
         const valorE = safeNumericValue(sheet17.getCell(`E${row}`));
         const valorF = safeNumericValue(sheet17.getCell(`F${row}`));
-        sheet17.getCell(`G${row}`).value = valorE + valorF;
+        writeCellSafe(sheet17, `G${row}`, valorE + valorF);
       }
       console.log(`[ExcelJS] Hoja17 - Columna G (E+F) calculada para ${filasConDatos17.length} filas`);
 
@@ -808,96 +840,96 @@ export async function rewriteFinancialDataWithExcelJS(
       };
 
       const beneficiosEmpleados18 = sumByPrefixes18(aseoAccounts, ['5101', '5103', '5104', '5107', '5108']);
-      sheet18.getCell('E13').value = beneficiosEmpleados18;
+      writeCellSafe(sheet18, 'E13', beneficiosEmpleados18);
       console.log(`[ExcelJS] Hoja18!E13 (Beneficios empleados) = ${beneficiosEmpleados18}`);
 
       const honorarios18 = sumByPrefixes18(aseoAccounts, ['5110']);
-      sheet18.getCell('E14').value = honorarios18;
+      writeCellSafe(sheet18, 'E14', honorarios18);
       console.log(`[ExcelJS] Hoja18!E14 (Honorarios) = ${honorarios18}`);
 
       const impuestosTasas18 = sumByPrefixes18(aseoAccounts, ['5120']);
-      sheet18.getCell('E15').value = impuestosTasas18;
+      writeCellSafe(sheet18, 'E15', impuestosTasas18);
       console.log(`[ExcelJS] Hoja18!E15 (Impuestos y tasas) = ${impuestosTasas18}`);
 
       const generales18 = sumByPrefixes18(aseoAccounts, ['5111']);
-      sheet18.getCell('E16').value = generales18;
+      writeCellSafe(sheet18, 'E16', generales18);
       console.log(`[ExcelJS] Hoja18!E16 (Generales) = ${generales18}`);
 
       const deterioro18 = sumByPrefixes18(aseoAccounts, ['5350']);
-      sheet18.getCell('E17').value = deterioro18;
+      writeCellSafe(sheet18, 'E17', deterioro18);
       console.log(`[ExcelJS] Hoja18!E17 (Deterioro) = ${deterioro18}`);
 
       const depreciacion18 = sumByPrefixes18(aseoAccounts, ['5360']);
-      sheet18.getCell('E18').value = depreciacion18;
+      writeCellSafe(sheet18, 'E18', depreciacion18);
       console.log(`[ExcelJS] Hoja18!E18 (Depreciación) = ${depreciacion18}`);
 
       const amortizacion18 = sumByPrefixes18(aseoAccounts, ['5365']);
-      sheet18.getCell('E19').value = amortizacion18;
+      writeCellSafe(sheet18, 'E19', amortizacion18);
       console.log(`[ExcelJS] Hoja18!E19 (Amortización) = ${amortizacion18}`);
 
       const litigios18 = sumByPrefixes18(aseoAccounts, ['537001', '537002']);
-      sheet18.getCell('E21').value = litigios18;
+      writeCellSafe(sheet18, 'E21', litigios18);
 
       const garantias18 = sumByPrefixes18(aseoAccounts, ['537003']);
-      sheet18.getCell('E22').value = garantias18;
+      writeCellSafe(sheet18, 'E22', garantias18);
 
       const provisionesDiversas18 = sumByPrefixes18(aseoAccounts, ['5370'], ['537001', '537002', '537003']);
-      sheet18.getCell('E23').value = provisionesDiversas18;
+      writeCellSafe(sheet18, 'E23', provisionesDiversas18);
 
       const arrendamientos18 = sumByPrefixes18(aseoAccounts, ['5115', '5124']);
-      sheet18.getCell('E25').value = arrendamientos18;
+      writeCellSafe(sheet18, 'E25', arrendamientos18);
       console.log(`[ExcelJS] Hoja18!E25 (Arrendamientos) = ${arrendamientos18}`);
 
       const comisiones18 = sumByPrefixes18(aseoAccounts, ['5125']);
-      sheet18.getCell('E27').value = comisiones18;
+      writeCellSafe(sheet18, 'E27', comisiones18);
 
       const diferenciaEnCambio18 = sumByPrefixes18(aseoAccounts, ['5807']);
-      sheet18.getCell('E28').value = diferenciaEnCambio18;
+      writeCellSafe(sheet18, 'E28', diferenciaEnCambio18);
 
       const financieros18 = sumByPrefixes18(aseoAccounts, ['5802', '5803']);
-      sheet18.getCell('E29').value = financieros18;
+      writeCellSafe(sheet18, 'E29', financieros18);
       console.log(`[ExcelJS] Hoja18!E29 (Financieros) = ${financieros18}`);
 
       const perdidasMPP18 = sumByPrefixes18(aseoAccounts, ['5815']);
-      sheet18.getCell('E30').value = perdidasMPP18;
+      writeCellSafe(sheet18, 'E30', perdidasMPP18);
       console.log(`[ExcelJS] Hoja18!E30 (Pérdidas MPP) = ${perdidasMPP18}`);
 
       const gastosDiversos18 = sumByPrefixes18(aseoAccounts, ['5195', '5895']);
-      sheet18.getCell('E31').value = gastosDiversos18;
+      writeCellSafe(sheet18, 'E31', gastosDiversos18);
       console.log(`[ExcelJS] Hoja18!E31 (Gastos diversos) = ${gastosDiversos18}`);
 
       const donaciones18 = sumByPrefixes18(aseoAccounts, ['5423']);
-      sheet18.getCell('E32').value = donaciones18;
+      writeCellSafe(sheet18, 'E32', donaciones18);
       console.log(`[ExcelJS] Hoja18!E32 (Donaciones) = ${donaciones18}`);
 
       const gananciasMPP18 = sumByPrefixes18(aseoAccounts, ['4815']);
-      sheet18.getCell('E33').value = gananciasMPP18 !== 0 ? -gananciasMPP18 : 0;
+      writeCellSafe(sheet18, 'E33', gananciasMPP18 !== 0 ? -gananciasMPP18 : 0);
       if (gananciasMPP18 !== 0) {
         console.log(`[ExcelJS] Hoja18!E33 (Ganancias MPP) = ${-gananciasMPP18}`);
       }
 
       const impuestoRentaCorriente18 = sumByPrefixes18(aseoAccounts, ['540101']);
-      sheet18.getCell('E34').value = impuestoRentaCorriente18;
+      writeCellSafe(sheet18, 'E34', impuestoRentaCorriente18);
       console.log(`[ExcelJS] Hoja18!E34 (Imp. renta corriente) = ${impuestoRentaCorriente18}`);
 
       const impuestoRentaDiferido18 = sumByPrefixes18(aseoAccounts, ['5410'], ['540101']);
-      sheet18.getCell('E35').value = impuestoRentaDiferido18;
+      writeCellSafe(sheet18, 'E35', impuestoRentaDiferido18);
       console.log(`[ExcelJS] Hoja18!E35 (Imp. renta diferido) = ${impuestoRentaDiferido18}`);
 
       const mantenimiento18 = sumByPrefixes18(aseoAccounts, ['5140', '5145']);
-      sheet18.getCell('E72').value = mantenimiento18;
+      writeCellSafe(sheet18, 'E72', mantenimiento18);
       console.log(`[ExcelJS] Hoja18!E72 (Mantenimiento) = ${mantenimiento18}`);
 
       const serviciosPublicos18 = sumByPrefixes18(aseoAccounts, ['5135']);
-      sheet18.getCell('E77').value = serviciosPublicos18;
+      writeCellSafe(sheet18, 'E77', serviciosPublicos18);
       console.log(`[ExcelJS] Hoja18!E77 (Servicios públicos) = ${serviciosPublicos18}`);
 
       const seguros18 = sumByPrefixes18(aseoAccounts, ['5130']);
-      sheet18.getCell('E80').value = seguros18;
+      writeCellSafe(sheet18, 'E80', seguros18);
       console.log(`[ExcelJS] Hoja18!E80 (Seguros) = ${seguros18}`);
 
       const otrosContratos18 = sumByPrefixes18(aseoAccounts, ['5150', '5155']);
-      sheet18.getCell('E81').value = otrosContratos18;
+      writeCellSafe(sheet18, 'E81', otrosContratos18);
       console.log(`[ExcelJS] Hoja18!E81 (Otros contratos) = ${otrosContratos18}`);
 
       // =====================================================
@@ -911,22 +943,22 @@ export async function rewriteFinancialDataWithExcelJS(
       const costosMantenimiento18 = Math.round(costosVentasTotal18 * 0.40);
       const costosDisposicionFinal18 = costosVentasTotal18 - costosMantenimiento18;
 
-      sheet18.getCell('F72').value = costosMantenimiento18;
-      sheet18.getCell('F74').value = costosDisposicionFinal18;
+      writeCellSafe(sheet18, 'F72', costosMantenimiento18);
+      writeCellSafe(sheet18, 'F74', costosDisposicionFinal18);
 
       console.log(`[ExcelJS] Hoja18 - Costos de ventas total: ${costosVentasTotal18}`);
       console.log(`[ExcelJS] Hoja18!F72 (Mantenimiento 40%) = ${costosMantenimiento18}`);
       console.log(`[ExcelJS] Hoja18!F74 (Disposición final 60%) = ${costosDisposicionFinal18}`);
 
       for (const row of [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 73, 77, 80, 81]) {
-        sheet18.getCell(`F${row}`).value = 0;
+        writeCellSafe(sheet18, `F${row}`, 0);
       }
 
       const filasConDatos18 = [13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35, 72, 74, 77, 80, 81];
       for (const row of filasConDatos18) {
         const valorE = safeNumericValue(sheet18.getCell(`E${row}`));
         const valorF = safeNumericValue(sheet18.getCell(`F${row}`));
-        sheet18.getCell(`G${row}`).value = valorE + valorF;
+        writeCellSafe(sheet18, `G${row}`, valorE + valorF);
       }
       console.log(`[ExcelJS] Hoja18 - Columna G (E+F) calculada para ${filasConDatos18.length} filas`);
 
@@ -1002,13 +1034,13 @@ export async function rewriteFinancialDataWithExcelJS(
         const f18 = safeNumericValue(sheet18ForHoja22.getCell(`F${origen}`));
         const sumaF = f16 + f17 + f18;
 
-        sheet22.getCell(`E${destino}`).value = sumaE;
-        sheet22.getCell(`F${destino}`).value = sumaF;
-        sheet22.getCell(`G${destino}`).value = sumaE + sumaF;
+        writeCellSafe(sheet22, `E${destino}`, sumaE);
+        writeCellSafe(sheet22, `F${destino}`, sumaF);
+        writeCellSafe(sheet22, `G${destino}`, sumaE + sumaF);
 
-        sheet22.getCell(`K${destino}`).value = sumaE;
-        sheet22.getCell(`L${destino}`).value = sumaF;
-        sheet22.getCell(`M${destino}`).value = sumaE + sumaF;
+        writeCellSafe(sheet22, `K${destino}`, sumaE);
+        writeCellSafe(sheet22, `L${destino}`, sumaF);
+        writeCellSafe(sheet22, `M${destino}`, sumaE + sumaF);
 
         if (sumaE !== 0 || sumaF !== 0) {
           console.log(`[ExcelJS] Hoja22 fila ${destino}: E=${sumaE}, F=${sumaF}, G=${sumaE + sumaF}`);
@@ -1046,16 +1078,16 @@ export async function rewriteFinancialDataWithExcelJS(
       console.log(`[ExcelJS]   F14 (Alcantarillado): ${ingresosAlcantarillado}`);
       console.log(`[ExcelJS]   G14 (Aseo): ${ingresosAseo}`);
 
-      sheet23.getCell('I17').value = ingresosAcueducto;
-      sheet23.getCell('K18').value = ingresosAcueducto;
+      writeCellSafe(sheet23, 'I17', ingresosAcueducto);
+      writeCellSafe(sheet23, 'K18', ingresosAcueducto);
       console.log(`[ExcelJS] Hoja23 - Acueducto: I17=${ingresosAcueducto}, K18=${ingresosAcueducto}`);
 
-      sheet23.getCell('I22').value = ingresosAlcantarillado;
-      sheet23.getCell('K23').value = ingresosAlcantarillado;
+      writeCellSafe(sheet23, 'I22', ingresosAlcantarillado);
+      writeCellSafe(sheet23, 'K23', ingresosAlcantarillado);
       console.log(`[ExcelJS] Hoja23 - Alcantarillado: I22=${ingresosAlcantarillado}, K23=${ingresosAlcantarillado}`);
 
-      sheet23.getCell('I28').value = ingresosAseo;
-      sheet23.getCell('K40').value = ingresosAseo;
+      writeCellSafe(sheet23, 'I28', ingresosAseo);
+      writeCellSafe(sheet23, 'K40', ingresosAseo);
       console.log(`[ExcelJS] Hoja23 - Aseo: I28=${ingresosAseo}, K40=${ingresosAseo}`);
 
       console.log('[ExcelJS] Hoja23 completada.');
@@ -1132,25 +1164,25 @@ export async function rewriteFinancialDataWithExcelJS(
             valorNoCorriente = Math.round(totalCXCNoCorrientes * usuarios / totalUsuarios);
           }
 
-          sheet24.getCell(`G${estrato.fila}`).value = valorCorriente;
-          sheet24.getCell(`H${estrato.fila}`).value = valorNoCorriente;
+          writeCellSafe(sheet24, `G${estrato.fila}`, valorCorriente);
+          writeCellSafe(sheet24, `H${estrato.fila}`, valorNoCorriente);
           const totalCXCEstrato = valorCorriente + valorNoCorriente;
-          sheet24.getCell(`I${estrato.fila}`).value = totalCXCEstrato;
+          writeCellSafe(sheet24, `I${estrato.fila}`, totalCXCEstrato);
 
           let sumaRangos = 0;
           for (const rango of rangosVencimiento) {
             const valorRango = Math.round(totalCXCEstrato * rango.porcentaje);
-            sheet24.getCell(`${rango.columna}${estrato.fila}`).value = valorRango;
+            writeCellSafe(sheet24, `${rango.columna}${estrato.fila}`, valorRango);
             sumaRangos += valorRango;
           }
 
           const diferencia = totalCXCEstrato - sumaRangos;
           if (diferencia !== 0) {
             const valorLActual = safeNumericValue(sheet24.getCell(`L${estrato.fila}`));
-            sheet24.getCell(`L${estrato.fila}`).value = valorLActual + diferencia;
+            writeCellSafe(sheet24, `L${estrato.fila}`, valorLActual + diferencia);
             sumaRangos = totalCXCEstrato;
           }
-          sheet24.getCell(`S${estrato.fila}`).value = sumaRangos;
+          writeCellSafe(sheet24, `S${estrato.fila}`, sumaRangos);
 
           if (totalCXCEstrato !== 0) {
             const porcentaje = totalUsuarios > 0 ? (usuarios / totalUsuarios * 100).toFixed(2) : '0.00';
@@ -1190,24 +1222,24 @@ export async function rewriteFinancialDataWithExcelJS(
           const valorNoCorriente = Math.round(totalCXCNoCorrientes * estrato.porcentaje);
           const totalCXCEstrato = valorCorriente + valorNoCorriente;
 
-          sheet24.getCell(`G${estrato.fila}`).value = valorCorriente;
-          sheet24.getCell(`H${estrato.fila}`).value = valorNoCorriente;
-          sheet24.getCell(`I${estrato.fila}`).value = totalCXCEstrato;
+          writeCellSafe(sheet24, `G${estrato.fila}`, valorCorriente);
+          writeCellSafe(sheet24, `H${estrato.fila}`, valorNoCorriente);
+          writeCellSafe(sheet24, `I${estrato.fila}`, totalCXCEstrato);
 
           let sumaRangos = 0;
           for (const rango of rangosVencimiento) {
             const valorRango = Math.round(totalCXCEstrato * rango.porcentaje);
-            sheet24.getCell(`${rango.columna}${estrato.fila}`).value = valorRango;
+            writeCellSafe(sheet24, `${rango.columna}${estrato.fila}`, valorRango);
             sumaRangos += valorRango;
           }
 
           const diferencia = totalCXCEstrato - sumaRangos;
           if (diferencia !== 0) {
             const valorLActual = safeNumericValue(sheet24.getCell(`L${estrato.fila}`));
-            sheet24.getCell(`L${estrato.fila}`).value = valorLActual + diferencia;
+            writeCellSafe(sheet24, `L${estrato.fila}`, valorLActual + diferencia);
             sumaRangos = totalCXCEstrato;
           }
-          sheet24.getCell(`S${estrato.fila}`).value = sumaRangos;
+          writeCellSafe(sheet24, `S${estrato.fila}`, sumaRangos);
         }
       }
 
@@ -1286,25 +1318,25 @@ export async function rewriteFinancialDataWithExcelJS(
             valorNoCorriente = Math.round(totalCXCNoCorrientesAlc * usuarios / totalUsuariosAlc);
           }
 
-          sheet25.getCell(`G${estrato.fila}`).value = valorCorriente;
-          sheet25.getCell(`H${estrato.fila}`).value = valorNoCorriente;
+          writeCellSafe(sheet25, `G${estrato.fila}`, valorCorriente);
+          writeCellSafe(sheet25, `H${estrato.fila}`, valorNoCorriente);
           const totalCXCEstrato = valorCorriente + valorNoCorriente;
-          sheet25.getCell(`I${estrato.fila}`).value = totalCXCEstrato;
+          writeCellSafe(sheet25, `I${estrato.fila}`, totalCXCEstrato);
 
           let sumaRangos = 0;
           for (const rango of rangosVencimientoAlc) {
             const valorRango = Math.round(totalCXCEstrato * rango.porcentaje);
-            sheet25.getCell(`${rango.columna}${estrato.fila}`).value = valorRango;
+            writeCellSafe(sheet25, `${rango.columna}${estrato.fila}`, valorRango);
             sumaRangos += valorRango;
           }
 
           const diferencia = totalCXCEstrato - sumaRangos;
           if (diferencia !== 0) {
             const valorLActual = safeNumericValue(sheet25.getCell(`L${estrato.fila}`));
-            sheet25.getCell(`L${estrato.fila}`).value = valorLActual + diferencia;
+            writeCellSafe(sheet25, `L${estrato.fila}`, valorLActual + diferencia);
             sumaRangos = totalCXCEstrato;
           }
-          sheet25.getCell(`S${estrato.fila}`).value = sumaRangos;
+          writeCellSafe(sheet25, `S${estrato.fila}`, sumaRangos);
 
           if (totalCXCEstrato !== 0) {
             const porcentaje = totalUsuariosAlc > 0 ? (usuarios / totalUsuariosAlc * 100).toFixed(2) : '0.00';
@@ -1332,24 +1364,24 @@ export async function rewriteFinancialDataWithExcelJS(
           const valorNoCorriente = Math.round(totalCXCNoCorrientesAlc * estrato.porcentaje);
           const totalCXCEstrato = valorCorriente + valorNoCorriente;
 
-          sheet25.getCell(`G${estrato.fila}`).value = valorCorriente;
-          sheet25.getCell(`H${estrato.fila}`).value = valorNoCorriente;
-          sheet25.getCell(`I${estrato.fila}`).value = totalCXCEstrato;
+          writeCellSafe(sheet25, `G${estrato.fila}`, valorCorriente);
+          writeCellSafe(sheet25, `H${estrato.fila}`, valorNoCorriente);
+          writeCellSafe(sheet25, `I${estrato.fila}`, totalCXCEstrato);
 
           let sumaRangos = 0;
           for (const rango of rangosVencimientoAlc) {
             const valorRango = Math.round(totalCXCEstrato * rango.porcentaje);
-            sheet25.getCell(`${rango.columna}${estrato.fila}`).value = valorRango;
+            writeCellSafe(sheet25, `${rango.columna}${estrato.fila}`, valorRango);
             sumaRangos += valorRango;
           }
 
           const diferencia = totalCXCEstrato - sumaRangos;
           if (diferencia !== 0) {
             const valorLActual = safeNumericValue(sheet25.getCell(`L${estrato.fila}`));
-            sheet25.getCell(`L${estrato.fila}`).value = valorLActual + diferencia;
+            writeCellSafe(sheet25, `L${estrato.fila}`, valorLActual + diferencia);
             sumaRangos = totalCXCEstrato;
           }
-          sheet25.getCell(`S${estrato.fila}`).value = sumaRangos;
+          writeCellSafe(sheet25, `S${estrato.fila}`, sumaRangos);
         }
       }
 
@@ -1429,25 +1461,25 @@ export async function rewriteFinancialDataWithExcelJS(
             valorNoCorriente = Math.round(totalCXCNoCorrientesAseo * usuarios / totalUsuariosAseo);
           }
 
-          sheet26.getCell(`E${estrato.fila}`).value = valorCorriente;
-          sheet26.getCell(`F${estrato.fila}`).value = valorNoCorriente;
+          writeCellSafe(sheet26, `E${estrato.fila}`, valorCorriente);
+          writeCellSafe(sheet26, `F${estrato.fila}`, valorNoCorriente);
           const totalCXCEstrato = valorCorriente + valorNoCorriente;
-          sheet26.getCell(`G${estrato.fila}`).value = totalCXCEstrato;
+          writeCellSafe(sheet26, `G${estrato.fila}`, totalCXCEstrato);
 
           let sumaRangos = 0;
           for (const rango of rangosVencimientoAseo) {
             const valorRango = Math.round(totalCXCEstrato * rango.porcentaje);
-            sheet26.getCell(`${rango.columna}${estrato.fila}`).value = valorRango;
+            writeCellSafe(sheet26, `${rango.columna}${estrato.fila}`, valorRango);
             sumaRangos += valorRango;
           }
 
           const diferencia = totalCXCEstrato - sumaRangos;
           if (diferencia !== 0) {
             const valorJActual = safeNumericValue(sheet26.getCell(`J${estrato.fila}`));
-            sheet26.getCell(`J${estrato.fila}`).value = valorJActual + diferencia;
+            writeCellSafe(sheet26, `J${estrato.fila}`, valorJActual + diferencia);
             sumaRangos = totalCXCEstrato;
           }
-          sheet26.getCell(`Q${estrato.fila}`).value = sumaRangos;
+          writeCellSafe(sheet26, `Q${estrato.fila}`, sumaRangos);
 
           if (totalCXCEstrato !== 0) {
             const porcentaje = totalUsuariosAseo > 0 ? (usuarios / totalUsuariosAseo * 100).toFixed(2) : '0.00';
@@ -1475,24 +1507,24 @@ export async function rewriteFinancialDataWithExcelJS(
           const valorNoCorriente = Math.round(totalCXCNoCorrientesAseo * estrato.porcentaje);
           const totalCXCEstrato = valorCorriente + valorNoCorriente;
 
-          sheet26.getCell(`E${estrato.fila}`).value = valorCorriente;
-          sheet26.getCell(`F${estrato.fila}`).value = valorNoCorriente;
-          sheet26.getCell(`G${estrato.fila}`).value = totalCXCEstrato;
+          writeCellSafe(sheet26, `E${estrato.fila}`, valorCorriente);
+          writeCellSafe(sheet26, `F${estrato.fila}`, valorNoCorriente);
+          writeCellSafe(sheet26, `G${estrato.fila}`, totalCXCEstrato);
 
           let sumaRangos = 0;
           for (const rango of rangosVencimientoAseo) {
             const valorRango = Math.round(totalCXCEstrato * rango.porcentaje);
-            sheet26.getCell(`${rango.columna}${estrato.fila}`).value = valorRango;
+            writeCellSafe(sheet26, `${rango.columna}${estrato.fila}`, valorRango);
             sumaRangos += valorRango;
           }
 
           const diferencia = totalCXCEstrato - sumaRangos;
           if (diferencia !== 0) {
             const valorJActual = safeNumericValue(sheet26.getCell(`J${estrato.fila}`));
-            sheet26.getCell(`J${estrato.fila}`).value = valorJActual + diferencia;
+            writeCellSafe(sheet26, `J${estrato.fila}`, valorJActual + diferencia);
             sumaRangos = totalCXCEstrato;
           }
-          sheet26.getCell(`Q${estrato.fila}`).value = sumaRangos;
+          writeCellSafe(sheet26, `Q${estrato.fila}`, sumaRangos);
         }
       }
 
@@ -1545,21 +1577,21 @@ export async function rewriteFinancialDataWithExcelJS(
         }
       }
 
-      sheet30.getCell('E14').value = distribucionPorEstrato.acueducto['estrato1'];
-      sheet30.getCell('E15').value = distribucionPorEstrato.acueducto['estrato2'];
-      sheet30.getCell('E16').value = distribucionPorEstrato.acueducto['estrato3'];
+      writeCellSafe(sheet30, 'E14', distribucionPorEstrato.acueducto['estrato1']);
+      writeCellSafe(sheet30, 'E15', distribucionPorEstrato.acueducto['estrato2']);
+      writeCellSafe(sheet30, 'E16', distribucionPorEstrato.acueducto['estrato3']);
 
-      sheet30.getCell('F14').value = distribucionPorEstrato.alcantarillado['estrato1'];
-      sheet30.getCell('F15').value = distribucionPorEstrato.alcantarillado['estrato2'];
-      sheet30.getCell('F16').value = distribucionPorEstrato.alcantarillado['estrato3'];
+      writeCellSafe(sheet30, 'F14', distribucionPorEstrato.alcantarillado['estrato1']);
+      writeCellSafe(sheet30, 'F15', distribucionPorEstrato.alcantarillado['estrato2']);
+      writeCellSafe(sheet30, 'F16', distribucionPorEstrato.alcantarillado['estrato3']);
 
-      sheet30.getCell('G14').value = distribucionPorEstrato.aseo['estrato1'];
-      sheet30.getCell('G15').value = distribucionPorEstrato.aseo['estrato2'];
-      sheet30.getCell('G16').value = distribucionPorEstrato.aseo['estrato3'];
+      writeCellSafe(sheet30, 'G14', distribucionPorEstrato.aseo['estrato1']);
+      writeCellSafe(sheet30, 'G15', distribucionPorEstrato.aseo['estrato2']);
+      writeCellSafe(sheet30, 'G16', distribucionPorEstrato.aseo['estrato3']);
 
-      sheet30.getCell('K14').value = totalPorEstrato['estrato1'];
-      sheet30.getCell('K15').value = totalPorEstrato['estrato2'];
-      sheet30.getCell('K16').value = totalPorEstrato['estrato3'];
+      writeCellSafe(sheet30, 'K14', totalPorEstrato['estrato1']);
+      writeCellSafe(sheet30, 'K15', totalPorEstrato['estrato2']);
+      writeCellSafe(sheet30, 'K16', totalPorEstrato['estrato3']);
 
       console.log('[ExcelJS] Hoja30 (FC04) - Distribución de subsidios por estrato y servicio:');
       for (const estrato of estratosSubsidiables) {
@@ -1638,15 +1670,15 @@ export async function rewriteFinancialDataWithExcelJS(
         totalGeneral += valorTotal;
 
         if (valorCorriente !== 0) {
-          sheet32.getCell(`D${mapeo.fila32}`).value = valorCorriente;
+          writeCellSafe(sheet32, `D${mapeo.fila32}`, valorCorriente);
         }
 
         if (valorNoCorriente !== 0) {
-          sheet32.getCell(`F${mapeo.fila32}`).value = valorNoCorriente;
+          writeCellSafe(sheet32, `F${mapeo.fila32}`, valorNoCorriente);
         }
 
         if (valorTotal !== 0) {
-          sheet32.getCell(`E${mapeo.fila32}`).value = valorTotal;
+          writeCellSafe(sheet32, `E${mapeo.fila32}`, valorTotal);
 
           const noVencido = Math.round(valorTotal * porcentajesAntiguedad.noVencido);
           const hasta30 = Math.round(valorTotal * porcentajesAntiguedad.hasta30);
@@ -1661,15 +1693,15 @@ export async function rewriteFinancialDataWithExcelJS(
           const diferencia = valorTotal - totalH;
           const hasta60Ajustado = hasta60 + diferencia;
 
-          sheet32.getCell(`G${mapeo.fila32}`).value = noVencido;
-          sheet32.getCell(`I${mapeo.fila32}`).value = hasta30;
-          sheet32.getCell(`K${mapeo.fila32}`).value = hasta60Ajustado;
-          sheet32.getCell(`L${mapeo.fila32}`).value = hasta90;
-          sheet32.getCell(`M${mapeo.fila32}`).value = hasta180;
-          sheet32.getCell(`N${mapeo.fila32}`).value = hasta360;
-          sheet32.getCell(`O${mapeo.fila32}`).value = mayor360;
-          sheet32.getCell(`J${mapeo.fila32}`).value = totalVencidos + diferencia;
-          sheet32.getCell(`H${mapeo.fila32}`).value = valorTotal;
+          writeCellSafe(sheet32, `G${mapeo.fila32}`, noVencido);
+          writeCellSafe(sheet32, `I${mapeo.fila32}`, hasta30);
+          writeCellSafe(sheet32, `K${mapeo.fila32}`, hasta60Ajustado);
+          writeCellSafe(sheet32, `L${mapeo.fila32}`, hasta90);
+          writeCellSafe(sheet32, `M${mapeo.fila32}`, hasta180);
+          writeCellSafe(sheet32, `N${mapeo.fila32}`, hasta360);
+          writeCellSafe(sheet32, `O${mapeo.fila32}`, mayor360);
+          writeCellSafe(sheet32, `J${mapeo.fila32}`, totalVencidos + diferencia);
+          writeCellSafe(sheet32, `H${mapeo.fila32}`, valorTotal);
 
           console.log(`[ExcelJS] Hoja32 fila ${mapeo.fila32} (${mapeo.nombre}): D=${valorCorriente}, F=${valorNoCorriente}, E=${valorTotal}`);
         }
@@ -1696,9 +1728,9 @@ export async function rewriteFinancialDataWithExcelJS(
       const ingresosAlcantarillado35 = safeNumericValue(sheet3ForHoja35.getCell('F14'));
       const ingresosAseo35 = safeNumericValue(sheet3ForHoja35.getCell('G14'));
 
-      sheet35.getCell('G26').value = ingresosAcueducto35;
-      sheet35.getCell('H26').value = ingresosAlcantarillado35;
-      sheet35.getCell('I26').value = ingresosAseo35;
+      writeCellSafe(sheet35, 'G26', ingresosAcueducto35);
+      writeCellSafe(sheet35, 'H26', ingresosAlcantarillado35);
+      writeCellSafe(sheet35, 'I26', ingresosAseo35);
 
       console.log(`[ExcelJS] Hoja35 - Ingresos por prestación de servicios (fila 26):`);
       console.log(`[ExcelJS]   G26 (Acueducto): ${ingresosAcueducto35}`);
@@ -1765,53 +1797,53 @@ export async function rewriteFinancialDataWithExcelJS(
     const ifeSheet1 = workbook.getWorksheet('Hoja1');
     if (ifeSheet1) {
       console.log('[ExcelJS-IFE] Reescribiendo Hoja1 (110000t)...');
-      ifeSheet1.getCell('E13').value = options.nit || '';
-      ifeSheet1.getCell('E14').value = options.companyId;
-      ifeSheet1.getCell('E15').value = options.companyName;
-      ifeSheet1.getCell('E16').value = options.reportDate;
+      writeCellSafe(ifeSheet1, 'E13', options.nit || '');
+      writeCellSafe(ifeSheet1, 'E14', options.companyId);
+      writeCellSafe(ifeSheet1, 'E15', options.companyName);
+      writeCellSafe(ifeSheet1, 'E16', options.reportDate);
 
       const ife = options.ifeCompanyData;
       if (ife) {
-        ifeSheet1.getCell('E18').value = ife.address || '';
-        ifeSheet1.getCell('E19').value = ife.city || '';
-        ifeSheet1.getCell('E20').value = ife.phone || '';
-        ifeSheet1.getCell('E21').value = ife.cellphone || ife.phone || '';
-        ifeSheet1.getCell('E22').value = ife.email || '';
-        if (ife.employeesStart !== undefined) ifeSheet1.getCell('E24').value = ife.employeesStart;
-        if (ife.employeesEnd !== undefined) ifeSheet1.getCell('E25').value = ife.employeesEnd;
-        if (ife.employeesAverage !== undefined) ifeSheet1.getCell('E26').value = ife.employeesAverage;
+        writeCellSafe(ifeSheet1, 'E18', ife.address || '');
+        writeCellSafe(ifeSheet1, 'E19', ife.city || '');
+        writeCellSafe(ifeSheet1, 'E20', ife.phone || '');
+        writeCellSafe(ifeSheet1, 'E21', ife.cellphone || ife.phone || '');
+        writeCellSafe(ifeSheet1, 'E22', ife.email || '');
+        if (ife.employeesStart !== undefined) writeCellSafe(ifeSheet1, 'E24', ife.employeesStart);
+        if (ife.employeesEnd !== undefined) writeCellSafe(ifeSheet1, 'E25', ife.employeesEnd);
+        if (ife.employeesAverage !== undefined) writeCellSafe(ifeSheet1, 'E26', ife.employeesAverage);
         if (ife.representativeDocType) {
           const dtMap: Record<string, string> = {
             '01': '01 - CÉDULA DE CIUDADANÍA', '02': '02 - CÉDULA DE EXTRANJERÍA', '03': '03 - PASAPORTE',
           };
-          ifeSheet1.getCell('E28').value = dtMap[ife.representativeDocType] || ife.representativeDocType;
+          writeCellSafe(ifeSheet1, 'E28', dtMap[ife.representativeDocType] || ife.representativeDocType);
         }
-        ifeSheet1.getCell('E29').value = ife.representativeDocNumber || '';
-        ifeSheet1.getCell('E30').value = ife.representativeFirstName || '';
-        ifeSheet1.getCell('E31').value = ife.representativeLastName || '';
+        writeCellSafe(ifeSheet1, 'E29', ife.representativeDocNumber || '');
+        writeCellSafe(ifeSheet1, 'E30', ife.representativeFirstName || '');
+        writeCellSafe(ifeSheet1, 'E31', ife.representativeLastName || '');
         if (ife.normativeGroup) {
           const gMap: Record<string, string> = {
             'R414': 'R. 414', 'NIIF1': 'Grupo 1 - NIIF Plenas',
             'NIIF2': 'Grupo 2 - NIIF PYMES', 'NIIF3': 'Grupo 3 - Microempresas',
           };
-          ifeSheet1.getCell('E33').value = gMap[ife.normativeGroup] || ife.normativeGroup;
+          writeCellSafe(ifeSheet1, 'E33', gMap[ife.normativeGroup] || ife.normativeGroup);
         } else {
-          ifeSheet1.getCell('E33').value = 'R. 414';
+          writeCellSafe(ifeSheet1, 'E33', 'R. 414');
         }
-        ifeSheet1.getCell('E34').value = ife.complianceDeclaration ? '1. Si cumple' : '2. No cumple';
-        ifeSheet1.getCell('E35').value = ife.goingConcernUncertainty ? '1. Si' : '2. No';
-        ifeSheet1.getCell('E36').value = ife.goingConcernExplanation || 'NA';
-        ifeSheet1.getCell('E38').value = '2. No';
-        ifeSheet1.getCell('E39').value = ife.servicesTermination ? '1. Si' : '2. No';
-        ifeSheet1.getCell('E40').value = ife.servicesTerminationExplanation || 'NA';
+        writeCellSafe(ifeSheet1, 'E34', ife.complianceDeclaration ? '1. Si cumple' : '2. No cumple');
+        writeCellSafe(ifeSheet1, 'E35', ife.goingConcernUncertainty ? '1. Si' : '2. No');
+        writeCellSafe(ifeSheet1, 'E36', ife.goingConcernExplanation || 'NA');
+        writeCellSafe(ifeSheet1, 'E38', '2. No');
+        writeCellSafe(ifeSheet1, 'E39', ife.servicesTermination ? '1. Si' : '2. No');
+        writeCellSafe(ifeSheet1, 'E40', ife.servicesTerminationExplanation || 'NA');
       } else {
-        ifeSheet1.getCell('E33').value = 'R. 414';
-        ifeSheet1.getCell('E34').value = '1. Si cumple';
-        ifeSheet1.getCell('E35').value = '2. No';
-        ifeSheet1.getCell('E36').value = 'NA';
-        ifeSheet1.getCell('E38').value = '2. No';
-        ifeSheet1.getCell('E39').value = '2. No';
-        ifeSheet1.getCell('E40').value = 'NA';
+        writeCellSafe(ifeSheet1, 'E33', 'R. 414');
+        writeCellSafe(ifeSheet1, 'E34', '1. Si cumple');
+        writeCellSafe(ifeSheet1, 'E35', '2. No');
+        writeCellSafe(ifeSheet1, 'E36', 'NA');
+        writeCellSafe(ifeSheet1, 'E38', '2. No');
+        writeCellSafe(ifeSheet1, 'E39', '2. No');
+        writeCellSafe(ifeSheet1, 'E40', 'NA');
       }
       console.log('[ExcelJS-IFE] Hoja1 completada.');
     }
@@ -1833,36 +1865,36 @@ export async function rewriteFinancialDataWithExcelJS(
           efectivoFinal += acc.value;
         }
       }
-      ifeSheet2.getCell('G13').value = efectivoFinal;
+      writeCellSafe(ifeSheet2, 'G13', efectivoFinal);
 
       // G15: Incrementos (disminuciones) en el efectivo = 0
       // (no tenemos balance de apertura para calcular la diferencia)
-      ifeSheet2.getCell('G15').value = 0;
+      writeCellSafe(ifeSheet2, 'G15', 0);
 
       // G16: Efectivo y equivalentes al efectivo al inicio del periodo = 0
-      ifeSheet2.getCell('G16').value = 0;
+      writeCellSafe(ifeSheet2, 'G16', 0);
 
       // G14: Información sobre variaciones de flujo de efectivo (texto obligatorio)
-      ifeSheet2.getCell('G14').value = 'Sin observaciones';
+      writeCellSafe(ifeSheet2, 'G14', 'Sin observaciones');
 
       // G18-G23: Notas de revelación (texto obligatorio)
-      ifeSheet2.getCell('G18').value = 'Sin observaciones';
-      ifeSheet2.getCell('G19').value = 'Sin observaciones';
-      ifeSheet2.getCell('G20').value = 'Sin observaciones';
-      ifeSheet2.getCell('G21').value = 'Sin observaciones';
-      ifeSheet2.getCell('G22').value = 'Sin observaciones';
-      ifeSheet2.getCell('G23').value = 'Sin observaciones';
+      writeCellSafe(ifeSheet2, 'G18', 'Sin observaciones');
+      writeCellSafe(ifeSheet2, 'G19', 'Sin observaciones');
+      writeCellSafe(ifeSheet2, 'G20', 'Sin observaciones');
+      writeCellSafe(ifeSheet2, 'G21', 'Sin observaciones');
+      writeCellSafe(ifeSheet2, 'G22', 'Sin observaciones');
+      writeCellSafe(ifeSheet2, 'G23', 'Sin observaciones');
 
       // G25-G33: Sección de ajustes a información certificada
-      ifeSheet2.getCell('G25').value = '2. No';
-      ifeSheet2.getCell('G26').value = '2. No';
-      ifeSheet2.getCell('G27').value = 'NA';
-      ifeSheet2.getCell('G28').value = '2. No';
-      ifeSheet2.getCell('G29').value = 'NA';
-      ifeSheet2.getCell('G30').value = '2. No';
-      ifeSheet2.getCell('G31').value = 'NA';
-      ifeSheet2.getCell('G32').value = '2. No';
-      ifeSheet2.getCell('G33').value = 'NA';
+      writeCellSafe(ifeSheet2, 'G25', '2. No');
+      writeCellSafe(ifeSheet2, 'G26', '2. No');
+      writeCellSafe(ifeSheet2, 'G27', 'NA');
+      writeCellSafe(ifeSheet2, 'G28', '2. No');
+      writeCellSafe(ifeSheet2, 'G29', 'NA');
+      writeCellSafe(ifeSheet2, 'G30', '2. No');
+      writeCellSafe(ifeSheet2, 'G31', 'NA');
+      writeCellSafe(ifeSheet2, 'G32', '2. No');
+      writeCellSafe(ifeSheet2, 'G33', 'NA');
 
       console.log('[ExcelJS-IFE] Hoja2 (120000t) completada.');
     }
@@ -1930,7 +1962,7 @@ export async function rewriteFinancialDataWithExcelJS(
             }
           }
           if (svcValue !== 0) {
-            ifeSheet3.getCell(`${col}${m.row}`).value = svcValue;
+            writeCellSafe(ifeSheet3, `${col}${m.row}`, svcValue);
           }
         }
       }
@@ -1963,7 +1995,7 @@ export async function rewriteFinancialDataWithExcelJS(
           const svcAccounts = accountsByService[svc] || [];
           const svcER = calcERNet(svcAccounts);
           if (svcER !== 0) {
-            ifeSheet3.getCell(`${col}82`).value = svcER;
+            writeCellSafe(ifeSheet3, `${col}82`, svcER);
           }
         }
       }
@@ -2027,7 +2059,7 @@ export async function rewriteFinancialDataWithExcelJS(
       const esfAllCols = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'];
       for (let row = 86; row <= 163; row++) {
         for (const C of esfAllCols) {
-          ifeSheet3.getCell(`${C}${row}`).value = 0;
+          writeCellSafe(ifeSheet3, `${C}${row}`, 0);
         }
       }
 
@@ -2071,7 +2103,7 @@ export async function rewriteFinancialDataWithExcelJS(
         }
         erValues[m.row]['M'] = totalValue;
         if (totalValue !== 0) {
-          ifeSheet4.getCell(`M${m.row}`).value = totalValue;
+          writeCellSafe(ifeSheet4, `M${m.row}`, totalValue);
         }
         for (const svc of activeServices) {
           const col = IFE_ER_COLS[svc];
@@ -2086,7 +2118,7 @@ export async function rewriteFinancialDataWithExcelJS(
           }
           erValues[m.row][col] = svcValue;
           if (svcValue !== 0) {
-            ifeSheet4.getCell(`${col}${m.row}`).value = svcValue;
+            writeCellSafe(ifeSheet4, `${col}${m.row}`, svcValue);
           }
         }
       }
@@ -2118,7 +2150,7 @@ export async function rewriteFinancialDataWithExcelJS(
       // que generarían facts XBRL negativos (FRM_310000_008)
       for (let row = 35; row <= 49; row++) {
         for (const C of erAllCols) {
-          ifeSheet4.getCell(`${C}${row}`).value = 0;
+          writeCellSafe(ifeSheet4, `${C}${row}`, 0);
         }
       }
 
@@ -2162,7 +2194,7 @@ export async function rewriteFinancialDataWithExcelJS(
       // Limpiar todas las celdas de datos (rows 17-34, cols F-L) para evitar datos del template
       for (let r = 17; r <= 34; r++) {
         for (const c of CXC_ALL_COLS) {
-          ifeSheet5.getCell(`${c}${r}`).value = 0;
+          writeCellSafe(ifeSheet5, `${c}${r}`, 0);
         }
       }
 
@@ -2199,7 +2231,7 @@ export async function rewriteFinancialDataWithExcelJS(
         // Escribir CXC servicios en la fila del servicio
         if (svcServicios !== 0) {
           for (const p of CXC_PCTS) {
-            ifeSheet5.getCell(`${p.col}${row}`).value = Math.round(svcServicios * p.pct);
+            writeCellSafe(ifeSheet5, `${p.col}${row}`, Math.round(svcServicios * p.pct));
           }
           ifeSheet5.getCell(`K${row}`).value = { formula: `SUM(G${row}:J${row})` };
           ifeSheet5.getCell(`L${row}`).value = { formula: `F${row}+K${row}` };
@@ -2210,7 +2242,7 @@ export async function rewriteFinancialDataWithExcelJS(
       if (totalDeterioro !== 0) {
         const detValue = -Math.abs(totalDeterioro);
         for (const p of CXC_PCTS) {
-          ifeSheet5.getCell(`${p.col}24`).value = Math.round(detValue * p.pct);
+          writeCellSafe(ifeSheet5, `${p.col}24`, Math.round(detValue * p.pct));
         }
         ifeSheet5.getCell('K24').value = { formula: 'SUM(G24:J24)' };
         ifeSheet5.getCell('L24').value = { formula: 'F24+K24' };
@@ -2224,7 +2256,7 @@ export async function rewriteFinancialDataWithExcelJS(
       // --- SECCIÓN 2: CXC por venta de bienes (rows 27-29) ---
       if (totalBienes !== 0) {
         for (const p of CXC_PCTS) {
-          ifeSheet5.getCell(`${p.col}27`).value = Math.round(totalBienes * p.pct);
+          writeCellSafe(ifeSheet5, `${p.col}27`, Math.round(totalBienes * p.pct));
         }
         ifeSheet5.getCell('K27').value = { formula: 'SUM(G27:J27)' };
         ifeSheet5.getCell('L27').value = { formula: 'F27+K27' };
@@ -2238,7 +2270,7 @@ export async function rewriteFinancialDataWithExcelJS(
       // --- SECCIÓN 3: Otras CXC corrientes (rows 31-33) ---
       if (totalOtras !== 0) {
         for (const p of CXC_PCTS) {
-          ifeSheet5.getCell(`${p.col}31`).value = Math.round(totalOtras * p.pct);
+          writeCellSafe(ifeSheet5, `${p.col}31`, Math.round(totalOtras * p.pct));
         }
         ifeSheet5.getCell('K31').value = { formula: 'SUM(G31:J31)' };
         ifeSheet5.getCell('L31').value = { formula: 'F31+K31' };
@@ -2291,7 +2323,7 @@ export async function rewriteFinancialDataWithExcelJS(
         }
         if (total !== 0) {
           for (const r of CXP_PCTS) {
-            ifeSheet6.getCell(`${r.col}${m.row}`).value = Math.round(total * r.pct);
+            writeCellSafe(ifeSheet6, `${r.col}${m.row}`, Math.round(total * r.pct));
           }
           ifeSheet6.getCell(`I${m.row}`).value = { formula: `SUM(E${m.row}:H${m.row})` };
           ifeSheet6.getCell(`J${m.row}`).value = { formula: `D${m.row}+I${m.row}` };
@@ -2369,7 +2401,7 @@ export async function rewriteFinancialDataWithExcelJS(
       // Limpiar TODAS las filas de datos (F-N) para evitar datos residuales
       for (const row of [14, 15, 16, 18, 19, 20, 21, 22, 23, 24]) {
         for (const col of ['F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N']) {
-          ifeSheet7.getCell(`${col}${row}`).value = 0;
+          writeCellSafe(ifeSheet7, `${col}${row}`, 0);
         }
       }
 
@@ -2377,35 +2409,35 @@ export async function rewriteFinancialDataWithExcelJS(
       for (const m of H7_MAP) {
         // Fila 14: Ingresos de actividades ordinarias
         const ingOrd = sumSvcAbs(m.svc, H7_ING_ORD.puc, H7_ING_ORD.ex);
-        ifeSheet7.getCell(`${m.h7}14`).value = ingOrd;
+        writeCellSafe(ifeSheet7, `${m.h7}14`, ingOrd);
 
         // Fila 15: Todos los demás ingresos = Otros ingresos + Ingresos financieros
         const otrosIng = sumSvcAbs(m.svc, H7_OTROS_ING.puc, H7_OTROS_ING.ex);
         const ingFin = sumSvcAbs(m.svc, H7_ING_FIN.puc, H7_ING_FIN.ex);
-        ifeSheet7.getCell(`${m.h7}15`).value = otrosIng + ingFin;
+        writeCellSafe(ifeSheet7, `${m.h7}15`, otrosIng + ingFin);
 
         // Fila 16: Total ingresos = 14 + 15
         const totalIng = ingOrd + otrosIng + ingFin;
-        ifeSheet7.getCell(`${m.h7}16`).value = totalIng;
+        writeCellSafe(ifeSheet7, `${m.h7}16`, totalIng);
 
         // Fila 18: Costos y gastos totales = CostoVentas + GastosAdmin + OtrosGastos + CostosFinancieros
         const costoVta = sumSvcAbs(m.svc, H7_COSTO_VTA.puc, H7_COSTO_VTA.ex);
         const gastosAd = sumSvcAbs(m.svc, H7_GASTOS_AD.puc, H7_GASTOS_AD.ex);
         const otrosGas = sumSvcAbs(m.svc, H7_OTROS_GAS.puc, H7_OTROS_GAS.ex);
         const costosFi = sumSvcAbs(m.svc, H7_COSTOS_FI.puc, H7_COSTOS_FI.ex);
-        ifeSheet7.getCell(`${m.h7}18`).value = costoVta + gastosAd + otrosGas + costosFi;
+        writeCellSafe(ifeSheet7, `${m.h7}18`, costoVta + gastosAd + otrosGas + costosFi);
 
         // Fila 19: Impuestos, tasas y contribuciones
         const impuestos = sumSvcAbs(m.svc, H7_IMPUESTOS.puc, H7_IMPUESTOS.ex);
-        ifeSheet7.getCell(`${m.h7}19`).value = impuestos;
+        writeCellSafe(ifeSheet7, `${m.h7}19`, impuestos);
 
         // Fila 20: Gastos financieros
-        ifeSheet7.getCell(`${m.h7}20`).value = costosFi;
+        writeCellSafe(ifeSheet7, `${m.h7}20`, costosFi);
 
         // Filas 21-24: Detalle desde PUC clase 53 (SIEMPRE escribir, incluso 0)
         for (const detail of H7_DETAIL) {
           const val = sumSvcAbs(m.svc, detail.puc, detail.excl);
-          ifeSheet7.getCell(`${m.h7}${detail.row}`).value = val;
+          writeCellSafe(ifeSheet7, `${m.h7}${detail.row}`, val);
         }
       }
 
