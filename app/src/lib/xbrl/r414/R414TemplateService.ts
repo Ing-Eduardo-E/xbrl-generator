@@ -519,6 +519,70 @@ export class R414TemplateService extends BaseTemplateService {
   }
 
   // ============================================
+  // HOJA11: [810000] Notas - Información de la Entidad
+  // ============================================
+
+  /**
+   * Llena la Hoja11 (Formulario [810000] Notas - Información de la entidad
+   * y declaración de cumplimiento con el marco normativo).
+   *
+   * Celdas E11-E32 con datos de la entidad, declaración de cumplimiento,
+   * políticas significativas y sostenibilidad.
+   */
+  fillHoja11Sheet(
+    worksheet: ExcelJS.Worksheet,
+    options: TemplateWithDataOptions
+  ): void {
+    console.log('[R414] Escribiendo datos en Hoja11 (810000 - Información de la Entidad)...');
+
+    const companyName = options.companyName;
+    const domicilio = options.r414CompanyData?.domicilio || 'No reportado';
+    const direccion = options.r414CompanyData?.direccion || 'No reportada';
+    const emailInstitucional = options.r414CompanyData?.emailInstitucional || 'No reportado';
+
+    const celdas: Array<{ celda: string; contenido: string }> = [
+      {
+        celda: 'E11',
+        contenido: `Las presentes notas contienen información adicional a la presentada en los estados financieros de ${companyName}. Incluyen descripciones narrativas y detalladas de las principales partidas, así como la declaración de cumplimiento del marco normativo aplicable.`,
+      },
+      { celda: 'E12', contenido: companyName },
+      { celda: 'E13', contenido: domicilio },
+      { celda: 'E14', contenido: direccion },
+      { celda: 'E15', contenido: emailInstitucional },
+      {
+        celda: 'E16',
+        contenido: `${companyName} declara que los estados financieros han sido preparados de conformidad con las Normas de Información Financiera aplicables en Colombia, la Resolución 414 de 2014 y sus modificatorios expedidos por la Contaduría General de la Nación, y demás disposiciones legales vigentes. La empresa cumple con todos los requerimientos de estas normas y no existen desviaciones significativas en su aplicación.`,
+      },
+      { celda: 'E17', contenido: 'No Aplica' },
+      { celda: 'E18', contenido: 'No Aplica' },
+      { celda: 'E20', contenido: 'No Aplica' },
+      { celda: 'E21', contenido: 'No' },
+      { celda: 'E22', contenido: '' },
+      {
+        celda: 'E23',
+        contenido: `Las políticas contables significativas aplicadas en la preparación de los estados financieros se describen en las notas correspondientes. Se aplican de manera uniforme para todos los períodos presentados y son consistentes con las adoptadas en períodos anteriores.`,
+      },
+      {
+        celda: 'E24',
+        contenido: `Los estados financieros se preparan sobre la base del costo histórico, excepto por ciertos instrumentos financieros medidos a valor razonable. Las bases de medición se aplican conforme a lo establecido en el marco técnico normativo vigente para empresas de servicios públicos domiciliarios.`,
+      },
+      { celda: 'E25', contenido: 'No Aplica' },
+      { celda: 'E26', contenido: 'No Aplica' },
+      { celda: 'E28', contenido: 'No Aplica' },
+      { celda: 'E29', contenido: 'No' },
+      { celda: 'E30', contenido: 'SSPD - Superintendencia de Servicios Públicos Domiciliarios' },
+      { celda: 'E31', contenido: 'No Aplica' },
+      { celda: 'E32', contenido: 'No Aplica' },
+    ];
+
+    for (const item of celdas) {
+      this.writeCell(worksheet, item.celda, item.contenido);
+    }
+
+    console.log(`[R414] Hoja11 completada - ${celdas.length} celdas escritas (E11 a E32).`);
+  }
+
+  // ============================================
   // HOJA35: FC08 - Conciliación de Ingresos [900031]
   // ============================================
 

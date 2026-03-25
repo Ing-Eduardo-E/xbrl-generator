@@ -8,10 +8,10 @@ import { writeCellSafe, matchesPrefixes, type DataWriterContext } from '../../sh
 
 export function writeEsfData(
   workbook: ExcelJS.Workbook,
-  options: TemplateWithDataOptions,
+  _options: TemplateWithDataOptions,
   ctx: DataWriterContext
 ): void {
-  const { accountsByService, activeServices, codesWithChildren, serviceCodesWithChildren } = ctx;
+  const { accountsByService, activeServices, serviceCodesWithChildren } = ctx;
 
   const sheet2 = workbook.getWorksheet('Hoja2');
   if (!sheet2) return;
@@ -19,23 +19,13 @@ export function writeEsfData(
   console.log('[ExcelJS] Escribiendo datos en Hoja2...');
 
   for (const mapping of R414_ESF_MAPPINGS) {
-    let totalValue = 0;
-    for (const account of options.consolidatedAccounts!) {
-      if (codesWithChildren.has(account.code)) continue;
-      if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
-        totalValue += account.value;
-      }
-    }
-
-    if (totalValue !== 0) {
-      writeCellSafe(sheet2, `P${mapping.row}`, totalValue);
-      console.log(`[ExcelJS] Hoja2!P${mapping.row} = ${totalValue}`);
-    }
+    // Write service columns and accumulate total from services
+    let totalFromServices = 0;
 
     const serviceColumnMap = R414_SERVICE_COLUMNS as unknown as Record<string, string | undefined>;
     for (const service of activeServices) {
       const serviceColumn = serviceColumnMap[service];
-      if (!serviceColumn) continue;
+      if (!serviceColumn || serviceColumn === 'P') continue;
 
       let serviceValue = 0;
       const serviceAccounts = accountsByService[service] || [];
@@ -50,6 +40,13 @@ export function writeEsfData(
         writeCellSafe(sheet2, `${serviceColumn}${mapping.row}`, serviceValue);
         console.log(`[ExcelJS] Hoja2!${serviceColumn}${mapping.row} = ${serviceValue}`);
       }
+      totalFromServices += serviceValue;
+    }
+
+    // P = sum of all service columns (ensures XBRL validation FRM_210000_005a passes)
+    if (totalFromServices !== 0) {
+      writeCellSafe(sheet2, `P${mapping.row}`, totalFromServices);
+      console.log(`[ExcelJS] Hoja2!P${mapping.row} = ${totalFromServices} (sum of services)`);
     }
   }
 }
@@ -67,18 +64,8 @@ export function writeErData(
   console.log('[ExcelJS] Escribiendo datos en Hoja3...');
 
   for (const mapping of R414_ER_MAPPINGS) {
-    let totalValue = 0;
-    for (const account of options.consolidatedAccounts!) {
-      if (codesWithChildren.has(account.code)) continue;
-      if (matchesPrefixes(account.code, mapping.pucPrefixes, mapping.excludePrefixes)) {
-        totalValue += account.value;
-      }
-    }
-
-    writeCellSafe(sheet3, `L${mapping.row}`, totalValue);
-    if (totalValue !== 0) {
-      console.log(`[ExcelJS] Hoja3!L${mapping.row} = ${totalValue}`);
-    }
+    // Write service columns and accumulate total from services
+    let totalFromServices = 0;
 
     const erServiceColumns: Record<string, string> = {
       acueducto: 'E',
@@ -103,6 +90,13 @@ export function writeErData(
       if (serviceValue !== 0) {
         console.log(`[ExcelJS] Hoja3!${serviceColumn}${mapping.row} = ${serviceValue}`);
       }
+      totalFromServices += serviceValue;
+    }
+
+    // L = sum of all service columns (ensures XBRL validation consistency)
+    writeCellSafe(sheet3, `L${mapping.row}`, totalFromServices);
+    if (totalFromServices !== 0) {
+      console.log(`[ExcelJS] Hoja3!L${mapping.row} = ${totalFromServices} (sum of services)`);
     }
   }
 

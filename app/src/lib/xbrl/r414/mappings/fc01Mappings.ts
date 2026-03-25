@@ -29,35 +29,35 @@ import type { ESFMapping } from '../../types';
  */
 export const R414_FC01_GASTOS_MAPPINGS: ESFMapping[] = [
   // Fila 13: Beneficios a empleados
-  // PUC: 5101 Sueldos, 5103 Contribuciones, 5104 Aportes, 5107 Prestaciones, 5108 Diversos
+  // PUC: 5101/5201 Sueldos, 5103/5203 Contribuciones, 5104/5204 Aportes, 5107/5207 Prestaciones, 5108/5208 Diversos
   {
     row: 13,
     label: 'Beneficios a empleados',
-    pucPrefixes: ['5101', '5103', '5104', '5107', '5108'],
+    pucPrefixes: ['5101', '5103', '5104', '5107', '5108', '5201', '5203', '5204', '5207', '5208'],
   },
 
   // Fila 14: Honorarios
-  // PUC: 5110 Honorarios
+  // PUC: 5110/5210 Honorarios
   {
     row: 14,
     label: 'Honorarios',
-    pucPrefixes: ['5110'],
+    pucPrefixes: ['5110', '5210'],
   },
 
   // Fila 15: Impuestos, Tasas y Contribuciones
-  // PUC: 5120 Impuestos, contribuciones y tasas
+  // PUC: 5120/5220 Impuestos, contribuciones y tasas
   {
     row: 15,
     label: 'Impuestos, tasas y contribuciones',
-    pucPrefixes: ['5120'],
+    pucPrefixes: ['5120', '5220'],
   },
 
   // Fila 16: Generales
-  // PUC: 5111 Generales
+  // PUC: 5111/5211 Generales
   {
     row: 16,
     label: 'Generales',
-    pucPrefixes: ['5111'],
+    pucPrefixes: ['5111', '5211'],
   },
 
   // Fila 17: Deterioro
@@ -110,19 +110,19 @@ export const R414_FC01_GASTOS_MAPPINGS: ESFMapping[] = [
   },
 
   // Fila 25: Arrendamientos
-  // PUC: 5115 Arrendamientos, 5124 Arrendamiento operativo
+  // PUC: 5115/5215 Arrendamientos, 5124/5224 Arrendamiento operativo
   {
     row: 25,
     label: 'Arrendamientos',
-    pucPrefixes: ['5115', '5124'],
+    pucPrefixes: ['5115', '5124', '5215', '5224'],
   },
 
   // Fila 27: Comisiones
-  // PUC: 5125 Comisiones
+  // PUC: 5125/5225 Comisiones
   {
     row: 27,
     label: 'Comisiones',
-    pucPrefixes: ['5125'],
+    pucPrefixes: ['5125', '5225'],
   },
 
   // Fila 28: Ajuste por diferencia en cambio
@@ -150,11 +150,13 @@ export const R414_FC01_GASTOS_MAPPINGS: ESFMapping[] = [
   },
 
   // Fila 31: Gastos diversos
-  // PUC: 5195 Gastos diversos, 5895 Otros gastos
+  // PUC: 5195/5295 Gastos diversos, 5895 Otros gastos, 56 Servicios especializados
+  // Incluye clase 56 y transferencias 54 no mapeadas en otras filas
   {
     row: 31,
     label: 'Gastos diversos',
-    pucPrefixes: ['5195', '5895'],
+    pucPrefixes: ['5195', '5295', '5895', '56', '54'],
+    excludePrefixes: ['540101', '5410', '5423'],
   },
 
   // Fila 32: Donaciones
@@ -192,35 +194,35 @@ export const R414_FC01_GASTOS_MAPPINGS: ESFMapping[] = [
   },
 
   // Fila 72: Órdenes y contratos de mantenimiento
-  // PUC: 5140 Mantenimiento, 5145 Reparaciones
+  // PUC: 5140/5240 Mantenimiento, 5145/5245 Reparaciones
   {
     row: 72,
     label: 'Mantenimiento y reparaciones',
-    pucPrefixes: ['5140', '5145'],
+    pucPrefixes: ['5140', '5145', '5240', '5245'],
   },
 
   // Fila 77: Servicios públicos
-  // PUC: 5135 Servicios públicos
+  // PUC: 5135/5235 Servicios públicos
   {
     row: 77,
     label: 'Servicios públicos',
-    pucPrefixes: ['5135'],
+    pucPrefixes: ['5135', '5235'],
   },
 
   // Fila 80: Seguros
-  // PUC: 5130 Seguros
+  // PUC: 5130/5230 Seguros
   {
     row: 80,
     label: 'Seguros',
-    pucPrefixes: ['5130'],
+    pucPrefixes: ['5130', '5230'],
   },
 
   // Fila 81: Órdenes y contratos por otros servicios
-  // PUC: 5150 Servicios, 5155 Aseo, vigilancia y otros
+  // PUC: 5150/5250 Servicios, 5155/5255 Aseo, vigilancia y otros
   {
     row: 81,
     label: 'Otros servicios',
-    pucPrefixes: ['5150', '5155'],
+    pucPrefixes: ['5150', '5155', '5250', '5255'],
   },
 ];
 

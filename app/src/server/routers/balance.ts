@@ -453,6 +453,12 @@ export const balanceRouter = router({
         includeFinancialData: z.boolean().optional().default(true),
         // Trimestre para IFE
         trimestre: z.enum(['1T', '2T', '3T', '4T']).optional(),
+        // Datos específicos de compañía R414 (Hoja11)
+        r414CompanyData: z.object({
+          domicilio: z.string().max(500).optional(),
+          direccion: z.string().max(500).optional(),
+          emailInstitucional: z.string().max(255).optional(),
+        }).optional(),
         // Datos específicos de compañía IFE
         ifeCompanyData: z.object({
           address: z.string().max(500).optional(),
@@ -570,6 +576,7 @@ export const balanceRouter = router({
           subsidios,
           trimestre: input.trimestre,
           ifeCompanyData: input.ifeCompanyData,
+          r414CompanyData: input.r414CompanyData,
         });
 
         return {

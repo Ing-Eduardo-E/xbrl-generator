@@ -63,6 +63,12 @@ export interface TemplateWithDataOptions extends TemplateCustomization {
   subsidios?: import('../types').SubsidiosPorServicio;
   /** Trimestre para IFE */
   trimestre?: import('../types').IFETrimestre;
+  /** Datos específicos de compañía para R414 (Hoja11 - Información de la entidad) */
+  r414CompanyData?: {
+    domicilio?: string;
+    direccion?: string;
+    emailInstitucional?: string;
+  };
   /** Datos específicos de compañía para IFE */
   ifeCompanyData?: {
     address?: string;

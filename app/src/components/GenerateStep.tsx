@@ -22,6 +22,8 @@ import {
   Hash,
   FileText,
   CircleDollarSign,
+  MapPin,
+  Mail,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { trpc } from '@/lib/trpc';
@@ -85,6 +87,10 @@ export function GenerateStep({ onBack, onReset, ifeCompanyData, ifeMetadata }: G
   const [roundingDegree, setRoundingDegree] = useState('4'); // 4=Pesos redondeada a miles (mas comun)
   const [hasRestatedInfo, setHasRestatedInfo] = useState('No');
   const [restatedPeriod, setRestatedPeriod] = useState('');
+  // Campos R414 - Hoja11 (Información de la entidad)
+  const [domicilio, setDomicilio] = useState('');
+  const [direccion, setDireccion] = useState('');
+  const [emailInstitucional, setEmailInstitucional] = useState('');
 
   const serviceTotalsQuery = trpc.balance.getTotalesServicios.useQuery();
   const sessionQuery = trpc.balance.getSessionInfo.useQuery();
@@ -201,6 +207,13 @@ export function GenerateStep({ onBack, onReset, ifeCompanyData, ifeMetadata }: G
         hasRestatedInfo: hasRestatedInfo || undefined,
         restatedPeriod: restatedPeriod.trim() || undefined,
         ...ifeFields,
+        ...(sessionQuery.data?.niifGroup === 'r414' ? {
+          r414CompanyData: {
+            domicilio: domicilio.trim() || undefined,
+            direccion: direccion.trim() || undefined,
+            emailInstitucional: emailInstitucional.trim() || undefined,
+          },
+        } : {}),
       });
     } finally {
       setIsDownloadingOfficial(false);
@@ -426,6 +439,51 @@ export function GenerateStep({ onBack, onReset, ifeCompanyData, ifeMetadata }: G
                   onChange={(e) => setCompanyName(e.target.value)}
                 />
               </div>
+
+              {/* Campos R414: Domicilio, Dirección, Email (solo para R414) */}
+              {sessionQuery.data?.niifGroup === 'r414' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="domicilio" className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      Domicilio (Ciudad)
+                    </Label>
+                    <Input
+                      id="domicilio"
+                      placeholder="Ej: Popayán, Cauca, Colombia"
+                      value={domicilio}
+                      onChange={(e) => setDomicilio(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="emailInstitucional" className="flex items-center gap-2">
+                      <Mail className="w-4 h-4" />
+                      Email Institucional
+                    </Label>
+                    <Input
+                      id="emailInstitucional"
+                      type="email"
+                      placeholder="Ej: info@empresa.gov.co"
+                      value={emailInstitucional}
+                      onChange={(e) => setEmailInstitucional(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="direccion" className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      Dirección sede administrativa
+                    </Label>
+                    <Input
+                      id="direccion"
+                      placeholder="Ej: Calle 5 No. 4-21 Piso 2"
+                      value={direccion}
+                      onChange={(e) => setDireccion(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
 
               {/* Fila 3: Naturaleza del negocio (ancho completo) */}
               <div className="space-y-2 md:col-span-2">

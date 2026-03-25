@@ -5,7 +5,7 @@
  * - Hoja30 (FC04): Subsidios y contribuciones
  * - Hoja32 (FC05b): Pasivos por edades de vencimiento
  * - Hoja35 (FC08): Conciliación de ingresos
- * - Hoja9/10: Notas y políticas contables (delega a R414TemplateService)
+ * - Hoja9/10/11: Notas, políticas contables e información de la entidad (delega a R414TemplateService)
  */
 import type ExcelJS from 'exceljs';
 import type { TemplateWithDataOptions } from '../../official/interfaces';
@@ -138,6 +138,9 @@ function writeFc05b(workbook: ExcelJS.Workbook): void {
     return suma;
   };
 
+  // Accumulators for TOTAL row 30
+  const totals = { D: 0, E: 0, F: 0, G: 0, H: 0, I: 0, J: 0, K: 0, L: 0, M: 0, N: 0, O: 0 };
+
   for (const mapeo of MAPEO_HOJA32_A_HOJA2) {
     const valorCorriente = getValorHoja2(mapeo.filasCorrientes);
     const valorNoCorriente = getValorHoja2(mapeo.filasNoCorrientes);
@@ -145,6 +148,9 @@ function writeFc05b(workbook: ExcelJS.Workbook): void {
 
     if (valorCorriente !== 0) writeCellSafe(sheet32, `D${mapeo.fila32}`, valorCorriente);
     if (valorNoCorriente !== 0) writeCellSafe(sheet32, `F${mapeo.fila32}`, valorNoCorriente);
+
+    totals.D += valorCorriente;
+    totals.F += valorNoCorriente;
 
     if (valorTotal !== 0) {
       writeCellSafe(sheet32, `E${mapeo.fila32}`, valorTotal);
@@ -172,9 +178,26 @@ function writeFc05b(workbook: ExcelJS.Workbook): void {
       writeCellSafe(sheet32, `J${mapeo.fila32}`, totalVencidos + diferencia);
       writeCellSafe(sheet32, `H${mapeo.fila32}`, valorTotal);
 
+      totals.E += valorTotal;
+      totals.G += noVencido;
+      totals.H += valorTotal;
+      totals.I += hasta30;
+      totals.J += totalVencidos + diferencia;
+      totals.K += hasta60Ajustado;
+      totals.L += hasta90;
+      totals.M += hasta180;
+      totals.N += hasta360;
+      totals.O += mayor360;
+
       console.log(`[ExcelJS] Hoja32 fila ${mapeo.fila32} (${mapeo.nombre}): D=${valorCorriente}, F=${valorNoCorriente}, E=${valorTotal}`);
     }
   }
+
+  // Write TOTAL row 30 (required for XBRL validation FRM_900028)
+  for (const [col, val] of Object.entries(totals)) {
+    if (val !== 0) writeCellSafe(sheet32, `${col}30`, val);
+  }
+  console.log(`[ExcelJS] Hoja32 TOTAL fila 30: D=${totals.D}, E=${totals.E}, F=${totals.F}`);
 
   console.log('[ExcelJS] Hoja32 completada.');
 }
@@ -211,6 +234,7 @@ function writeNotasYPoliticas(workbook: ExcelJS.Workbook, options: TemplateWithD
     accounts: options.consolidatedAccounts || [],
     serviceBalances: options.serviceBalances || [],
     distribution: {},
+    r414CompanyData: options.r414CompanyData,
   } as R414Options;
 
   const sheet9 = workbook.getWorksheet('Hoja9');
@@ -218,6 +242,9 @@ function writeNotasYPoliticas(workbook: ExcelJS.Workbook, options: TemplateWithD
 
   const sheet10 = workbook.getWorksheet('Hoja10');
   if (sheet10) r414TemplateService.fillHoja10Sheet(sheet10, r414Opts);
+
+  const sheet11 = workbook.getWorksheet('Hoja11');
+  if (sheet11) r414TemplateService.fillHoja11Sheet(sheet11, r414Opts);
 }
 
 // ─── Exportación principal ─────────────────────────────────────────────────

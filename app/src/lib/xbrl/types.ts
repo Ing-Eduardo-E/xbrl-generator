@@ -198,6 +198,12 @@ export interface TemplateWithDataOptions extends TemplateCustomization {
   subsidios?: SubsidiosPorServicio;
   /** Datos específicos para IFE (opcional) */
   ifeData?: IFESpecificData;
+  /** Datos específicos de compañía para R414 (Hoja11 - Información de la entidad) */
+  r414CompanyData?: {
+    domicilio?: string;
+    direccion?: string;
+    emailInstitucional?: string;
+  };
 }
 
 /**
