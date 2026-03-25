@@ -102,6 +102,25 @@ export function writeNotesData(
     [37, 38, 39, 40, 41, 42, 43, 45, 46, 47]
   );
 
+  // F48 = Total Intangibles neto desde cuentas distribuidas por servicio
+  // Debe coincidir exactamente con Hoja2 P59 (validación cruzada XBRL)
+  {
+    let intangiblesTotalFromServices = 0;
+    for (const service of activeServices) {
+      const serviceAccounts = accountsByService[service] || [];
+      for (const account of serviceAccounts) {
+        if (serviceCodesWithChildren.has(account.code)) continue;
+        if (account.code.startsWith('1970') || account.code.startsWith('1975') || account.code.startsWith('1976')) {
+          intangiblesTotalFromServices += account.value;
+        }
+      }
+    }
+    if (intangiblesTotalFromServices !== 0) {
+      writeCellSafe(sheet7, 'F48', intangiblesTotalFromServices);
+      console.log(`[ExcelJS] Hoja7!F48 = ${intangiblesTotalFromServices} (Intangibles neto = Hoja2 P59)`);
+    }
+  }
+
   // Efectivo (filas 51-60)
   processSectionWithZeroFill(
     R414_EFECTIVO_MAPPINGS,

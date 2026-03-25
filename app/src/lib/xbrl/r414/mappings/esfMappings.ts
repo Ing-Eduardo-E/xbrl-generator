@@ -156,12 +156,11 @@ export const R414_ESF_ACTIVOS: ESFMapping[] = [
 
   // Fila 31: Otros activos no financieros corrientes
   // PUC R414: 19 - Otros activos (bienes de arte, etc.) - parte corriente
-  // EXCLUIR: 1905 (impuestos diferidos, fila 53), 1920 (planes activos, fila 55), 1975 (inversión, fila 57)
+  // NOTA: 1970/1975/1976 (Intangibles) son NO CORRIENTES → van a fila 59
   {
     row: 31,
     label: 'Otros activos no financieros corrientes',
-    pucPrefixes: ['1910', '1930', '1970'],
-    excludePrefixes: ['1975'],
+    pucPrefixes: ['1910', '1930'],
   },
 
   // =====================================================
@@ -235,30 +234,33 @@ export const R414_ESF_ACTIVOS: ESFMapping[] = [
   },
 
   // Fila 57: Propiedad de inversión
-  // PUC R414: 1975 - Bienes en proceso de adquisición, 197505 Terrenos, 197510 Edificaciones
+  // PUC R414: No aplica para la mayoría de empresas de servicios públicos
+  // NOTA: 1975 es Amortización acumulada de intangibles, NO propiedad de inversión → va a fila 59
   {
     row: 57,
     label: 'Propiedad de inversión',
-    pucPrefixes: ['1975'],
+    pucPrefixes: [],
   },
 
-  // Fila 59: Activos intangibles
-  // PUC R414: 17 - Bienes de uso público e históricos (para entidades públicas) o
-  // Intangibles se registran diferente en sector público
+  // Fila 59: Activos intangibles (NETO)
+  // PUC R414: 1970 - Activos intangibles (bruto)
+  //           1975 - Amortización acumulada de activos intangibles (CR)
+  //           1976 - Deterioro acumulado de activos intangibles (CR)
+  // El neto = 1970 + 1975 + 1976 (1975 y 1976 son negativos en BD)
   {
     row: 59,
     label: 'Activos intangibles',
-    pucPrefixes: ['17'],
+    pucPrefixes: ['1970', '1975', '1976'],
   },
 
   // Fila 61: Otros activos no corrientes
   // PUC: 19 - Otros activos (bienes de arte, cultura, etc.)
-  // EXCLUIR: 1905 (fila 53), 1920 (fila 55), 1975 (fila 57), 1910/1930/1970 (fila 31)
+  // EXCLUIR: 1905 (fila 53), 1920 (fila 55), 1910/1930 (fila 31), 1970/1975/1976 (fila 59)
   {
     row: 61,
     label: 'Otros activos no corrientes',
     pucPrefixes: ['19'],
-    excludePrefixes: ['1905', '1910', '1920', '1930', '1970', '1975'],
+    excludePrefixes: ['1905', '1910', '1920', '1930', '1970', '1975', '1976'],
   },
 ];
 
