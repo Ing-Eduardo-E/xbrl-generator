@@ -136,12 +136,16 @@ export const R414_PPE_MAPPINGS: ESFMapping[] = [
   // Fila 29: Información especial PPE (AUTOSUMA - NO LLENAR)
 
   // Fila 30: Otras propiedades, planta y equipo en términos brutos
-  // PUC R414: Otras cuentas del grupo 16 no mapeadas arriba
-  // 1610 - Semovientes, 1660 - Equipos varios, 1680 - Bienes de arte y cultura
+  // PUC R414: TODAS las cuentas del grupo 16 no mapeadas en filas anteriores
+  // Catch-all para garantizar cobertura completa del grupo 16
   {
     row: 30,
     label: 'Otras PPE',
-    pucPrefixes: ['1610', '1660', '1680', '1690'],
+    pucPrefixes: ['16'],
+    excludePrefixes: [
+      '1605', '1615', '1640', '164501', '164502', '164503', '164504',
+      '1646', '1650', '1655', '1665', '1670', '1675', '1685', '1695',
+    ],
   },
 
   // Fila 31: PPE Importe en libros bruto (AUTOSUMA - NO LLENAR)

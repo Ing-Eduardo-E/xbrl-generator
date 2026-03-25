@@ -556,7 +556,7 @@ export class R414TemplateService extends BaseTemplateService {
       { celda: 'E17', contenido: 'No Aplica' },
       { celda: 'E18', contenido: 'No Aplica' },
       { celda: 'E20', contenido: 'No Aplica' },
-      { celda: 'E21', contenido: 'No' },
+      { celda: 'E21', contenido: '2. No' },
       { celda: 'E22', contenido: '' },
       {
         celda: 'E23',
@@ -569,7 +569,7 @@ export class R414TemplateService extends BaseTemplateService {
       { celda: 'E25', contenido: 'No Aplica' },
       { celda: 'E26', contenido: 'No Aplica' },
       { celda: 'E28', contenido: 'No Aplica' },
-      { celda: 'E29', contenido: 'No' },
+      { celda: 'E29', contenido: '2. No' },
       { celda: 'E30', contenido: 'SSPD - Superintendencia de Servicios Públicos Domiciliarios' },
       { celda: 'E31', contenido: 'No Aplica' },
       { celda: 'E32', contenido: 'No Aplica' },

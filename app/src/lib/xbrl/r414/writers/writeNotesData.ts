@@ -18,7 +18,7 @@ export function writeNotesData(
   options: TemplateWithDataOptions,
   ctx: DataWriterContext
 ): void {
-  const { codesWithChildren } = ctx;
+  const { codesWithChildren, activeServices, accountsByService, serviceCodesWithChildren } = ctx;
 
   const sheet7 = workbook.getWorksheet('Hoja7');
   if (!sheet7) return;
@@ -69,18 +69,37 @@ export function writeNotesData(
     }
   };
 
-  // PPE (filas 14-34)
+  // PPE (filas 14-33, sin autosumas 16/22/29/31/34)
   processSectionWithZeroFill(
     R414_PPE_MAPPINGS,
     'PPE',
-    [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]
+    [14, 15, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27, 28, 30, 32, 33]
   );
 
-  // Intangibles (filas 37-48)
+  // F34 = Total PPE neto desde cuentas distribuidas por servicio
+  // Debe coincidir exactamente con Hoja2 P34 (validación cruzada XBRL)
+  {
+    let ppeTotalFromServices = 0;
+    for (const service of activeServices) {
+      const serviceAccounts = accountsByService[service] || [];
+      for (const account of serviceAccounts) {
+        if (serviceCodesWithChildren.has(account.code)) continue;
+        if (account.code.startsWith('16')) {
+          ppeTotalFromServices += account.value;
+        }
+      }
+    }
+    if (ppeTotalFromServices !== 0) {
+      writeCellSafe(sheet7, 'F34', ppeTotalFromServices);
+      console.log(`[ExcelJS] Hoja7!F34 = ${ppeTotalFromServices} (PPE neto = Hoja2 P34)`);
+    }
+  }
+
+  // Intangibles (filas 37-47, sin autosumas 44/48)
   processSectionWithZeroFill(
     R414_INTANGIBLES_MAPPINGS,
     'Intangibles',
-    [37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48]
+    [37, 38, 39, 40, 41, 42, 43, 45, 46, 47]
   );
 
   // Efectivo (filas 51-60)
