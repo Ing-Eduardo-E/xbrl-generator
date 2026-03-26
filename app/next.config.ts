@@ -8,12 +8,14 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['postgres'],
 
   // Optimize package imports to reduce bundle size
-  optimizePackageImports: [
-    'lucide-react',
-    '@radix-ui/react-select',
-    '@radix-ui/react-label',
-    '@radix-ui/react-progress',
-  ],
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-select',
+      '@radix-ui/react-label',
+      '@radix-ui/react-progress',
+    ],
+  },
 
   // Security headers for production
   async headers() {

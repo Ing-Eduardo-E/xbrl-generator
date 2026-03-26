@@ -56,7 +56,7 @@ export function writeErData(
   options: TemplateWithDataOptions,
   ctx: DataWriterContext
 ): void {
-  const { accountsByService, activeServices, codesWithChildren, serviceCodesWithChildren } = ctx;
+  const { accountsByService, activeServices, codesWithChildren: _codesWithChildren, serviceCodesWithChildren } = ctx;
 
   const sheet3 = workbook.getWorksheet('Hoja3');
   if (!sheet3) return;

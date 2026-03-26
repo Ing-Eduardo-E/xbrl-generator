@@ -11,6 +11,7 @@ import type {
 } from '../types';
 import { R414_SERVICE_COLUMNS, R414_ESF_MAPPINGS } from './mappings/esfMappings';
 import { R414_SHEET_MAPPING, R414_TEMPLATE_PATHS } from './config';
+import { safeNumericValue } from '../excelUtils';
 
 /** Servicio de plantillas para R414. */
 export class R414TemplateService extends BaseTemplateService {
@@ -20,6 +21,10 @@ export class R414TemplateService extends BaseTemplateService {
   getESFMappings(): ESFMapping[] { return R414_ESF_MAPPINGS; }
   getServiceColumns(): ServiceColumnMapping { return R414_SERVICE_COLUMNS; }
   getSheetMapping(): SheetMapping { return R414_SHEET_MAPPING; }
+
+  // R414 usa su propio pipeline de writers modulares; estos métodos abstractos quedan como no-op
+  fillESFSheet(): void { /* handled by r414/writers */ }
+  fillERSheet(): void { /* handled by r414/writers */ }
 
   fillHoja9Sheet(
     worksheet: ExcelJS.Worksheet,

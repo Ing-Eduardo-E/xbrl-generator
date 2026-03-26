@@ -4,7 +4,6 @@
  */
 import ExcelJS from 'exceljs';
 import type { TemplateWithDataOptions } from './interfaces';
-import { safeNumericValue } from '../excelUtils';
 import { writeCellSafe, matchesPrefixes, type DataWriterContext } from '../shared/excelUtils';
 
 export function writeIFEData(
