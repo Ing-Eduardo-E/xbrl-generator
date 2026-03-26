@@ -72,11 +72,9 @@ function writeServiceSheetExpenses(
   // Columna E: gastos administrativos por categoría
   for (const mapping of R414_FC01_GASTOS_MAPPINGS) {
     const value = sumByPrefixes(mapping.pucPrefixes, mapping.excludePrefixes);
-    // Fila 33 (Ganancias MPP) se invierte el signo
-    const cellValue = mapping.row === 33 ? (value !== 0 ? -value : 0) : value;
-    writeCellSafe(sheet, `E${mapping.row}`, cellValue);
-    if (cellValue !== 0) {
-      console.log(`[ExcelJS] ${config.sheetName}!E${mapping.row} = ${cellValue}`);
+    writeCellSafe(sheet, `E${mapping.row}`, value);
+    if (value !== 0) {
+      console.log(`[ExcelJS] ${config.sheetName}!E${mapping.row} = ${value}`);
     }
   }
 

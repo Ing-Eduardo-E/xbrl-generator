@@ -167,14 +167,8 @@ export const R414_FC01_GASTOS_MAPPINGS: ESFMapping[] = [
     pucPrefixes: ['5423'],
   },
 
-  // Fila 33: Ganancias por MPP (se muestra como negativo)
-  // PUC: 4815 Ganancias por método participación patrimonial
-  // Nota: Se invierte el signo al escribir
-  {
-    row: 33,
-    label: 'Ganancias MPP',
-    pucPrefixes: ['4815'],
-  },
+  // Nota: Fila 33 es FÓRMULA =SUM(E27:E32) (subtotal "Otros gastos"), NO se debe escribir.
+  // 4815 (Ganancias MPP) NO pertenece al FC01 (es ingreso clase 4, no gasto).
 
   // Fila 34: Impuesto a las ganancias corrientes
   // PUC: 540101 Impuesto de renta corriente
@@ -233,11 +227,11 @@ export const R414_FC01_GASTOS_MAPPINGS: ESFMapping[] = [
  */
 export const R414_FC01_DATA_ROWS = {
   standard: [
-    13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35,
+    13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 34, 35,
     72, 77, 80, 81,
   ],
   aseo: [
-    13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35,
+    13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32, 34, 35,
     72, 74, 77, 80, 81,
   ],
 };
@@ -249,11 +243,11 @@ export const R414_FC01_DATA_ROWS = {
  */
 export const R414_FC01_ZERO_F_ROWS = {
   standard: [
-    13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+    13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32,
     34, 35, 77, 80, 81,
   ],
   aseo: [
-    13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+    13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32,
     34, 35, 73, 77, 80, 81,
   ],
 };

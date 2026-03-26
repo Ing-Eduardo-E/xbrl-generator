@@ -146,15 +146,16 @@ function writeFc05b(workbook: ExcelJS.Workbook): void {
     const valorNoCorriente = getValorHoja2(mapeo.filasNoCorrientes);
     const valorTotal = valorCorriente + valorNoCorriente;
 
-    if (valorCorriente !== 0) writeCellSafe(sheet32, `D${mapeo.fila32}`, valorCorriente);
-    if (valorNoCorriente !== 0) writeCellSafe(sheet32, `F${mapeo.fila32}`, valorNoCorriente);
+    // Siempre escribir D, E, F (incluso 0) para validación XBRL FRM_900028_001: E = D + F
+    writeCellSafe(sheet32, `D${mapeo.fila32}`, valorCorriente);
+    writeCellSafe(sheet32, `E${mapeo.fila32}`, valorTotal);
+    writeCellSafe(sheet32, `F${mapeo.fila32}`, valorNoCorriente);
 
     totals.D += valorCorriente;
+    totals.E += valorTotal;
     totals.F += valorNoCorriente;
 
     if (valorTotal !== 0) {
-      writeCellSafe(sheet32, `E${mapeo.fila32}`, valorTotal);
-
       const noVencido = Math.round(valorTotal * PORCENTAJES_ANTIGUEDAD.noVencido);
       const hasta30 = Math.round(valorTotal * PORCENTAJES_ANTIGUEDAD.hasta30);
       const hasta60 = Math.round(valorTotal * PORCENTAJES_ANTIGUEDAD.hasta60);
@@ -176,9 +177,9 @@ function writeFc05b(workbook: ExcelJS.Workbook): void {
       writeCellSafe(sheet32, `N${mapeo.fila32}`, hasta360);
       writeCellSafe(sheet32, `O${mapeo.fila32}`, mayor360);
       writeCellSafe(sheet32, `J${mapeo.fila32}`, totalVencidos + diferencia);
+      // H = total bandas = E para XBRL FRM_900028_003
       writeCellSafe(sheet32, `H${mapeo.fila32}`, valorTotal);
 
-      totals.E += valorTotal;
       totals.G += noVencido;
       totals.H += valorTotal;
       totals.I += hasta30;
@@ -193,9 +194,9 @@ function writeFc05b(workbook: ExcelJS.Workbook): void {
     }
   }
 
-  // Write TOTAL row 30 (required for XBRL validation FRM_900028)
+  // Write TOTAL row 30 — siempre escribir todas las columnas (incluso 0) para XBRL
   for (const [col, val] of Object.entries(totals)) {
-    if (val !== 0) writeCellSafe(sheet32, `${col}30`, val);
+    writeCellSafe(sheet32, `${col}30`, val);
   }
   console.log(`[ExcelJS] Hoja32 TOTAL fila 30: D=${totals.D}, E=${totals.E}, F=${totals.F}`);
 

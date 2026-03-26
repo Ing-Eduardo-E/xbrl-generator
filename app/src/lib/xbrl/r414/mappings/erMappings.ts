@@ -110,13 +110,13 @@ export const R414_ER_MAPPINGS: ESFMapping[] = [
     pucPrefixes: ['5802', '5803', '5807'],
   },
 
-  // Fila 21: Participación en ganancias/pérdidas de asociadas
-  // PUC R414: 4815 - Método de participación patrimonial (si es ganancia)
-  // o 5815 (si es pérdida)
+  // Fila 21: Pérdida por aplicación del método de participación patrimonial
+  // PUC R414: 5815 - Pérdidas MPP (solo pérdidas, NO ganancias 4815)
+  // Template label: "Perdida por aplicación del método de participación patrimonial"
   {
     row: 21,
-    label: 'Participación asociadas',
-    pucPrefixes: ['4815', '5815'],
+    label: 'Pérdida MPP',
+    pucPrefixes: ['5815'],
   },
 
   // Fila 22: Otros gastos
@@ -128,6 +128,16 @@ export const R414_ER_MAPPINGS: ESFMapping[] = [
     label: 'Otros gastos',
     pucPrefixes: ['53', '54', '56', '58'],
     excludePrefixes: ['5802', '5803', '5807', '5815', '5410'],
+  },
+
+  // Fila 23: Otras ganancias (pérdidas)
+  // PUC R414: 4815 - Ganancias por método de participación patrimonial
+  // Template label: "Otras ganancias (pérdidas)"
+  // Nota: En la fórmula E24=E16+E17-E18+E19-SUM(E20:E22)+E23, +E23 suma las ganancias
+  {
+    row: 23,
+    label: 'Otras ganancias (pérdidas)',
+    pucPrefixes: ['4815'],
   },
 
   // Fila 25: Gasto/Ingreso impuesto a las ganancias corriente
